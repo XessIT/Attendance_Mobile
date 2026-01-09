@@ -1,0 +1,492 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
+import '../models/employee.dart';
+import '../providers/attendance_provider.dart';
+import '../providers/employee_provider.dart';
+import '../models/attendance.dart';
+import 'face_attendance_screen.dart';
+
+class AttendanceScreen extends StatefulWidget {
+  const AttendanceScreen({super.key});
+
+  @override
+  State<AttendanceScreen> createState() => _AttendanceScreenState();
+}
+
+class _AttendanceScreenState extends State<AttendanceScreen> {
+  DateTime _selectedDate = DateTime.now();
+  int? _selectedEmployeeId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
+      await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Attendance'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Quick actions and filters
+          _buildHeaderSection(),
+          
+          // Statistics
+          _buildStatisticsSection(),
+          
+          // Attendance list
+          Expanded(
+            child: _buildAttendanceList(),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FaceAttendanceScreen(),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF2196F3),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.face),
+        label: Text(
+          'Mark Attendance',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Date selector
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: _selectDate,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: Color(0xFF2196F3)),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat('EEEE, MMMM d, y').format(_selectedDate),
+                          style: GoogleFonts.poppins(),
+                        ),
+                        const Spacer(),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedDate = DateTime.now();
+                  });
+                },
+                icon: const Icon(Icons.today),
+                tooltip: 'Today',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Employee filter
+          Consumer<EmployeeProvider>(
+            builder: (context, employeeProvider, child) {
+              final employees = employeeProvider.employees;
+              
+              return DropdownButtonFormField<int>(
+                value: _selectedEmployeeId,
+                decoration: const InputDecoration(
+                  labelText: 'Filter by Employee',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                items: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('All Employees'),
+                  ),
+                  ...employees.map((employee) => DropdownMenuItem(
+                    value: employee.id,
+                    child: Text(employee.name),
+                  )),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedEmployeeId = value;
+                  });
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsSection() {
+    return Consumer2<AttendanceProvider, EmployeeProvider>(
+      builder: (context, attendanceProvider, employeeProvider, child) {
+        final stats = attendanceProvider.getAttendanceStats(
+          employeeId: _selectedEmployeeId,
+          startDate: _selectedDate,
+          endDate: _selectedDate,
+        );
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Present',
+                  value: stats['presentDays'].toString(),
+                  color: Colors.green,
+                  icon: Icons.check_circle,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Absent',
+                  value: stats['absentDays'].toString(),
+                  color: Colors.red,
+                  icon: Icons.cancel,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Late',
+                  value: stats['lateDays'].toString(),
+                  color: Colors.orange,
+                  icon: Icons.schedule,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceList() {
+    return Consumer2<AttendanceProvider, EmployeeProvider>(
+      builder: (context, attendanceProvider, employeeProvider, child) {
+        final attendanceList = attendanceProvider.getAttendanceByDate(_selectedDate);
+        
+        // Filter by employee if selected
+        final filteredAttendance = _selectedEmployeeId != null
+            ? attendanceList.where((a) => a.employeeId == _selectedEmployeeId).toList()
+            : attendanceList;
+
+        if (filteredAttendance.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No attendance records',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'No attendance records found for ${DateFormat('MMMM d, y').format(_selectedDate)}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: filteredAttendance.length,
+          itemBuilder: (context, index) {
+            final attendance = filteredAttendance[index];
+            final employee = employeeProvider.getEmployeeById(attendance.employeeId);
+            
+            return _buildAttendanceCard(attendance, employee, index);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAttendanceCard(Attendance attendance, Employee? employee, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 25,
+          backgroundColor: _getStatusColor(attendance.status).withOpacity(0.1),
+          child: Icon(
+            _getStatusIcon(attendance.status),
+            color: _getStatusColor(attendance.status),
+          ),
+        ),
+        title: Text(
+          employee?.name ?? 'Employee ID: ${attendance.employeeId}',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            if (attendance.checkIn != null)
+              Text(
+                'Check-in: ${DateFormat('HH:mm').format(attendance.checkIn!)}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            if (attendance.checkOut != null)
+              Text(
+                'Check-out: ${DateFormat('HH:mm').format(attendance.checkOut!)}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            if (attendance.workingHours != null && attendance.workingHours! > 0)
+              Text(
+                'Hours: ${attendance.workingHours!.toStringAsFixed(1)}h',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+          ],
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: _getStatusColor(attendance.status),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            attendance.status.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        onTap: () => _showAttendanceDetails(attendance, employee),
+      ),
+    ).animate().fadeIn(delay: Duration(milliseconds: index * 100)).slideX(begin: 0.3, duration: 600.ms);
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'present':
+        return Colors.green;
+      case 'absent':
+        return Colors.red;
+      case 'late':
+        return Colors.orange;
+      case 'half-day':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'present':
+        return Icons.check_circle;
+      case 'absent':
+        return Icons.cancel;
+      case 'late':
+        return Icons.schedule;
+      case 'half-day':
+        return Icons.access_time;
+      default:
+        return Icons.help;
+    }
+  }
+
+  void _showAttendanceDetails(Attendance attendance, Employee? employee) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(employee?.name ?? 'Employee Details'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('Date', DateFormat('EEEE, MMMM d, y').format(attendance.date)),
+            if (attendance.checkIn != null)
+              _buildDetailRow('Check-in', DateFormat('HH:mm:ss').format(attendance.checkIn!)),
+            if (attendance.checkOut != null)
+              _buildDetailRow('Check-out', DateFormat('HH:mm:ss').format(attendance.checkOut!)),
+            if (attendance.workingHours != null && attendance.workingHours! > 0)
+              _buildDetailRow('Working Hours', '${attendance.workingHours!.toStringAsFixed(1)} hours'),
+            _buildDetailRow('Status', attendance.status.toUpperCase()),
+            if (attendance.notes != null && attendance.notes!.isNotEmpty)
+              _buildDetailRow('Notes', attendance.notes!),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+} 

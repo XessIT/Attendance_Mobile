@@ -1,0 +1,1335 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/employee.dart';
+import '../models/attendance.dart';
+import '../models/salary.dart';
+import 'location_service.dart';
+
+class ApiService {
+  // Face recognition and attendance API base URL
+  static const String baseUrl = 'https://face.agniplay.com/api';
+
+  // User management and company registration API base URL
+  static const String userBaseUrl = 'https://nodeface.agniplay.com/api';
+
+  // Dio instance for face recognition and attendance APIs
+  static final Dio _dio = Dio(BaseOptions(
+    baseUrl: baseUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+  ));
+
+  // Dio instance for user management APIs
+  static final Dio _userDio = Dio(BaseOptions(
+    baseUrl: userBaseUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+  ));
+
+  // Employee APIs
+  static Future<List<Employee>> getEmployees() async {
+    try {
+      print('========================================');
+      print('GET EMPLOYEES API CALL');
+      print('========================================');
+      print('URL: $baseUrl/employees');
+      print('Method: GET');
+      
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      print('📤 Sending request...');
+      final response = await _dio.get('/employees', options: options);
+      
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data Type: ${response.data.runtimeType}');
+      
+      if (response.statusCode == 200) {
+        print('✅ Employees loaded successfully');
+        
+        // Handle different response formats
+        List<dynamic> employeesList;
+        if (response.data is Map && response.data['employees'] is List) {
+          // Format: { "count": 1, "employees": [...], "success": true }
+          employeesList = response.data['employees'];
+        } else if (response.data is Map && response.data['data'] is List) {
+          // Format: { "data": [...] }
+          employeesList = response.data['data'];
+        } else if (response.data is List) {
+          // Format: [...]
+          employeesList = response.data;
+        } else {
+          print('❌ Unexpected response format');
+          print('Response: ${response.data}');
+          throw Exception('Unexpected response format');
+        }
+        
+        print('📋 Found ${employeesList.length} employees');
+        print('========================================');
+        
+        return employeesList.map((json) => Employee.fromJson(json)).toList();
+      }
+      
+      print('❌ Failed with status code: ${response.statusCode}');
+      print('========================================');
+      throw Exception('Failed to load employees');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET EMPLOYEES');
+      print('========================================');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load employees';
+        
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET EMPLOYEES');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName}) async {
+    final fullUrl = '$baseUrl/register';
+    
+    // Generate employee_id (format: E001, E002, etc.)
+    // Using last 3 digits of timestamp, padded with zeros
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final lastDigits = (timestamp % 1000).toString().padLeft(3, '0');
+    final employeeId = 'E$lastDigits';
+    
+    print('========================================');
+    print('EMPLOYEE REGISTRATION API CALL');
+    print('========================================');
+    print('URL: $fullUrl');
+    print('Method: POST');
+    print('Content-Type: multipart/form-data');
+    print('Employee Data:');
+    print('  - name: ${employee.name}');
+    print('  - employee_id: $employeeId');
+    print('  - email: ${employee.email}');
+    print('  - phone: ${employee.phone}');
+    print('  - department: ${employee.position}');
+    print('  - salary: ${employee.salary}');
+    print('  - shift: ${shiftName ?? "Not specified"}');
+    print('  - image: ${imageFile?.path ?? "No image"}');
+    print('----------------------------------------');
+    
+    try {
+      // Create FormData for multipart/form-data request
+      final Map<String, dynamic> formFields = {
+        'name': employee.name,
+        'employee_id': employeeId,
+        'email': employee.email,
+        'phone': employee.phone,
+        'department': employee.position, // Using position as department
+        'salary': employee.salary.toString(),
+      };
+      
+      // Add shift if provided
+      if (shiftName != null && shiftName.isNotEmpty) {
+        formFields['shift'] = shiftName;
+      }
+      
+      final formData = FormData.fromMap(formFields);
+      
+      // Add image file if provided
+      if (imageFile != null && await imageFile.exists()) {
+        formData.files.add(MapEntry(
+          'image',
+          await MultipartFile.fromFile(
+            imageFile.path,
+            filename: imageFile.path.split('/').last,
+          ),
+        ));
+        print('✅ Image file added to form data');
+      } else {
+        print('⚠️ No image file provided or file does not exist');
+      }
+      
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      print('📤 Sending request...');
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      final response = await _dio.post('/register', data: formData, options: options);
+      
+      print('Status Code: ${response.statusCode}');
+      print('Response Headers: ${response.headers}');
+      print('Response Body: ${jsonEncode(response.data)}');
+      print('========================================');
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        // Check if API call was successful
+        if (response.data['success'] == true) {
+          print('✅ Employee created successfully!');
+          
+          // The API returns: {"employee_id":1,"message":"...","success":true}
+          // Extract employee_id from response (could be 'employee_id' or 'id')
+          final returnedId = response.data['employee_id'] ?? 
+                            response.data['id'] ?? 
+                            null;
+          
+          // If API returns full employee data in 'data' field, use it
+          Map<String, dynamic>? employeeData = response.data['data'];
+          
+          // Create Employee object - use API response data if available, otherwise use original employee data
+          final createdEmployee = Employee(
+            id: returnedId ?? employeeData?['id'] ?? employeeData?['employee_id'],
+            name: employeeData?['name'] ?? employee.name,
+            email: employeeData?['email'] ?? employee.email,
+            phone: employeeData?['phone'] ?? employee.phone,
+            position: employeeData?['department'] ?? 
+                     employeeData?['position'] ?? 
+                     employee.position,
+            salary: employeeData?['salary'] != null 
+                ? double.parse(employeeData!['salary'].toString()) 
+                : employee.salary,
+            faceData: employeeData?['face_data'] ?? 
+                     employeeData?['faceData'] ?? 
+                     employee.faceData,
+            createdAt: employeeData?['created_at'] != null
+                ? DateTime.parse(employeeData!['created_at'])
+                : DateTime.now(),
+            isActive: employeeData?['is_active'] ?? 
+                     employeeData?['isActive'] ?? 
+                     employee.isActive,
+          );
+          
+          print('📋 Created Employee Details:');
+          print('   ID: ${createdEmployee.id}');
+          print('   Name: ${createdEmployee.name}');
+          print('   Email: ${createdEmployee.email}');
+          
+          return createdEmployee;
+        } else {
+          print('❌ Response indicates failure: ${response.data['message'] ?? 'Unknown error'}');
+          throw Exception(response.data['message'] ?? 'Failed to create employee');
+        }
+      }
+      print('❌ Unexpected status code: ${response.statusCode}');
+      throw Exception('Failed to create employee: Status ${response.statusCode}');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error Type: ${e.type}');
+      print('Error Message: ${e.message}');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Headers: ${e.response?.headers}');
+        print('Response Data: ${jsonEncode(e.response?.data)}');
+        
+        final errorMessage = e.response?.data['error'] ?? 
+                            e.response?.data['message'] ?? 
+                            e.response?.data.toString() ??
+                            'Failed to create employee';
+        print('Extracted Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('Request Data Type: ${e.requestOptions.data.runtimeType}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error creating employee: $e');
+    }
+  }
+
+  static Future<Employee> updateEmployee(Employee employee) async {
+    try {
+      print('========================================');
+      print('UPDATE EMPLOYEE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/employee/${employee.id}');
+      print('Method: PUT');
+      print('Content-Type: application/json');
+      
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final storedCompanyId = prefs.getInt('company_id');
+      
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      // Use employee's companyId if available, otherwise use stored companyId
+      final companyId = employee.companyId ?? storedCompanyId ?? 1;
+      
+      print('📋 Employee Company ID: ${employee.companyId}');
+      print('📋 Stored Company ID: $storedCompanyId');
+      print('📋 Using Company ID: $companyId');
+      
+      // Prepare request data according to API format
+      final requestData = {
+        'name': employee.name,
+        'employee_id': 'EMP${employee.id?.toString().padLeft(3, '0')}', // Format as EMP001, EMP002, etc.
+        'email': employee.email,
+        'phone': employee.phone,
+        'department': employee.position,
+        'salary': employee.salary,
+        'shift': employee.shiftName ?? 'Day Shift', // Default shift if not provided
+        'company_id': companyId,
+        'is_active': employee.isActive ? 1 : 0,
+      };
+      
+      print('Request Data: $requestData');
+      print('📤 Sending request...');
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      final response = await _userDio.put(
+        '/employee/${employee.id}',
+        data: requestData,
+        options: options,
+      );
+      
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('========================================');
+      
+      if (response.statusCode == 200) {
+        print('✅ Employee updated successfully');
+        
+        // Handle different response formats
+        if (response.data is Map) {
+          if (response.data['data'] != null) {
+            return Employee.fromJson(response.data['data']);
+          } else if (response.data['employee'] != null) {
+            return Employee.fromJson(response.data['employee']);
+          } else {
+            // Return the updated employee with the response data merged
+            return employee.copyWith(
+              name: response.data['name'] ?? employee.name,
+              email: response.data['email'] ?? employee.email,
+              phone: response.data['phone'] ?? employee.phone,
+              position: response.data['department'] ?? employee.position,
+              salary: response.data['salary'] != null 
+                  ? double.parse(response.data['salary'].toString()) 
+                  : employee.salary,
+              isActive: response.data['is_active'] == 1 || response.data['is_active'] == true,
+              companyId: response.data['company_id'] ?? companyId,
+            );
+          }
+        }
+        
+        // If no data in response, return the original employee
+        return employee;
+      }
+      
+      print('❌ Failed with status code: ${response.statusCode}');
+      print('========================================');
+      throw Exception('Failed to update employee');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - UPDATE EMPLOYEE');
+      print('========================================');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to update employee';
+        
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - UPDATE EMPLOYEE');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<bool> deleteEmployee(int id) async {
+    try {
+      final response = await _dio.delete('/employees.php', data: {'id': id});
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Activate employee
+  static Future<Employee> activateEmployee(int employeeId) async {
+    try {
+      print('========================================');
+      print('ACTIVATE EMPLOYEE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/employee/$employeeId/activate');
+      print('Method: PATCH');
+      
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      print('📤 Sending request...');
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      final response = await _userDio.patch(
+        '/employee/$employeeId/activate',
+        options: options,
+      );
+      
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('========================================');
+      
+      if (response.statusCode == 200) {
+        print('✅ Employee activated successfully');
+        
+        // Handle different response formats
+        if (response.data is Map) {
+          if (response.data['data'] != null) {
+            return Employee.fromJson(response.data['data']);
+          } else if (response.data['employee'] != null) {
+            return Employee.fromJson(response.data['employee']);
+          }
+        }
+        
+        throw Exception('Invalid response format');
+      }
+      
+      print('❌ Failed with status code: ${response.statusCode}');
+      print('========================================');
+      throw Exception('Failed to activate employee');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - ACTIVATE EMPLOYEE');
+      print('========================================');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to activate employee';
+        
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - ACTIVATE EMPLOYEE');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Deactivate employee
+  static Future<Employee> deactivateEmployee(int employeeId) async {
+    try {
+      print('========================================');
+      print('DEACTIVATE EMPLOYEE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/employee/$employeeId/deactivate');
+      print('Method: PATCH');
+      
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      print('📤 Sending request...');
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      final response = await _userDio.patch(
+        '/employee/$employeeId/deactivate',
+        options: options,
+      );
+      
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('========================================');
+      
+      if (response.statusCode == 200) {
+        print('✅ Employee deactivated successfully');
+        
+        // Handle different response formats
+        if (response.data is Map) {
+          if (response.data['data'] != null) {
+            return Employee.fromJson(response.data['data']);
+          } else if (response.data['employee'] != null) {
+            return Employee.fromJson(response.data['employee']);
+          }
+        }
+        
+        throw Exception('Invalid response format');
+      }
+      
+      print('❌ Failed with status code: ${response.statusCode}');
+      print('========================================');
+      throw Exception('Failed to deactivate employee');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - DEACTIVATE EMPLOYEE');
+      print('========================================');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to deactivate employee';
+        
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - DEACTIVATE EMPLOYEE');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Face Recognition APIs
+  static Future<Map<String, dynamic>> registerFace(int employeeId, File imageFile) async {
+    try {
+      final formData = FormData.fromMap({
+        'employee_id': employeeId,
+        'face_image': await MultipartFile.fromFile(imageFile.path),
+      });
+
+      final response = await _dio.post('/face_register.php', data: formData);
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      throw Exception('Failed to register face');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> recognizeFace(File imageFile) async {
+    try {
+      final formData = FormData.fromMap({
+        'face_image': await MultipartFile.fromFile(imageFile.path),
+      });
+
+      final response = await _dio.post('/face_recognize.php', data: formData);
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      throw Exception('Failed to recognize face');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Attendance APIs
+  static Future<List<Attendance>> getAttendance({
+    int? employeeId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      final Map<String, dynamic> params = {};
+      if (employeeId != null) params['employee_id'] = employeeId;
+      if (startDate != null) params['start_date'] = startDate.toIso8601String().split('T')[0];
+      if (endDate != null) params['end_date'] = endDate.toIso8601String().split('T')[0];
+
+      final response = await _dio.get('/attendance.php', queryParameters: params);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Attendance.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load attendance');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<Attendance> markAttendance(Attendance attendance) async {
+    try {
+      final response = await _dio.post('/attendance.php', data: attendance.toJson());
+      if (response.statusCode == 201) {
+        return Attendance.fromJson(response.data['data']);
+      }
+      throw Exception('Failed to mark attendance');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<Attendance> updateAttendance(Attendance attendance) async {
+    try {
+      final response = await _dio.put('/attendance.php', data: attendance.toJson());
+      if (response.statusCode == 200) {
+        return Attendance.fromJson(response.data['data']);
+      }
+      throw Exception('Failed to update attendance');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Salary APIs
+  static Future<List<Salary>> getSalaries({
+    int? employeeId,
+    int? month,
+    int? year,
+  }) async {
+    try {
+      final Map<String, dynamic> params = {};
+      if (employeeId != null) params['employee_id'] = employeeId;
+      if (month != null) params['month'] = month;
+      if (year != null) params['year'] = year;
+
+      final response = await _dio.get('/salary.php', queryParameters: params);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Salary.fromJson(json)).toList();
+      }
+      throw Exception('Failed to load salaries');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<Salary> calculateSalary(Salary salary) async {
+    try {
+      final response = await _dio.post('/salary.php', data: salary.toJson());
+      if (response.statusCode == 201) {
+        return Salary.fromJson(response.data['data']);
+      }
+      throw Exception('Failed to calculate salary');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  static Future<bool> markSalaryPaid(int salaryId) async {
+    try {
+      final response = await _dio.put('/salary.php', data: {
+        'id': salaryId,
+        'is_paid': 1,
+        'paid_date': DateTime.now().toIso8601String(),
+      });
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Dashboard APIs
+  static Future<Map<String, dynamic>> getDashboardStats() async {
+    try {
+      final response = await _dio.get('/dashboard.php');
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      throw Exception('Failed to load dashboard stats');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Mark attendance with face image, authorization token, and location
+  static Future<Map<String, dynamic>> markAttendanceWithImage(File imageFile) async {
+    final fullUrl = '$baseUrl/mark_attendance';
+    
+    print('========================================');
+    print('MARK ATTENDANCE API CALL');
+    print('========================================');
+    print('URL: $fullUrl');
+    print('Method: POST');
+    print('Content-Type: multipart/form-data');
+    print('Image Path: ${imageFile.path}');
+    print('----------------------------------------');
+    
+    try {
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      // Get current location
+      final Map<String, double>? location = await LocationService.getCurrentLocation();
+      
+      if (location != null) {
+        print('📍 Location obtained: Lat=${location['latitude']}, Lon=${location['longitude']}');
+      } else {
+        print('⚠️ Could not obtain location');
+      }
+      
+      // Create FormData for multipart/form-data request
+      final Map<String, dynamic> formFields = {
+        'image': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        ),
+      };
+      
+      // Add location data if available
+      if (location != null) {
+        formFields['latitude'] = location['latitude'].toString();
+        formFields['longitude'] = location['longitude'].toString();
+      }
+      
+      final formData = FormData.fromMap(formFields);
+      
+      print('📤 Sending attendance request...');
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      final response = await _dio.post('/mark_attendance', data: formData, options: options);
+      
+      print('Status Code: ${response.statusCode}');
+      print('Response Headers: ${response.headers}');
+      print('Response Body: ${jsonEncode(response.data)}');
+      print('========================================');
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data['success'] == true) {
+          print('✅ Attendance marked successfully!');
+          return response.data;
+        } else {
+          print('❌ Response indicates failure: ${response.data['message'] ?? 'Unknown error'}');
+          throw Exception(response.data['message'] ?? 'Failed to mark attendance');
+        }
+      }
+      print('❌ Unexpected status code: ${response.statusCode}');
+      throw Exception('Failed to mark attendance: Status ${response.statusCode}');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error Type: ${e.type}');
+      print('Error Message: ${e.message}');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Headers: ${e.response?.headers}');
+        print('Response Data: ${jsonEncode(e.response?.data)}');
+        
+        final errorMessage = e.response?.data['error'] ?? 
+                            e.response?.data['message'] ?? 
+                            e.response?.data.toString() ??
+                            'Failed to mark attendance';
+        print('Extracted Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error marking attendance: $e');
+    }
+  }
+
+  // User Registration API
+  static Future<Map<String, dynamic>> registerUser({
+    required String companyName,
+    required String name,
+    required String mobileNumber,
+    required String address,
+    required String username,
+    required String password,
+  }) async {
+    try {
+      print('========================================');
+      print('USER REGISTRATION API CALL');
+      print('========================================');
+
+      final requestData = {
+        'companyName': companyName,
+        'name': name,
+        'mobileNumber': mobileNumber,
+        'address': address,
+        'username': username,
+        'password': password,
+      };
+
+      print('URL: $userBaseUrl/registration');
+      print('Method: POST');
+      print('Content-Type: application/json');
+      print('Request Data: $requestData');
+
+      final response = await _userDio.post(
+        '/registration',
+        data: requestData,
+        options: Options(
+          contentType: 'application/json',
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ User registration successful');
+        print('========================================');
+        return {
+          'success': true,
+          'data': response.data,
+        };
+      } else {
+        print('❌ User registration failed with status: ${response.statusCode}');
+        print('========================================');
+        throw Exception('Registration failed: ${response.data}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Registration failed';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error during registration: $e');
+    }
+  }
+
+  // User Login API
+  static Future<Map<String, dynamic>> loginUser({
+    required String mobileNumber,
+    required String password,
+  }) async {
+    try {
+      print('========================================');
+      print('USER LOGIN API CALL');
+      print('========================================');
+
+      final requestData = {
+        'mobileNumber': mobileNumber,
+        'password': password,
+      };
+
+      print('URL: $userBaseUrl/login');
+      print('Method: POST');
+      print('Content-Type: application/json');
+      print('Request Data: $requestData');
+
+      final response = await _userDio.post(
+        '/login',
+        data: requestData,
+        options: Options(
+          contentType: 'application/json',
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ User login successful');
+        print('========================================');
+
+        // Try multiple possible token locations and keys
+        String? token;
+
+        // Check direct response.data level
+        token ??= response.data['token'] ??
+                  response.data['access_token'] ??
+                  response.data['auth_token'] ??
+                  response.data['jwt'] ??
+                  response.data['bearer'];
+
+        // Check nested in response.data.data level (API structure)
+        if (token == null && response.data['data'] != null) {
+          token = response.data['data']['token'] ??
+                  response.data['data']['access_token'] ??
+                  response.data['data']['auth_token'] ??
+                  response.data['data']['jwt'] ??
+                  response.data['data']['bearer'];
+        }
+
+        print('🔑 Token found in response: ${token != null ? "YES" : "NO"}');
+        if (token != null) {
+          print('🔑 Token value: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
+        }
+
+        return {
+          'success': true,
+          'token': token,
+          'data': response.data,
+        };
+      } else {
+        print('❌ User login failed with status: ${response.statusCode}');
+        print('========================================');
+        throw Exception('Login failed: ${response.data}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Login failed';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error during login: $e');
+    }
+  }
+
+  // Shift Management APIs
+
+  // Get authorization headers with token
+  static Future<Map<String, String>> _getAuthHeaders() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      return {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+    } catch (e) {
+      return {'Content-Type': 'application/json'};
+    }
+  }
+
+  // Get all shifts
+  static Future<List<Map<String, dynamic>>> getShifts() async {
+    try {
+      print('========================================');
+      print('GET SHIFTS API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/shift');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.get(
+        '/shift',
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Shifts loaded successfully');
+        print('========================================');
+
+        final data = response.data;
+        if (data is Map && data['data'] is List) {
+          return List<Map<String, dynamic>>.from(data['data']);
+        } else if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+        return [];
+      } else {
+        throw Exception('Failed to load shifts: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load shifts';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error loading shifts: $e');
+    }
+  }
+
+  // Create new shift
+  static Future<Map<String, dynamic>> createShift(Map<String, dynamic> shiftData) async {
+    try {
+      print('========================================');
+      print('CREATE SHIFT API CALL');
+      print('========================================');
+      print('Method: POST');
+      print('URL: $userBaseUrl/shift');
+      print('Content-Type: application/json');
+      print('Request Data:');
+      shiftData.forEach((key, value) {
+        print('  - $key: $value');
+      });
+
+      final headers = await _getAuthHeaders();
+      print('Authorization: Bearer ${headers['Authorization']?.toString().substring(0, 20)}...');
+
+      final response = await _userDio.post(
+        '/shift',
+        data: shiftData,
+        options: Options(
+          headers: headers,
+          contentType: 'application/json',
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Shift created successfully');
+        print('========================================');
+
+        final responseData = response.data;
+        if (responseData is Map && responseData['data'] is Map) {
+          return Map<String, dynamic>.from(responseData['data']);
+        } else if (responseData is Map) {
+          return Map<String, dynamic>.from(responseData);
+        }
+        return {};
+      } else {
+        throw Exception('Failed to create shift: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - CREATE SHIFT');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to create shift';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - CREATE SHIFT');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error creating shift: $e');
+    }
+  }
+
+  // Update existing shift
+  static Future<Map<String, dynamic>> updateShift(int id, Map<String, dynamic> shiftData) async {
+    try {
+      print('========================================');
+      print('UPDATE SHIFT API CALL');
+      print('========================================');
+      print('Method: PUT');
+      print('URL: $userBaseUrl/shift/$id');
+      print('Content-Type: application/json');
+      print('Request Data:');
+      shiftData.forEach((key, value) {
+        print('  - $key: $value');
+      });
+
+      final headers = await _getAuthHeaders();
+      print('Authorization: Bearer ${headers['Authorization']?.toString().substring(0, 20)}...');
+
+      final response = await _userDio.put(
+        '/shift/$id',
+        data: shiftData,
+        options: Options(
+          headers: headers,
+          contentType: 'application/json',
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Shift updated successfully');
+        print('========================================');
+
+        final responseData = response.data;
+        if (responseData is Map && responseData['data'] is Map) {
+          return Map<String, dynamic>.from(responseData['data']);
+        } else if (responseData is Map) {
+          return Map<String, dynamic>.from(responseData);
+        }
+        return {};
+      } else {
+        throw Exception('Failed to update shift: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - UPDATE SHIFT');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to update shift';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - UPDATE SHIFT');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error updating shift: $e');
+    }
+  }
+
+  // Delete shift
+  static Future<void> deleteShift(int id) async {
+    try {
+      print('========================================');
+      print('DELETE SHIFT API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/shift/$id');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.delete(
+        '/shift/$id',
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ Shift deleted successfully');
+        print('========================================');
+      } else {
+        throw Exception('Failed to delete shift: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to delete shift';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error deleting shift: $e');
+    }
+  }
+} 
