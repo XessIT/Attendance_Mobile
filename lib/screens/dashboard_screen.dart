@@ -267,7 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Leave',
-                    value: '${stats['attendancePercentage']}',
+                    value: '${stats['absentDays']}',
                     icon: Icons.trending_up,
                     color: Colors.orange,
                   ),
@@ -276,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Late Check In',
-                    value: '${stats['totalWorkingHours']}',
+                    value: '${stats['lateDays']}',
                     icon: Icons.access_time,
                     color: Colors.purple,
                   ),

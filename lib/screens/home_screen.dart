@@ -122,10 +122,10 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.access_time),
             label: 'Attendance',
           ),
-          BottomNavigationBarItem(
+          /*BottomNavigationBarItem(
             icon: Icon(Icons.attach_money),
             label: 'Salary',
-          ),
+          ),*/
           /*BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
