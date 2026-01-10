@@ -169,7 +169,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         );
 
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(horizontal: 40),
           child: Row(
             children: [
               Expanded(

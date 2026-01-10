@@ -91,7 +91,33 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           // Navigate to home/dashboard
-          Navigator.of(context).pushReplacementNamed('/home');
+          if (mounted) {
+            String? userType;
+            try {
+              // Try to extract userType from result['data'] -> 'data' -> 'employee' -> 'userType'
+              // result['data'] is the API response body
+              final apiResponse = result['data'];
+              if (apiResponse != null && apiResponse is Map) {
+                final innerData = apiResponse['data'];
+                if (innerData != null && innerData is Map) {
+                  final employee = innerData['employee'];
+                  if (employee != null && employee is Map) {
+                    userType = employee['userType'];
+                  }
+                }
+              }
+            } catch (e) {
+              print('Error parsing userType: $e');
+            }
+
+            print('👤 User Type: $userType');
+
+            if (userType == 'employee') {
+              Navigator.of(context).pushReplacementNamed('/employee-home');
+            } else {
+              Navigator.of(context).pushReplacementNamed('/home');
+            }
+          }
         }
       } else {
         throw Exception(result['message'] ?? 'Login failed');

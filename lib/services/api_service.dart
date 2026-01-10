@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import '../models/employee.dart';
 import '../models/attendance.dart';
 import '../models/salary.dart';
@@ -1330,6 +1331,330 @@ class ApiService {
       print('Error: $e');
       print('========================================');
       throw Exception('Error deleting shift: $e');
+    }
+  }
+
+  // Employee Dashboard API
+  static Future<Map<String, dynamic>> getEmployeeDashboardStats() async {
+    try {
+      print('========================================');
+      print('GET EMPLOYEE DASHBOARD STATS API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/employee/dashboard');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.get(
+        '/employee/dashboard',
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Employee dashboard stats loaded successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to load employee dashboard stats: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET EMPLOYEE DASHBOARD');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load employee dashboard';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET EMPLOYEE DASHBOARD');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error loading employee dashboard: $e');
+    }
+  }
+
+  // Employee Leave API
+  static Future<Map<String, dynamic>> applyLeave(Map<String, dynamic> leaveData) async {
+    try {
+      print('========================================');
+      print('APPLY LEAVE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/leave/apply');
+      print('Leave Data: $leaveData');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.post(
+        '/leave/apply',
+        data: leaveData,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Leave application submitted successfully');
+        print('========================================');
+        final responseData = response.data;
+        if (responseData is Map && responseData['data'] is Map) {
+          return Map<String, dynamic>.from(responseData);
+        } else if (responseData is Map) {
+          return Map<String, dynamic>.from(responseData);
+        }
+        return {'success': true, 'message': 'Leave applied successfully'};
+      } else {
+        throw Exception('Failed to apply leave: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - APPLY LEAVE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to apply leave';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - APPLY LEAVE');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error applying leave: $e');
+    }
+  }
+
+  // Fetch Employee Leaves
+  static Future<Map<String, dynamic>> getMyLeaves({
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      print('========================================');
+      print('GET MY LEAVES API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/leave/my-leaves');
+
+      final Map<String, dynamic> queryParams = {};
+      if (status != null && status.isNotEmpty && status != 'All') {
+        queryParams['status'] = status;
+      }
+      if (startDate != null) {
+        queryParams['startDate'] = DateFormat('yyyy-MM-dd').format(startDate);
+      }
+      if (endDate != null) {
+        queryParams['endDate'] = DateFormat('yyyy-MM-dd').format(endDate);
+      }
+
+      print('Query Params: $queryParams');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.get(
+        '/leave/my-leaves',
+        queryParameters: queryParams,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Leaves loaded successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to load leaves: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET MY LEAVES');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load leaves';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET MY LEAVES');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error loading leaves: $e');
+    }
+  }
+
+  // Employee Attendance Report API
+  static Future<Map<String, dynamic>> getEmployeeAttendanceReport({
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      print('========================================');
+      print('GET EMPLOYEE ATTENDANCE REPORT API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/employee/attendance-report');
+      
+      final Map<String, dynamic> queryParams = {};
+      if (status != null && status.isNotEmpty && status != 'All') {
+        queryParams['status'] = status.toLowerCase();
+      }
+      if (startDate != null) {
+        queryParams['startDate'] = startDate.toIso8601String().split('T')[0];
+      }
+      if (endDate != null) {
+        queryParams['endDate'] = endDate.toIso8601String().split('T')[0];
+      }
+      
+      print('Query Params: $queryParams');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.get(
+        '/employee/attendance-report',
+        queryParameters: queryParams,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Employee attendance report loaded successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to load attendance report: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET ATTENDANCE REPORT');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load attendance report';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET ATTENDANCE REPORT');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error loading attendance report: $e');
+    }
+  }
+
+  // Cancel Leave API
+  static Future<Map<String, dynamic>> cancelLeave(int leaveId) async {
+    try {
+      print('========================================');
+      print('CANCEL LEAVE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/leave/$leaveId/cancel');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.post(
+        '/leave/$leaveId/cancel',
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Leave cancelled successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to cancel leave: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - CANCEL LEAVE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to cancel leave';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - CANCEL LEAVE');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error cancelling leave: $e');
     }
   }
 } 
