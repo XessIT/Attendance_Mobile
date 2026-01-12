@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'providers/employee_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/shift_provider.dart';
+import 'providers/department_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EmployeeProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => ShiftProvider()),
+        ChangeNotifierProvider(create: (_) => DepartmentProvider()),
       ],
       child: MaterialApp(
         title: 'Face Recognition Attendance',

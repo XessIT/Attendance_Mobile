@@ -5,8 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/employee.dart';
 import '../models/shift.dart';
+import '../models/department.dart';
 import '../providers/employee_provider.dart';
 import '../providers/shift_provider.dart';
+import '../providers/department_provider.dart';
 import '../services/api_service.dart';
 
 class EmployeeRegistrationScreen extends StatefulWidget {
@@ -28,13 +30,15 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
   bool _isLoading = false;
   bool _isCapturing = false;
   Shift? _selectedShift;
+  Department? _selectedDepartment;
 
   @override
   void initState() {
     super.initState();
-    // Load shifts when screen initializes
+    // Load shifts and departments when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ShiftProvider>().loadShifts();
+      context.read<DepartmentProvider>().loadDepartments();
     });
   }
 
@@ -138,7 +142,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
-        position: _positionController.text.trim(),
+        position: _selectedDepartment?.name ?? 'Employee',
         salary: double.parse(_salaryController.text.trim()),
         faceData: '', // Will be set after face registration
         createdAt: DateTime.now(),
@@ -151,6 +155,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       print('   Phone: ${employee.phone}');
       print('   Position: ${employee.position}');
       print('   Salary: ${employee.salary}');
+      print('   Department: ${_selectedDepartment?.name ?? "Not selected"}');
       print('   Shift: ${_selectedShift?.name ?? "Not selected"}');
       print('   Face Image Path: ${_faceImage!.path}');
 
@@ -161,6 +166,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         employee, 
         imageFile: _faceImage!,
         shiftName: _selectedShift?.name,
+        departmentName: _selectedDepartment?.name,
       );
 
       print('📥 [EMPLOYEE REGISTRATION] createEmployee returned: $success');
@@ -322,7 +328,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            /*const SizedBox(width: 12),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _pickFaceImage,
@@ -336,7 +342,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                   side: const BorderSide(color: Color(0xFF2196F3)),
                 ),
               ),
-            ),
+            ),*/
           ],
         ),
       ],
@@ -425,17 +431,138 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         const SizedBox(height: 16),
 
         // Position field
-        TextFormField(
-          controller: _positionController,
-          decoration: const InputDecoration(
-            labelText: 'Position',
-            prefixIcon: Icon(Icons.work),
-          ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter position';
+        Consumer<DepartmentProvider>(
+          builder: (context, departmentProvider, child) {
+            if (departmentProvider.isLoading) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Loading departments...',
+                      style: GoogleFonts.poppins(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
             }
-            return null;
+
+            if (departmentProvider.error != null) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.red.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.red.shade50,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Error loading departments',
+                        style: GoogleFonts.poppins(color: Colors.red),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => departmentProvider.loadDepartments(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (departmentProvider.departments.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.orange.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.orange.shade50,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No departments available. Please contact administrator.',
+                        style: GoogleFonts.poppins(
+                          color: Colors.orange.shade900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return DropdownButtonFormField<Department>(
+              value: _selectedDepartment,
+              decoration: InputDecoration(
+                labelText: 'Select Department',
+                prefixIcon: const Icon(Icons.business),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+              hint: Text(
+                'Choose employee department',
+                style: GoogleFonts.poppins(color: Colors.grey),
+              ),
+              items: departmentProvider.departments.map((department) {
+                return DropdownMenuItem<Department>(
+                  value: department,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        department.name,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (department.description != null && department.description!.isNotEmpty)
+                        Text(
+                          department.description!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (Department? newValue) {
+                setState(() {
+                  _selectedDepartment = newValue;
+                });
+              },
+              validator: (value) {
+                if (value == null) {
+                  return 'Please select a department';
+                }
+                return null;
+              },
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -445,7 +572,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           controller: _salaryController,
           decoration: const InputDecoration(
             labelText: 'Monthly Salary',
-            prefixIcon: Icon(Icons.attach_money),
+            prefixIcon: Icon(Icons.currency_rupee),
           ),
           keyboardType: TextInputType.number,
           validator: (value) {
@@ -464,6 +591,8 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       ],
     );
   }
+
+
 
   Widget _buildShiftSection() {
     return Column(
@@ -670,10 +799,10 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.person_add),
-                  const SizedBox(width: 8),
+                  // const Icon(Icons.person_add),
+                  // const SizedBox(width: 8),
                   Text(
-                    'Register Employee',
+                    'Register',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

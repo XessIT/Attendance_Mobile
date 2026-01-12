@@ -124,7 +124,7 @@ class ApiService {
     }
   }
 
-  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName}) async {
+  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName}) async {
     final fullUrl = '$baseUrl/register';
     
     // Generate employee_id (format: E001, E002, etc.)
@@ -157,7 +157,7 @@ class ApiService {
         'employee_id': employeeId,
         'email': employee.email,
         'phone': employee.phone,
-        'department': employee.position, // Using position as department
+        'department': departmentName ?? employee.position, // Use departmentName if provided, fallback to position
         'salary': employee.salary.toString(),
       };
       
@@ -1657,4 +1657,95 @@ class ApiService {
       throw Exception('Error cancelling leave: $e');
     }
   }
-} 
+
+  // Departments API
+  static Future<List<dynamic>> getDepartments() async {
+    try {
+      print('========================================');
+      print('GET DEPARTMENTS API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/departments');
+      print('Method: GET');
+      
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token != null) {
+        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+      } else {
+        print('⚠️ No auth token found');
+      }
+      
+      // Create options with Authorization header
+      final options = Options(
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      print('📤 Sending request...');
+      final response = await _userDio.get('/departments', options: options);
+      
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data Type: ${response.data.runtimeType}');
+      
+      if (response.statusCode == 200) {
+        print('✅ Departments loaded successfully');
+        
+        // Handle different response formats
+        List<dynamic> departmentsList;
+        if (response.data is Map && response.data['departments'] is List) {
+          departmentsList = response.data['departments'];
+        } else if (response.data is Map && response.data['data'] is List) {
+          departmentsList = response.data['data'];
+        } else if (response.data is List) {
+          departmentsList = response.data;
+        } else {
+          print('❌ Unexpected response format');
+          print('Response: ${response.data}');
+          throw Exception('Unexpected response format');
+        }
+        
+        print('📋 Found ${departmentsList.length} departments');
+        print('========================================');
+        
+        return departmentsList;
+      }
+      
+      print('❌ Failed with status code: ${response.statusCode}');
+      print('========================================');
+      throw Exception('Failed to load departments');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET DEPARTMENTS');
+      print('========================================');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load departments';
+        
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET DEPARTMENTS');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error: $e');
+    }
+  }
+}
