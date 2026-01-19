@@ -7,6 +7,7 @@ import '../providers/employee_provider.dart';
 import '../providers/attendance_provider.dart';
 import 'employee_registration_screen.dart';
 import 'face_attendance_screen_new.dart';
+import 'comp_off_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -156,6 +157,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.timelapse,
+                title: 'Compensatory Off',
+                subtitle: 'Request Credit/Leave',
+                color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CompOffScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Spacer(), // Placeholder for future 4th item
           ],
         ),
       ],

@@ -1391,20 +1391,37 @@ class ApiService {
   }
 
   // Employee Leave API
-  static Future<Map<String, dynamic>> applyLeave(Map<String, dynamic> leaveData) async {
+  static Future<Map<String, dynamic>> applyLeave(Map<String, dynamic> leaveData, {File? certificate}) async {
     try {
       print('========================================');
       print('APPLY LEAVE API CALL');
       print('========================================');
       print('URL: $userBaseUrl/leave/apply');
       print('Leave Data: $leaveData');
+      if (certificate != null) print('Certificate: ${certificate.path}');
 
       final headers = await _getAuthHeaders();
       print('Headers: $headers');
+      
+      // Create FormData
+      final formData = FormData.fromMap({
+        ...leaveData,
+      });
+
+      // Add certificate if provided
+      if (certificate != null) {
+        formData.files.add(MapEntry(
+          'certificate',
+          await MultipartFile.fromFile(
+            certificate.path,
+            filename: certificate.path.split('/').last,
+          ),
+        ));
+      }
 
       final response = await _userDio.post(
         '/leave/apply',
-        data: leaveData,
+        data: formData, // Send as FormData
         options: Options(headers: headers),
       );
 
@@ -1745,6 +1762,150 @@ class ApiService {
       print('Error: $e');
       print('Error Type: ${e.runtimeType}');
       print('========================================');
+      throw Exception('Error: $e');
+    }
+  }
+  // ---------------------------------------------------------------------------
+  // COMP-OFF APIs
+  // ---------------------------------------------------------------------------
+
+  // 1. Apply for Comp-Off Credit
+  static Future<Map<String, dynamic>> applyCompOffCredit(Map<String, dynamic> creditData) async {
+    try {
+      print('========================================');
+      print('APPLY COMP-OFF CREDIT API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/comp-off/apply');
+      print('Data: $creditData');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.post(
+        '/comp-off/apply',
+        data: creditData,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to apply for comp-off credit: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? e.response?.data['error'] ?? 'Failed to apply');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // 2. Get Comp-Off Requests (Status)
+  static Future<List<dynamic>> getCompOffCredits() async {
+    try {
+      print('========================================');
+      print('GET COMP-OFF CREDITS API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/comp-off/my-credits');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.get(
+        '/comp-off/my-credits',
+        options: Options(headers: headers),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data is Map && data['data'] is List) {
+          return List<dynamic>.from(data['data']);
+        }
+        return [];
+      } else {
+        throw Exception('Failed to load comp-off credits: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to load credits');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // 3. Get Comp-Off Balance
+  static Future<Map<String, dynamic>> getCompOffBalance() async {
+    try {
+      print('========================================');
+      print('GET COMP-OFF BALANCE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/comp-off/balance');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.get(
+        '/comp-off/balance',
+        options: Options(headers: headers),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data is Map && data['data'] is Map) {
+          return Map<String, dynamic>.from(data['data']);
+        }
+        return {'availableCredits': '0.0'}; // Default fallback
+      } else {
+        throw Exception('Failed to load balance: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Failed to load balance');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // 4. Apply for Comp-Off Leave (Use Credit)
+  static Future<Map<String, dynamic>> applyCompOffLeave(Map<String, dynamic> leaveData) async {
+    try {
+      print('========================================');
+      print('APPLY COMP-OFF LEAVE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/comp-off/leave/apply');
+      print('Data: $leaveData');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.post(
+        '/comp-off/leave/apply',
+        data: leaveData,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to apply for comp-off leave: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+         // Pass the specific error message (e.g., "Insufficient balance")
+        throw Exception(e.response?.data['error'] ?? e.response?.data['message'] ?? 'Failed to apply');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
       throw Exception('Error: $e');
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -65,16 +67,31 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
   DateTime _focusedDay = DateTime.now();
   bool _isLoading = false;
 
+  // New Fields for Session Management
+  String _startDaySession = 'First Half'; // Default: Start of the day
+  String _endDaySession = 'Second Half'; // Default: End of the day
+  File? _certificateFile;
+
   @override
   void dispose() {
     _reasonController.dispose();
     super.dispose();
   }
 
+  Future<void> _pickCertificate() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image != null) {
+      setState(() {
+        _certificateFile = File(image.path);
+      });
+    }
+  }
+
   Future<void> _applyLeave() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Validate Date Range
     if (_rangeStart == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a start date')),
@@ -82,7 +99,6 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
       return;
     }
     
-    // If end date is null (single day selected), allow it equal to start date
     final effectiveEndDate = _rangeEnd ?? _rangeStart;
 
     setState(() {
@@ -95,9 +111,11 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
         'startDate': DateFormat('yyyy-MM-dd').format(_rangeStart!),
         'endDate': DateFormat('yyyy-MM-dd').format(effectiveEndDate!),
         'reason': _reasonController.text.trim(),
+        'startDaySession': _startDaySession,
+        'endDaySession': _endDaySession,
       };
 
-      await ApiService.applyLeave(leaveData);
+      await ApiService.applyLeave(leaveData, certificate: _certificateFile);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,6 +130,9 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
           _rangeEnd = null;
           _focusedDay = DateTime.now();
           _leaveType = 'Casual';
+          _startDaySession = 'First Half';
+          _endDaySession = 'Second Half';
+          _certificateFile = null;
         });
       }
     } catch (e) {
@@ -158,6 +179,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // --- LEAVE TYPE ---
                     Text(
                       'Leave Type',
                       style: GoogleFonts.poppins(
@@ -193,6 +215,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                     ),
                     const SizedBox(height: 20),
                     
+                    // --- DATE SELECTION ---
                     Text(
                       'Select Dates',
                       style: GoogleFonts.poppins(
@@ -267,8 +290,214 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                           ),
                         ),
                       ),
-
+                    
                     const SizedBox(height: 20),
+
+                    // --- SESSION SELECTION (Visible if dates selected) ---
+                    if (_rangeStart != null) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${DateFormat('dd MMM').format(_rangeStart!)} (Start)', 
+                                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey[700])),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _startDaySession,
+                                      isExpanded: true,
+                                      style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87),
+                                      items: ['First Half', 'Second Half'].map((String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(value),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          _startDaySession = newValue!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${DateFormat('dd MMM').format(_rangeEnd ?? _rangeStart!)} (End)', 
+                                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey[700])),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _endDaySession,
+                                      isExpanded: true,
+                                      style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87),
+                                      items: ['First Half', 'Second Half'].map((String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(value),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          _endDaySession = newValue!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Helper text explaining the calculation
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                             Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                             const SizedBox(width: 8),
+                             Expanded(
+                               child: Text(
+                                 _calculateDurationText(),
+                                 style: GoogleFonts.poppins(fontSize: 11, color: Colors.blue[900]),
+                               ),
+                             ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // --- CERTIFICATE UPLOAD (Visible only for Medical Leave) ---
+                    if (_leaveType == 'Medical') ...[
+                      Row(
+                        children: [
+                          Icon(Icons.medical_services, size: 16, color: Colors.blue[700]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Medical Certificate',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: _pickCertificate,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: _certificateFile != null ? Colors.green : Colors.blue.withOpacity(0.3),
+                              style: BorderStyle.solid,
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            color: _certificateFile != null 
+                                ? Colors.green.withOpacity(0.05) 
+                                : Colors.blue.withOpacity(0.05),
+                          ),
+                          child: Column(
+                            children: [
+                              if (_certificateFile != null) ...[
+                                 const Icon(Icons.check_circle_rounded, color: Colors.green, size: 40),
+                                 const SizedBox(height: 12),
+                                 Text(
+                                   'Certificate Attached',
+                                   style: GoogleFonts.poppins(
+                                     fontSize: 14, 
+                                     fontWeight: FontWeight.w600, 
+                                     color: Colors.green[700]
+                                   ),
+                                 ),
+                                 const SizedBox(height: 4),
+                                 Text(
+                                   _certificateFile!.path.split('/').last,
+                                   style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                                   textAlign: TextAlign.center,
+                                   maxLines: 1,
+                                   overflow: TextOverflow.ellipsis,
+                                 ),
+                                 const SizedBox(height: 12),
+                                 SizedBox(
+                                   height: 36,
+                                   child: TextButton.icon(
+                                     onPressed: () {
+                                       setState(() {
+                                         _certificateFile = null;
+                                       });
+                                     },
+                                     style: TextButton.styleFrom(
+                                       backgroundColor: Colors.white,
+                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                       side: BorderSide(color: Colors.red[200]!),
+                                     ),
+                                     icon: Icon(Icons.delete_outline, size: 18, color: Colors.red[400]),
+                                     label: Text('Remove File', style: GoogleFonts.poppins(color: Colors.red[400], fontSize: 13)),
+                                   ),
+                                 ),
+                              ] else ...[
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.add_a_photo_outlined, color: Colors.blue[400], size: 30),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Tap to upload Medical Document',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.blue[700], 
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Supports: JPG, PNG',
+                                  style: GoogleFonts.poppins(color: Colors.grey[500], fontSize: 11),
+                                ),
+                              ]
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    
+                    // --- REASON ---
                     Text(
                       'Reason',
                       style: GoogleFonts.poppins(
@@ -326,6 +555,25 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
         ),
       ),
     );
+  }
+
+  String _calculateDurationText() {
+    if (_rangeStart == null) return '';
+    final end = _rangeEnd ?? _rangeStart!;
+    int days = end.difference(_rangeStart!).inDays + 1;
+    double duration = days.toDouble();
+    
+    // Adjust start day
+    if (_startDaySession == 'Second Half') {
+      duration -= 0.5;
+    }
+    
+    // Adjust end day
+    if (_endDaySession == 'First Half') {
+      duration -= 0.5;
+    }
+    
+    return 'Total Duration: $duration Days';
   }
 }
 

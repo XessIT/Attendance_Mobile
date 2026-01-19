@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../utils/auth_utils.dart';
+import 'comp_off_screen.dart';
 
 class EmployeeDashboardScreen extends StatefulWidget {
   const EmployeeDashboardScreen({super.key});
@@ -105,6 +106,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                           _buildMonthStatsGrid(),
                           const SizedBox(height: 20),
                           _buildHolidayCard(),
+                          const SizedBox(height: 20),
+                          _buildCompOffCard(),
                           const SizedBox(height: 20),
                           _buildLeaveStatsCard(),
                         ],
@@ -687,6 +690,60 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+  Widget _buildCompOffCard() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CompOffScreen()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+             BoxShadow(
+              color: Colors.black.withOpacity(0.05), 
+              blurRadius: 10, 
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.timelapse, color: Colors.purple, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Compensatory Off',
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                  ),
+                  Text(
+                    'Request credit or apply for leave',
+                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
     );
   }
 }
