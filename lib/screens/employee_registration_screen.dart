@@ -519,7 +519,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Colors.white,
               ),
               hint: Text(
                 'Choose employee department',
@@ -544,7 +544,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                           department.description!,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: Colors.black,
                           ),
                         ),
                     ],
