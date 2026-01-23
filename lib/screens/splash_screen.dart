@@ -28,26 +28,37 @@ class _SplashScreenState extends State<SplashScreen> {
     // Check if user is authenticated
     final isAuthenticated = await AuthUtils.isAuthenticated();
     final token = await AuthUtils.getToken();
+    final userType = await AuthUtils.getUserType();
 
     debugPrint('🔍 Token check on app start:');
     debugPrint('   - isAuthenticated: $isAuthenticated');
     debugPrint('   - token: ${token != null ? "${token.substring(0, token.length > 10 ? 10 : token.length)}..." : "null"}');
+    debugPrint('   - userType: $userType');
 
     if (isAuthenticated) {
-      // Token exists, navigate to home screen
-      debugPrint('✅ User authenticated, navigating to home screen');
+      // Token exists, navigate to appropriate screen based on user type
+      debugPrint('✅ User authenticated, navigating based on user type: $userType');
 
-      // Load initial data for authenticated user
-      try {
-        await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
-        await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
-      } catch (e) {
-        // Handle error silently for now
-        debugPrint('Error loading initial data: $e');
+      // Load initial data for authenticated user (only for admin)
+      if (userType != 'employee') {
+        try {
+          await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+          await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
+        } catch (e) {
+          // Handle error silently for now
+          debugPrint('Error loading initial data: $e');
+        }
       }
 
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Navigate to appropriate screen based on user type
+        if (userType == 'employee') {
+          debugPrint('👤 Navigating to employee home screen');
+          Navigator.of(context).pushReplacementNamed('/employee-home');
+        } else {
+          debugPrint('👔 Navigating to admin home screen');
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
       }
     } else {
       // No token, navigate to login screen

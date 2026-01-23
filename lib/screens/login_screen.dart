@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
+import '../utils/validation_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -111,6 +113,16 @@ class _LoginScreenState extends State<LoginScreen> {
             }
 
             print('👤 User Type: $userType');
+
+            // Store user type for future app launches
+            if (userType != null && userType.isNotEmpty) {
+              await AuthUtils.setUserType(userType);
+              print('✅ User type stored: $userType');
+            } else {
+              // Default to admin if userType is not found
+              await AuthUtils.setUserType('admin');
+              print('⚠️ User type not found, defaulting to admin');
+            }
 
             if (userType == 'employee') {
               Navigator.of(context).pushReplacementNamed('/employee-home');
@@ -245,16 +257,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your mobile number';
-                            }
-                            if (!RegExp(r'^\d{10}$').hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
-                              return 'Please enter a valid 10-digit mobile number';
-                            }
-                            return null;
-                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          validator: ValidationUtils.validateMobileNumber,
                         ),
                         const SizedBox(height: 20),
 
@@ -281,15 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           obscureText: _obscurePassword,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
+                          validator: ValidationUtils.validatePassword,
                         ),
                         const SizedBox(height: 12),
 
@@ -344,32 +344,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ],
                                   ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Register Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Don't have an account?",
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/register');
-                              },
-                              child: Text(
-                                'Sign Up',
-                                style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2196F3),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
