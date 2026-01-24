@@ -138,7 +138,7 @@ class EmployeeProvider with ChangeNotifier {
     
     return _employees.where((employee) {
       return employee.name.toLowerCase().contains(query.toLowerCase()) ||
-             employee.email.toLowerCase().contains(query.toLowerCase()) ||
+             (employee.email?.toLowerCase() ?? '').contains(query.toLowerCase()) ||
              employee.position.toLowerCase().contains(query.toLowerCase());
     }).toList();
   }

@@ -20,6 +20,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   AttendanceSummary? _attendanceSummary;
+  List<dynamic>? _attendanceData;
   @override
   void initState() {
     super.initState();
@@ -48,6 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final data = await ApiService.fetchAttendanceSummary(startDate: startDate, endDate: endDate);
       setState(() {
         _attendanceSummary = AttendanceSummary.fromJson(data);
+        _attendanceData = data['data'] as List<dynamic>?;
       });
     } catch (e) {
       // Silently ignore in UI if summary fetch fails; keep existing UI functional
@@ -270,10 +272,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Use the provided employeeProvider
         final totalEmployeesFromList = employeeProvider.employees.length;
          final int summaryTotalEmployees = _attendanceSummary?.totalEmployees ?? totalEmployeesFromList;
-         final int summaryPresent = _attendanceSummary?.totalPresent ?? attendanceProvider.todayAttendance.length;
-         final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
          final int summaryLate = _attendanceSummary?.totalLate ?? 0;
+         final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
          final int summaryHalfDay = _attendanceSummary?.totalHalfDay ?? 0;
+         // Add late check-ins to present count
+         final int summaryPresent = (_attendanceSummary?.totalPresent ?? attendanceProvider.todayAttendance.length) + summaryLate;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +315,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Expanded(
                   child: _buildStatCard(
-                    title: 'Leave',
+                    title: 'Absent',
                     value: summaryAbsent.toString(),
                     icon: Icons.trending_up,
                     color: Colors.orange,
@@ -387,95 +390,236 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTodayAttendance() {
-    return Consumer<AttendanceProvider>(
-      builder: (context, attendanceProvider, child) {
-        final todayAttendance = attendanceProvider.todayAttendance;
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Today\'s Attendance',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+    final attendanceList = _attendanceData ?? [];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Today\'s Attendance',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: todayAttendance.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Center(
-                        child: Text(
-                          'No attendance records for today',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
+            ],
+          ),
+          child: attendanceList.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Text(
+                      'No attendance records for today',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey,
                       ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: todayAttendance.length,
-                      itemBuilder: (context, index) {
-                        final attendance = todayAttendance[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: attendance.isPresent
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
-                            child: Icon(
-                              attendance.isPresent ? Icons.check : Icons.close,
-                              color: attendance.isPresent ? Colors.green : Colors.red,
-                            ),
-                          ),
-                          title: Text(
-                            'Employee ID: ${attendance.employeeId}',
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            attendance.checkIn != null
-                                ? 'Check-in: ${DateFormat('HH:mm').format(attendance.checkIn!)}'
-                                : 'Not checked in',
-                            style: GoogleFonts.poppins(),
-                          ),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: attendance.isPresent ? Colors.green : Colors.red,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              attendance.status.toUpperCase(),
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
                     ),
-            ),
-          ],
-        );
-      },
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: attendanceList.length,
+                  itemBuilder: (context, index) {
+                    final employee = attendanceList[index] as Map<String, dynamic>;
+                    final name = employee['name'] ?? 'Unknown';
+                    final employeeId = employee['employeeId'] ?? '';
+                    final department = employee['department'] ?? '';
+                    final details = employee['details'] as List<dynamic>? ?? [];
+                    
+                    // Get the first detail (today's attendance)
+                    final todayDetail = details.isNotEmpty ? details[0] as Map<String, dynamic>? : null;
+                    final status = todayDetail?['status']?.toString().toLowerCase() ?? 'absent';
+                    final checkIn = todayDetail?['checkIn']?.toString() ?? '-';
+                    final checkOut = todayDetail?['checkOut']?.toString() ?? '-';
+                    
+                    // Determine status color
+                    Color statusColor;
+                    IconData statusIcon;
+                    if (status == 'present') {
+                      statusColor = Colors.green;
+                      statusIcon = Icons.check_circle;
+                    } else if (status == 'late') {
+                      statusColor = Colors.orange;
+                      statusIcon = Icons.access_time;
+                    } else if (status == 'absent') {
+                      statusColor = Colors.red;
+                      statusIcon = Icons.cancel;
+                    } else if (status == 'halfday') {
+                      statusColor = Colors.blue;
+                      statusIcon = Icons.schedule;
+                    } else {
+                      statusColor = Colors.grey;
+                      statusIcon = Icons.help_outline;
+                    }
+                    
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: statusColor.withOpacity(0.1),
+                                child: Icon(
+                                  statusIcon,
+                                  color: statusColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$employeeId • $department',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  status.toUpperCase(),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTimeInfo(
+                                  icon: Icons.login,
+                                  label: 'Check In',
+                                  time: checkIn,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTimeInfo(
+                                  icon: Icons.logout,
+                                  label: 'Check Out',
+                                  time: checkOut,
+                                  color: Colors.purple,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     ).animate().fadeIn(delay: 600.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
+  }
+
+  Widget _buildTimeInfo({
+    required IconData icon,
+    required String label,
+    required String time,
+    required Color color,
+  }) {
+    final hasTime = time != '-' && time.isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasTime ? _formatTime(time) : 'Not available',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: hasTime ? color : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(String timeString) {
+    if (timeString == '-' || timeString.isEmpty) {
+      return 'Not available';
+    }
+    try {
+      // Handle time format like "11:08:04" or "14:35:18"
+      final parts = timeString.split(':');
+      if (parts.length >= 2) {
+        final hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+      return timeString;
+    } catch (e) {
+      return timeString;
+    }
   }
 
 

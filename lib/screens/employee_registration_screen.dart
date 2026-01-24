@@ -33,7 +33,9 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
   Shift? _selectedShift;
   Department? _selectedDepartment;
   DateTime? _dateOfJoining;
+  DateTime? _dateOfBirth;
   late TextEditingController _dateOfJoiningController;
+  late TextEditingController _dateOfBirthController;
 
   @override
   void initState() {
@@ -45,8 +47,9 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
     });
     _dateOfJoining = DateTime.now();
     _dateOfJoiningController = TextEditingController(
-      text: DateFormat('yyyy-MM-dd').format(_dateOfJoining!),
+      text: DateFormat('dd MMM yyyy').format(_dateOfJoining!),
     );
+    _dateOfBirthController = TextEditingController();
   }
 
   @override
@@ -57,6 +60,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
     _positionController.dispose();
     _salaryController.dispose();
     _dateOfJoiningController.dispose();
+    _dateOfBirthController.dispose();
     super.dispose();
   }
 
@@ -148,11 +152,12 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       // Create employee object
       final employee = Employee(
         name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         position: _selectedDepartment?.name ?? 'Employee',
         salary: double.parse(_salaryController.text.trim()),
         dateOfJoining: _dateOfJoining,
+        dateOfBirth: _dateOfBirth,
         faceData: '', // Will be set after face registration
         createdAt: DateTime.now(),
         shiftId: _selectedShift?.id,
@@ -387,20 +392,21 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         ),
         const SizedBox(height: 16),
 
-        // Email field
+        // Email field (optional)
         TextFormField(
           controller: _emailController,
           decoration: const InputDecoration(
-            labelText: 'Email',
+            labelText: 'Email (Optional)',
             prefixIcon: Icon(Icons.email),
+            hintText: 'Enter email address',
           ),
           keyboardType: TextInputType.emailAddress,
           validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter email';
-            }
-            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-              return 'Please enter a valid email';
+            // Email is optional, but if provided, it must be valid
+            if (value != null && value.trim().isNotEmpty) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                return 'Please enter a valid email';
+              }
             }
             return null;
           },
@@ -598,6 +604,48 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           },
         ),
         const SizedBox(height: 16),
+        
+        // Date of Birth field
+        TextFormField(
+          controller: _dateOfBirthController,
+          readOnly: true,
+          decoration: const InputDecoration(
+            labelText: 'Date of Birth',
+            prefixIcon: Icon(Icons.cake),
+            hintText: 'Select date of birth',
+          ),
+          onTap: () async {
+            final DateTime initialDate = _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25));
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: initialDate,
+              firstDate: DateTime(1950),
+              lastDate: DateTime.now(),
+              helpText: 'Select Date of Birth',
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color(0xFF2196F3),
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (picked != null) {
+              setState(() {
+                _dateOfBirth = picked;
+                _dateOfBirthController.text = DateFormat('dd MMM yyyy').format(picked);
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 16),
+        
+        // Date of Joining field
         TextFormField(
           controller: _dateOfJoiningController,
           readOnly: true,
@@ -612,11 +660,24 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
               initialDate: initialDate,
               firstDate: DateTime(2000),
               lastDate: DateTime(2100),
+              helpText: 'Select Date of Joining',
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color(0xFF2196F3),
+                      onPrimary: Colors.white,
+                      onSurface: Colors.black,
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
             );
             if (picked != null) {
               setState(() {
                 _dateOfJoining = picked;
-                _dateOfJoiningController.text = DateFormat('yyyy-MM-dd').format(picked);
+                _dateOfJoiningController.text = DateFormat('dd MMM yyyy').format(picked);
               });
             }
           },

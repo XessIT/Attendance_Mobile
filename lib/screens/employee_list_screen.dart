@@ -48,7 +48,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     if (_searchQuery.isNotEmpty) {
       allEmployees = allEmployees.where((employee) {
         return employee.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               employee.email.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+               (employee.email?.toLowerCase() ?? '').contains(_searchQuery.toLowerCase()) ||
                employee.position.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
@@ -322,7 +322,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              employee.email,
+              employee.email ?? 'No email',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.grey.shade500,
@@ -421,7 +421,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Email', employee.email),
+            _buildDetailRow('Email', employee.email ?? 'Not provided'),
             _buildDetailRow('Phone', employee.phone),
             _buildDetailRow('Position', employee.position),
             _buildDetailRow('Salary', '₹${employee.salary.toStringAsFixed(0)}/month'),

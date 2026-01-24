@@ -155,15 +155,24 @@ class ApiService {
       final Map<String, dynamic> formFields = {
         'name': employee.name,
         'employee_id': employeeId,
-        'email': employee.email,
         'phone': employee.phone,
         'department': departmentName ?? employee.position, // Use departmentName if provided, fallback to position
         'salary': employee.salary.toString(),
       };
       
+      // Only include email if it's provided
+      if (employee.email != null && employee.email!.isNotEmpty) {
+        formFields['email'] = employee.email!;
+      }
+      
       // Include date of joining if provided
       if (employee.dateOfJoining != null) {
         formFields['date_of_joining'] = employee.dateOfJoining!.toIso8601String().split('T')[0];
+      }
+      
+      // Include date of birth if provided
+      if (employee.dateOfBirth != null) {
+        formFields['date_of_birth'] = employee.dateOfBirth!.toIso8601String().split('T')[0];
       }
 
       // Add shift if provided
@@ -774,6 +783,35 @@ class ApiService {
     } on DioException catch (e) {
       if (e.response != null) {
         final errorMessage = e.response?.data?['message'] ?? e.response?.data?['error'] ?? 'Failed to fetch summary';
+        throw Exception(errorMessage);
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Employee Full Report API
+  static Future<Map<String, dynamic>> fetchEmployeeFullReport({
+    required String startDate,
+    required String endDate,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.get(
+        '/reports/employee-full-report',
+        queryParameters: {'startDate': startDate, 'endDate': endDate},
+        options: Options(headers: headers),
+      );
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to fetch employee full report');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final errorMessage = e.response?.data?['message'] ?? e.response?.data?['error'] ?? 'Failed to fetch report';
         throw Exception(errorMessage);
       } else {
         throw Exception('Network error: ${e.message}');

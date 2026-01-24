@@ -7,6 +7,7 @@ import '../models/employee.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/employee_provider.dart';
 import '../models/attendance.dart';
+import '../services/api_service.dart';
 import 'face_attendance_screen_new.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -19,6 +20,9 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   DateTime _selectedDate = DateTime.now();
   int? _selectedEmployeeId;
+  Map<String, dynamic>? _reportData;
+  bool _isLoading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -27,11 +31,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
       await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+      await _loadFullReport();
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading data: $e'),
@@ -39,26 +52,86 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFullReport() async {
+    try {
+      final startDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final endDate = startDate;
+      final data = await ApiService.fetchEmployeeFullReport(
+        startDate: startDate,
+        endDate: endDate,
+      );
+      if (mounted) {
+        setState(() {
+          _reportData = data;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          // Quick actions and filters
-          _buildHeaderSection(),
-          
-          // Statistics
-          _buildStatisticsSection(),
-          
-          // Attendance list
-          Expanded(
-            child: _buildAttendanceList(),
-          ),
-        ],
-      ),
+   
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null && _reportData == null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading data',
+                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          _error!,
+                          style: GoogleFonts.poppins(color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: _loadData,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: [
+                    // Quick actions and filters
+                    _buildHeaderSection(),
+                    
+                    // Statistics
+                    _buildStatisticsSection(),
+                    
+                    // Attendance list
+                    Expanded(
+                      child: _buildAttendanceList(),
+                    ),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
@@ -66,7 +139,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             MaterialPageRoute(
               builder: (context) => const FaceAttendanceScreen(),
             ),
-          );
+          ).then((_) => _loadData());
         },
         backgroundColor: const Color(0xFF2196F3),
         foregroundColor: Colors.white,
@@ -113,10 +186,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
               const SizedBox(width: 12),
               IconButton(
-                onPressed: () {
+                onPressed: () async {
                   setState(() {
                     _selectedDate = DateTime.now();
                   });
+                  await _loadFullReport();
                 },
                 icon: const Icon(Icons.today),
                 tooltip: 'Today',
@@ -160,48 +234,85 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildStatisticsSection() {
-    return Consumer2<AttendanceProvider, EmployeeProvider>(
-      builder: (context, attendanceProvider, employeeProvider, child) {
-        final stats = attendanceProvider.getAttendanceStats(
-          employeeId: _selectedEmployeeId,
-          startDate: _selectedDate,
-          endDate: _selectedDate,
-        );
+    final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
+    
+    // Filter by employee if selected
+    final filteredDetails = _selectedEmployeeId != null
+        ? dayWiseDetails.where((detail) {
+            final empId = detail['employeeId']?.toString();
+            return empId == _selectedEmployeeId.toString();
+          }).toList()
+        : dayWiseDetails;
+    
+    // Calculate counts from dayWiseDetails for accurate statistics
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+    int halfDay = 0;
+    
+    for (var detail in filteredDetails) {
+      final status = (detail['status'] as String? ?? '').toLowerCase();
+      final isHalfDayFlag = detail['isHalfDay'] as bool? ?? false;
+      
+      if (status == 'present') {
+        present++;
+      } else if (status == 'absent') {
+        absent++;
+      } else if (status == 'late') {
+        late++;
+      }
+      
+      if (isHalfDayFlag) {
+        halfDay++;
+      }
+    }
+    
+    // Include late in present count (late employees are also present)
+    final int totalPresent = present + late;
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 40),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Present',
-                  value: stats['presentDays'].toString(),
-                  color: Colors.green,
-                  icon: Icons.check_circle,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Absent',
-                  value: stats['absentDays'].toString(),
-                  color: Colors.red,
-                  icon: Icons.cancel,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  title: 'Late',
-                  value: stats['lateDays'].toString(),
-                  color: Colors.orange,
-                  icon: Icons.schedule,
-                ),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              title: 'Present',
+              value: totalPresent.toString(),
+              color: Colors.green,
+              icon: Icons.check_circle,
+            ),
           ),
-        );
-      },
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              title: 'Absent',
+              value: absent.toString(),
+              color: Colors.red,
+              icon: Icons.cancel,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              title: 'Late',
+              value: late.toString(),
+              color: Colors.orange,
+              icon: Icons.schedule,
+            ),
+          ),
+          if (halfDay > 0) ...[
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                title: 'Half Day',
+                value: halfDay.toString(),
+                color: Colors.blue,
+                icon: Icons.schedule,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -243,66 +354,85 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildAttendanceList() {
-    return Consumer2<AttendanceProvider, EmployeeProvider>(
-      builder: (context, attendanceProvider, employeeProvider, child) {
-        final attendanceList = attendanceProvider.getAttendanceByDate(_selectedDate);
-        
-        // Filter by employee if selected
-        final filteredAttendance = _selectedEmployeeId != null
-            ? attendanceList.where((a) => a.employeeId == _selectedEmployeeId).toList()
-            : attendanceList;
+    final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
+    
+    // Filter by employee if selected
+    final filteredDetails = _selectedEmployeeId != null
+        ? dayWiseDetails.where((detail) {
+            final empId = detail['employeeId']?.toString();
+            return empId == _selectedEmployeeId.toString();
+          }).toList()
+        : dayWiseDetails;
 
-        if (filteredAttendance.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No attendance records',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'No attendance records found for ${DateFormat('MMMM d, y').format(_selectedDate)}',
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+    if (filteredDetails.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.access_time,
+              size: 64,
+              color: Colors.grey.shade400,
             ),
-          );
-        }
+            const SizedBox(height: 16),
+            Text(
+              'No attendance records',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No attendance records found for ${DateFormat('MMMM d, y').format(_selectedDate)}',
+              style: GoogleFonts.poppins(
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: filteredAttendance.length,
-          itemBuilder: (context, index) {
-            final attendance = filteredAttendance[index];
-            final employee = employeeProvider.getEmployeeById(attendance.employeeId);
-            
-            return _buildAttendanceCard(attendance, employee, index);
-          },
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _loadFullReport,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: filteredDetails.length,
+        itemBuilder: (context, index) {
+          final detail = filteredDetails[index] as Map<String, dynamic>;
+          return _buildEnhancedAttendanceCard(detail, index);
+        },
+      ),
     );
   }
 
-  Widget _buildAttendanceCard(Attendance attendance, Employee? employee, int index) {
+  Widget _buildEnhancedAttendanceCard(Map<String, dynamic> detail, int index) {
+    final employeeName = detail['employeeName'] ?? 'Unknown';
+    final employeeId = detail['employeeId'] ?? '';
+    final department = detail['department'] ?? '';
+    final status = detail['status']?.toString().toLowerCase() ?? 'absent';
+    final checkIn = detail['checkIn']?.toString() ?? '-';
+    final checkOut = detail['checkOut']?.toString() ?? '-';
+    final workHours = detail['workHours'] ?? 0;
+    final otHours = detail['otHours'] ?? 0;
+    final lateMinutes = detail['lateMinutes'] ?? 0;
+    final shiftName = detail['shiftName'] ?? '';
+    final shiftTimings = detail['shiftTimings'] as Map<String, dynamic>?;
+    final dayOfWeek = detail['dayOfWeek'] ?? '';
+    final isHoliday = detail['isHoliday'] ?? false;
+    final holidayName = detail['holidayName'];
+    final isHalfDay = detail['isHalfDay'] ?? false;
+
+    final statusColor = _getStatusColor(status);
+    final statusIcon = _getStatusIcon(status);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -311,71 +441,295 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: _getStatusColor(attendance.status).withOpacity(0.1),
-          child: Icon(
-            _getStatusIcon(attendance.status),
-            color: _getStatusColor(attendance.status),
-          ),
-        ),
-        title: Text(
-          employee?.name ?? 'Employee ID: ${attendance.employeeId}',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            if (attendance.checkIn != null)
-              Text(
-                'Check-in: ${DateFormat('HH:mm').format(attendance.checkIn!)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+      child: InkWell(
+        onTap: () => _showEnhancedAttendanceDetails(detail),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row with employee info and status
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: statusColor.withOpacity(0.1),
+                    child: Icon(
+                      statusIcon,
+                      color: statusColor,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          employeeName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.badge, size: 14, color: Colors.grey.shade600),
+                            const SizedBox(width: 4),
+                            Text(
+                              employeeId,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Icon(Icons.business, size: 14, color: Colors.grey.shade600),
+                            const SizedBox(width: 4),
+                            Text(
+                              department,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            if (attendance.checkOut != null)
-              Text(
-                'Check-out: ${DateFormat('HH:mm').format(attendance.checkOut!)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+              const SizedBox(height: 16),
+              
+              // Check-in and Check-out times
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTimeCard(
+                      icon: Icons.login,
+                      label: 'Check In',
+                      time: checkIn,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTimeCard(
+                      icon: Icons.logout,
+                      label: 'Check Out',
+                      time: checkOut,
+                      color: Colors.purple,
+                    ),
+                  ),
+                ],
               ),
-            if (attendance.workingHours != null && attendance.workingHours! > 0)
-              Text(
-                'Hours: ${attendance.workingHours!.toStringAsFixed(1)}h',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+              const SizedBox(height: 12),
+              
+              // Additional info row
+              Row(
+                children: [
+                  if (shiftName.isNotEmpty) ...[
+                    Expanded(
+                      child: _buildInfoChip(
+                        icon: Icons.schedule,
+                        label: shiftName,
+                        color: Colors.indigo,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (workHours > 0) ...[
+                    Expanded(
+                      child: _buildInfoChip(
+                        icon: Icons.access_time,
+                        label: '${workHours.toStringAsFixed(1)}h',
+                        color: Colors.teal,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (lateMinutes > 0)
+                    Expanded(
+                      child: _buildInfoChip(
+                        icon: Icons.warning,
+                        label: '${lateMinutes}m late',
+                        color: Colors.orange,
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: _getStatusColor(attendance.status),
-            borderRadius: BorderRadius.circular(12),
+              
+              // Holiday or Half Day indicator
+              if (isHoliday && holidayName != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.celebration, size: 16, color: Colors.amber.shade700),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Holiday: $holidayName',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.amber.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (isHalfDay) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule, size: 16, color: Colors.blue.shade700),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Half Day',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
-          child: Text(
-            attendance.status.toUpperCase(),
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
-        onTap: () => _showAttendanceDetails(attendance, employee),
       ),
     ).animate().fadeIn(delay: Duration(milliseconds: index * 100)).slideX(begin: 0.3, duration: 600.ms);
+  }
+
+  Widget _buildTimeCard({
+    required IconData icon,
+    required String label,
+    required String time,
+    required Color color,
+  }) {
+    final hasTime = time != '-' && time.isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasTime ? _formatTime(time) : 'Not available',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: hasTime ? color : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(String timeString) {
+    if (timeString == '-' || timeString.isEmpty) {
+      return 'Not available';
+    }
+    try {
+      final parts = timeString.split(':');
+      if (parts.length >= 2) {
+        final hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+      return timeString;
+    } catch (e) {
+      return timeString;
+    }
   }
 
   Color _getStatusColor(String status) {
@@ -408,33 +762,173 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
-  void _showAttendanceDetails(Attendance attendance, Employee? employee) {
+  void _showEnhancedAttendanceDetails(Map<String, dynamic> detail) {
+    final employeeName = detail['employeeName'] ?? 'Unknown';
+    final employeeId = detail['employeeId'] ?? '';
+    final department = detail['department'] ?? '';
+    final date = detail['date'] ?? '';
+    final dayOfWeek = detail['dayOfWeek'] ?? '';
+    final status = detail['status'] ?? '';
+    final checkIn = detail['checkIn'] ?? '-';
+    final checkOut = detail['checkOut'] ?? '-';
+    final workHours = detail['workHours'] ?? 0;
+    final otHours = detail['otHours'] ?? 0;
+    final lateMinutes = detail['lateMinutes'] ?? 0;
+    final shiftName = detail['shiftName'] ?? '';
+    final shiftTimings = detail['shiftTimings'] as Map<String, dynamic>?;
+    final isHoliday = detail['isHoliday'] ?? false;
+    final holidayName = detail['holidayName'];
+    final isHalfDay = detail['isHalfDay'] ?? false;
+    final leaveType = detail['leaveType'];
+    final leaveStatus = detail['leaveStatus'];
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(employee?.name ?? 'Employee Details'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Date', DateFormat('EEEE, MMMM d, y').format(attendance.date)),
-            if (attendance.checkIn != null)
-              _buildDetailRow('Check-in', DateFormat('HH:mm:ss').format(attendance.checkIn!)),
-            if (attendance.checkOut != null)
-              _buildDetailRow('Check-out', DateFormat('HH:mm:ss').format(attendance.checkOut!)),
-            if (attendance.workingHours != null && attendance.workingHours! > 0)
-              _buildDetailRow('Working Hours', '${attendance.workingHours!.toStringAsFixed(1)} hours'),
-            _buildDetailRow('Status', attendance.status.toUpperCase()),
-            if (attendance.notes != null && attendance.notes!.isNotEmpty)
-              _buildDetailRow('Notes', attendance.notes!),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: _getStatusColor(status.toString().toLowerCase()).withOpacity(0.1),
+                        child: Icon(
+                          _getStatusIcon(status.toString().toLowerCase()),
+                          color: _getStatusColor(status.toString().toLowerCase()),
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              employeeName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '$employeeId • $department',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Date and Status
+                  _buildDetailRow('Date', '$dayOfWeek, ${DateFormat('MMMM d, y').format(DateTime.parse(date))}'),
+                  _buildDetailRow('Status', status.toString().toUpperCase()),
+                  
+                  const Divider(height: 32),
+                  
+                  // Timing Information
+                  Text(
+                    'Timing Information',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDetailRow('Check In', checkIn != '-' ? _formatTime(checkIn) : 'Not available'),
+                  _buildDetailRow('Check Out', checkOut != '-' ? _formatTime(checkOut) : 'Not available'),
+                  if (workHours > 0)
+                    _buildDetailRow('Work Hours', '${workHours.toStringAsFixed(1)} hours'),
+                  if (otHours > 0)
+                    _buildDetailRow('OT Hours', '${otHours.toStringAsFixed(1)} hours'),
+                  if (lateMinutes > 0)
+                    _buildDetailRow('Late Minutes', '$lateMinutes minutes'),
+                  
+                  const Divider(height: 32),
+                  
+                  // Shift Information
+                  if (shiftName.isNotEmpty) ...[
+                    Text(
+                      'Shift Information',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDetailRow('Shift Name', shiftName),
+                    if (shiftTimings != null) ...[
+                      _buildDetailRow('From Time', shiftTimings['fromTime'] ?? '-'),
+                      _buildDetailRow('To Time', shiftTimings['toTime'] ?? '-'),
+                    ],
+                    const Divider(height: 32),
+                  ],
+                  
+                  // Additional Information
+                  if (isHoliday || isHalfDay || leaveType != null) ...[
+                    Text(
+                      'Additional Information',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (isHoliday && holidayName != null)
+                      _buildDetailRow('Holiday', holidayName),
+                    if (isHalfDay)
+                      _buildDetailRow('Half Day', 'Yes'),
+                    if (leaveType != null)
+                      _buildDetailRow('Leave Type', leaveType),
+                    if (leaveStatus != null)
+                      _buildDetailRow('Leave Status', leaveStatus),
+                  ],
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Close button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2196F3),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Close',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -478,6 +972,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       setState(() {
         _selectedDate = picked;
       });
+      await _loadFullReport();
     }
   }
 } 
