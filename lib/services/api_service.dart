@@ -161,6 +161,11 @@ class ApiService {
         'salary': employee.salary.toString(),
       };
       
+      // Include date of joining if provided
+      if (employee.dateOfJoining != null) {
+        formFields['date_of_joining'] = employee.dateOfJoining!.toIso8601String().split('T')[0];
+      }
+
       // Add shift if provided
       if (shiftName != null && shiftName.isNotEmpty) {
         formFields['shift'] = shiftName;
@@ -744,6 +749,35 @@ class ApiService {
         return response.data;
       }
       throw Exception('Failed to load dashboard stats');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Attendance Summary API
+  static Future<Map<String, dynamic>> fetchAttendanceSummary({
+    required String startDate,
+    required String endDate,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.get(
+        '/reports/attendance-summary',
+        queryParameters: {'startDate': startDate, 'endDate': endDate},
+        options: Options(headers: headers),
+      );
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to fetch attendance summary');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final errorMessage = e.response?.data?['message'] ?? e.response?.data?['error'] ?? 'Failed to fetch summary';
+        throw Exception(errorMessage);
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
     } catch (e) {
       throw Exception('Error: $e');
     }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -31,6 +32,8 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
   bool _isCapturing = false;
   Shift? _selectedShift;
   Department? _selectedDepartment;
+  DateTime? _dateOfJoining;
+  late TextEditingController _dateOfJoiningController;
 
   @override
   void initState() {
@@ -40,6 +43,10 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       context.read<ShiftProvider>().loadShifts();
       context.read<DepartmentProvider>().loadDepartments();
     });
+    _dateOfJoining = DateTime.now();
+    _dateOfJoiningController = TextEditingController(
+      text: DateFormat('yyyy-MM-dd').format(_dateOfJoining!),
+    );
   }
 
   @override
@@ -49,6 +56,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
     _phoneController.dispose();
     _positionController.dispose();
     _salaryController.dispose();
+    _dateOfJoiningController.dispose();
     super.dispose();
   }
 
@@ -144,6 +152,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         phone: _phoneController.text.trim(),
         position: _selectedDepartment?.name ?? 'Employee',
         salary: double.parse(_salaryController.text.trim()),
+        dateOfJoining: _dateOfJoining,
         faceData: '', // Will be set after face registration
         createdAt: DateTime.now(),
         shiftId: _selectedShift?.id,
@@ -585,6 +594,34 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             if (double.parse(value) <= 0) {
               return 'Salary must be greater than 0';
             }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _dateOfJoiningController,
+          readOnly: true,
+          decoration: const InputDecoration(
+            labelText: 'Date of Joining',
+            prefixIcon: Icon(Icons.calendar_today),
+          ),
+          onTap: () async {
+            final DateTime initialDate = _dateOfJoining ?? DateTime.now();
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: initialDate,
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) {
+              setState(() {
+                _dateOfJoining = picked;
+                _dateOfJoiningController.text = DateFormat('yyyy-MM-dd').format(picked);
+              });
+            }
+          },
+          validator: (value) {
+            if (_dateOfJoining == null) return 'Please select date';
             return null;
           },
         ),

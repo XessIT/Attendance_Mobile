@@ -11,6 +11,7 @@ class Employee {
   final int? shiftId;
   final String? shiftName; // Store shift name from API
   final int? companyId; // Company ID the employee belongs to
+  final DateTime? dateOfJoining;
 
   Employee({
     this.id,
@@ -25,6 +26,7 @@ class Employee {
     this.shiftId,
     this.shiftName,
     this.companyId,
+    this.dateOfJoining,
   });
 
   factory Employee.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,11 @@ class Employee {
       // Old format: face_data is a string
       faceDataValue = json['face_data'].toString();
     }
+    
+    // Parse date_of_joining if available
+    final DateTime? joiningDate = json['date_of_joining'] != null
+        ? DateTime.parse(json['date_of_joining'])
+        : null;
     
     return Employee(
       id: json['id'],
@@ -54,6 +61,7 @@ class Employee {
       shiftId: json['shift_id'],
       shiftName: json['shift'], // API returns shift name
       companyId: json['company_id'],
+      dateOfJoining: joiningDate,
     );
   }
 
@@ -75,6 +83,7 @@ class Employee {
       json['position'] = position;
       json['salary'] = salary;
       json['face_data'] = faceData;
+      if (dateOfJoining != null) json['date_of_joining'] = dateOfJoining!.toIso8601String().split('T')[0];
       
       // Only include these fields if not creating a new employee
       if (!forCreation) {
@@ -100,6 +109,7 @@ class Employee {
     int? shiftId,
     String? shiftName,
     int? companyId,
+    DateTime? dateOfJoining,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -114,6 +124,7 @@ class Employee {
       shiftId: shiftId ?? this.shiftId,
       shiftName: shiftName ?? this.shiftName,
       companyId: companyId ?? this.companyId,
+      dateOfJoining: dateOfJoining ?? this.dateOfJoining,
     );
   }
 } 

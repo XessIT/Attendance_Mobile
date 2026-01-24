@@ -8,6 +8,8 @@ import '../providers/attendance_provider.dart';
 import 'employee_registration_screen.dart';
 import 'face_attendance_screen_new.dart';
 import 'comp_off_screen.dart';
+import '../services/api_service.dart';
+import '../models/attendance_summary.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,6 +19,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  AttendanceSummary? _attendanceSummary;
   @override
   void initState() {
     super.initState();
@@ -27,12 +30,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
       await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
+      await _loadAttendanceSummary();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error refreshing data: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _loadAttendanceSummary() async {
+    try {
+      final now = DateTime.now();
+      final startDate = DateFormat('yyyy-MM-dd').format(now);
+      final endDate = startDate;
+      final data = await ApiService.fetchAttendanceSummary(startDate: startDate, endDate: endDate);
+      setState(() {
+        _attendanceSummary = AttendanceSummary.fromJson(data);
+      });
+    } catch (e) {
+      // Silently ignore in UI if summary fetch fails; keep existing UI functional
     }
   }
 
@@ -55,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildQuickActions(),
               const SizedBox(height: 24),
 
-              // Statistics Cards
+              // Statistics Cards (source counts from attendance summary API)
               _buildStatisticsCards(),
               const SizedBox(height: 24),
 
@@ -249,9 +267,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatisticsCards() {
     return Consumer2<EmployeeProvider, AttendanceProvider>(
       builder: (context, employeeProvider, attendanceProvider, child) {
-        final stats = attendanceProvider.getAttendanceStats();
-        final totalEmployees = employeeProvider.employees.length;
-        final todayAttendance = attendanceProvider.todayAttendance;
+        // Use the provided employeeProvider
+        final totalEmployeesFromList = employeeProvider.employees.length;
+         final int summaryTotalEmployees = _attendanceSummary?.totalEmployees ?? totalEmployeesFromList;
+         final int summaryPresent = _attendanceSummary?.totalPresent ?? attendanceProvider.todayAttendance.length;
+         final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
+         final int summaryLate = _attendanceSummary?.totalLate ?? 0;
+         final int summaryHalfDay = _attendanceSummary?.totalHalfDay ?? 0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +291,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Total Employees',
-                    value: totalEmployees.toString(),
+                    value: summaryTotalEmployees.toString(),
                     icon: Icons.people,
                     color: Colors.blue,
                   ),
@@ -278,7 +300,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Present Today',
-                    value: todayAttendance.where((a) => a.isPresent).length.toString(),
+                    value: summaryPresent.toString(),
                     icon: Icons.check_circle,
                     color: Colors.green,
                   ),
@@ -291,7 +313,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Leave',
-                    value: '${stats['absentDays']}',
+                    value: summaryAbsent.toString(),
                     icon: Icons.trending_up,
                     color: Colors.orange,
                   ),
@@ -300,7 +322,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: _buildStatCard(
                     title: 'Late Check In',
-                    value: '${stats['lateDays']}',
+                    value: summaryLate.toString(),
                     icon: Icons.access_time,
                     color: Colors.purple,
                   ),
@@ -312,6 +334,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
   }
+
+  // Attendance summary UI removed to rely solely on API-driven statistics
 
   Widget _buildStatCard({
     required String title,
