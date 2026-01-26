@@ -1,13 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/employee.dart';
 import '../providers/attendance_provider.dart';
 import '../providers/employee_provider.dart';
 import '../models/attendance.dart';
 import '../services/api_service.dart';
+import '../services/location_service.dart';
 import 'face_attendance_screen_new.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -83,6 +86,106 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  Future<void> _handleMarkAttendance() async {
+    // 1. Check Location Permission
+    bool hasPermission = await LocationService.hasLocationPermission();
+    if (!hasPermission) {
+      bool permissionGranted = await LocationService.requestLocationPermission();
+      if (!permissionGranted) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Location Permission Required'),
+              content: const Text(
+                'Location access is required to mark attendance. '
+                'Please enable location permissions in your device settings.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    LocationService.openAppSettings();
+                  },
+                  child: const Text('Open Settings'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // 2. Open Camera
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 80,
+      );
+
+      if (image == null) return; // User cancelled
+
+      // 3. Mark Attendance
+      if (mounted) {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        try {
+          final File imageFile = File(image.path);
+          final result = await ApiService.markAttendanceWithImage(imageFile);
+
+          if (mounted) {
+            Navigator.of(context).pop(); // Close loading dialog
+            
+            if (result['success'] == true) {
+              final String message = result['message'] ?? 'Attendance marked successfully';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(message),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Refresh data
+              _loadData();
+            } else {
+              throw Exception(result['message'] ?? 'Failed to mark attendance');
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            Navigator.of(context).pop(); // Close loading dialog
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Camera Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,14 +236,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ],
                 ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const FaceAttendanceScreen(),
-            ),
-          ).then((_) => _loadData());
-        },
+        onPressed: _handleMarkAttendance,
         backgroundColor: const Color(0xFF2196F3),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.face),

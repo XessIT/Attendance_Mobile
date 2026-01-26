@@ -117,7 +117,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                     ),
                   ),
                 ),
-      /*floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _handleMarkAttendance,
         label: Text(
           'Mark Attendance',
@@ -125,7 +125,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         ),
         icon: const Icon(Icons.camera_alt),
         backgroundColor: const Color(0xFF2196F3),
-      ),*/
+      ),
     );
   }
 
