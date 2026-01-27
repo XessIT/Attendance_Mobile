@@ -383,9 +383,18 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             labelText: 'Full Name',
             prefixIcon: Icon(Icons.person),
           ),
+          textCapitalization: TextCapitalization.words,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter full name';
+            }
+            final trimmedValue = value.trim();
+            if (trimmedValue.isEmpty) {
+              return 'Please enter full name';
+            }
+            // Check if first letter is capital
+            if (trimmedValue[0] != trimmedValue[0].toUpperCase()) {
+              return 'Name must start with a capital letter';
             }
             return null;
           },
@@ -419,11 +428,18 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           decoration: const InputDecoration(
             labelText: 'Phone Number',
             prefixIcon: Icon(Icons.phone),
+            hintText: 'Enter 10 digit mobile number',
           ),
           keyboardType: TextInputType.phone,
+          maxLength: 10,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter phone number';
+            }
+            final trimmedValue = value.trim();
+            // Check if it contains exactly 10 digits
+            if (!RegExp(r'^\d{10}$').hasMatch(trimmedValue)) {
+              return 'Phone number must be exactly 10 digits';
             }
             return null;
           },

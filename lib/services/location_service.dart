@@ -27,10 +27,10 @@ class LocationService {
         return null;
       }
 
-      // Get current position
+      // Get current position with lower accuracy for faster response
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
+        desiredAccuracy: LocationAccuracy.medium, // Changed from high to medium for faster response
+        timeLimit: const Duration(seconds: 5), // Reduced from 10 to 5 seconds
       );
 
       print('Location obtained: Lat=${position.latitude}, Lon=${position.longitude}');

@@ -822,7 +822,10 @@ class ApiService {
   }
 
   // Mark attendance with face image, authorization token, and location
-  static Future<Map<String, dynamic>> markAttendanceWithImage(File imageFile) async {
+  static Future<Map<String, dynamic>> markAttendanceWithImage(
+    File imageFile, {
+    Map<String, double>? cachedLocation,
+  }) async {
     final fullUrl = '$baseUrl/mark_attendance';
     
     print('========================================');
@@ -845,8 +848,26 @@ class ApiService {
         print('⚠️ No auth token found');
       }
       
-      // Get current location
-      final Map<String, double>? location = await LocationService.getCurrentLocation();
+      // Use cached location if available, otherwise try to get current location (with timeout)
+      Map<String, double>? location = cachedLocation;
+      
+      if (location == null) {
+        // Only fetch location if not cached (with shorter timeout)
+        try {
+          location = await LocationService.getCurrentLocation().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () {
+              print('⚠️ Location fetch timeout, proceeding without location');
+              return null;
+            },
+          );
+        } catch (e) {
+          print('⚠️ Location fetch error: $e');
+          location = null;
+        }
+      } else {
+        print('📍 Using cached location: Lat=${location['latitude']}, Lon=${location['longitude']}');
+      }
       
       if (location != null) {
         print('📍 Location obtained: Lat=${location['latitude']}, Lon=${location['longitude']}');
