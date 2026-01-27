@@ -143,8 +143,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700;
+    final padding = screenWidth * 0.06; // Responsive padding (6% of screen width)
+    final topSpacing = isSmallScreen ? 20.0 : screenHeight * 0.05;
+    final bottomSpacing = isSmallScreen ? 16.0 : 24.0;
+
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -156,229 +165,249 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-
-                // Logo/Title Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: padding,
+                  vertical: topSpacing,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - (topSpacing * 2),
                   ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.face_retouching_natural,
-                        size: 80,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Face Recognition',
-                        style: GoogleFonts.poppins(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Attendance System',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
-
-                const SizedBox(height: 40),
-
-                // Login Form
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
+                  child: IntrinsicHeight(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Welcome Back',
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2196F3),
+                        // Logo/Title Section
+                        Container(
+                          padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sign in to your account',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Mobile Number Field
-                        TextFormField(
-                          controller: _mobileNumberController,
-                          decoration: InputDecoration(
-                            labelText: 'Mobile Number',
-                            prefixIcon: const Icon(Icons.phone_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your mobile number';
-                            }
-                            if (!RegExp(r'^\d{10}$').hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
-                              return 'Please enter a valid 10-digit mobile number';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Password Field
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outlined),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.face_retouching_natural,
+                                size: isSmallScreen ? 60 : 80,
+                                color: Colors.white,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          obscureText: _obscurePassword,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Forgot Password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              // TODO: Implement forgot password functionality
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: GoogleFonts.poppins(
-                                color: const Color(0xFF2196F3),
-                                fontWeight: FontWeight.w500,
+                              SizedBox(height: isSmallScreen ? 12 : 16),
+                              Text(
+                                'Face Recognition',
+                                style: GoogleFonts.poppins(
+                                  fontSize: isSmallScreen ? 24 : 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Login Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2196F3),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              Text(
+                                'Attendance System',
+                                style: GoogleFonts.poppins(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
                               ),
-                              elevation: 2,
+                            ],
+                          ),
+                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+
+                        SizedBox(height: isSmallScreen ? 24 : 32),
+
+                        // Login Form
+                        Flexible(
+                          child: Container(
+                            padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                             ),
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  )
-                                : Row(
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Welcome Back',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isSmallScreen ? 22 : 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF2196F3),
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 6 : 8),
+                                  Text(
+                                    'Sign in to your account',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isSmallScreen ? 13 : 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 24 : 32),
+
+                                  // Mobile Number Field
+                                  TextFormField(
+                                    controller: _mobileNumberController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Mobile Number',
+                                      prefixIcon: const Icon(Icons.phone_outlined),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.phone,
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty) {
+                                        return 'Please enter your mobile number';
+                                      }
+                                      if (!RegExp(r'^\d{10}$').hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
+                                        return 'Please enter a valid 10-digit mobile number';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 16 : 20),
+
+                                  // Password Field
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Password',
+                                      prefixIcon: const Icon(Icons.lock_outlined),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword = !_obscurePassword;
+                                          });
+                                        },
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    obscureText: _obscurePassword,
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty) {
+                                        return 'Please enter your password';
+                                      }
+                                      if (value.length < 6) {
+                                        return 'Password must be at least 6 characters';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 10 : 12),
+
+                                  // Forgot Password
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        // TODO: Implement forgot password functionality
+                                      },
+                                      child: Text(
+                                        'Forgot Password?',
+                                        style: GoogleFonts.poppins(
+                                          color: const Color(0xFF2196F3),
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: isSmallScreen ? 13 : 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 24 : 32),
+
+                                  // Login Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: isSmallScreen ? 50 : 56,
+                                    child: ElevatedButton(
+                                      onPressed: _isLoading ? null : _login,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF2196F3),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 2,
+                                      ),
+                                      child: _isLoading
+                                          ? const CircularProgressIndicator(
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            )
+                                          : Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(Icons.login),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Sign In',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: isSmallScreen ? 15 : 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 20 : 24),
+
+                                  // Register Link
+                                  Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Icon(Icons.login),
-                                      const SizedBox(width: 8),
                                       Text(
-                                        'Sign In',
+                                        "Don't have an account?",
                                         style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey[600],
+                                          fontSize: isSmallScreen ? 13 : 14,
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pushNamed('/register');
+                                        },
+                                        child: Text(
+                                          'Sign Up',
+                                          style: GoogleFonts.poppins(
+                                            color: const Color(0xFF2196F3),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: isSmallScreen ? 13 : 14,
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
-                          ),
+                                ],
+                              ),
+                            ),
+                          ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
                         ),
-                        const SizedBox(height: 24),
 
-                        // Register Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Don't have an account?",
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/register');
-                              },
-                              child: Text(
-                                'Sign Up',
-                                style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2196F3),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        SizedBox(height: bottomSpacing),
                       ],
                     ),
                   ),
-                ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
-
-                const SizedBox(height: 40),
-              ],
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
