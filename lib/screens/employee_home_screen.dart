@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../utils/auth_utils.dart';
 import 'employee_dashboard_screen.dart';
 import 'employee_attendance_screen.dart';
@@ -19,12 +18,6 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     const EmployeeDashboardScreen(),
     const EmployeeAttendanceScreen(),
     const EmployeeLeaveScreen(),
-  ];
-
-  final List<String> _titles = [
-    'Dashboard',
-    'Attendance Report',
-    'Apply Leave',
   ];
 
   Future<void> _logout() async {
@@ -59,11 +52,30 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
+        centerTitle: false,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/app_icon_cropped.png',
+                width: 26,
+                height: 26,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('InstaMarQ'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2196F3),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
+            tooltip: 'Logout',
           ),
         ],
       ),

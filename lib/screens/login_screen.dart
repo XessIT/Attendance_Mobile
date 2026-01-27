@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/link.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
 
@@ -292,23 +293,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-
-                        // Forgot Password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              // TODO: Implement forgot password functionality
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: GoogleFonts.poppins(
-                                color: const Color(0xFF2196F3),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
                         const SizedBox(height: 32),
 
                         // Login Button
@@ -346,30 +330,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-
-                        // Register Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Don't have an account?",
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/register');
-                              },
+                        Center(
+                          child: Link(
+                            uri: Uri.parse('https://xesstechlink.com'),
+                            builder: (context, followLink) => InkWell(
+                              onTap: followLink,
                               child: Text(
-                                'Sign Up',
+                                'Contact xesstechlink.com',
                                 style: GoogleFonts.poppins(
                                   color: const Color(0xFF2196F3),
                                   fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
                                 ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
