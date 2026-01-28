@@ -2,7 +2,7 @@ name: face_recognization
 description: "Employee Face Recognition Attendance System"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.2+3
 
 environment:
   sdk: ^3.5.4
@@ -17,6 +17,7 @@ dependencies:
   camera: ^0.10.5+9
   image: ^4.1.7
   image_picker: ^1.0.7
+
 
   # HTTP and API
   http: ^1.1.2
