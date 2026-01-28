@@ -8,7 +8,7 @@
 PRODUCT_NAME = face_recognization
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.xesstechlink.faceRecognization
+PRODUCT_BUNDLE_IDENTIFIER = com.xesstechlink.instamarq
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.xesstechlink. All rights reserved.

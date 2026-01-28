@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/link.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
 
@@ -17,16 +20,130 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isCheckingMobile = false;
+  List<Map<String, dynamic>> _companies = [];
+  int? _selectedCompanyId;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listener to mobile number field
+    _mobileNumberController.addListener(_onMobileNumberChanged);
+  }
 
   @override
   void dispose() {
+    _mobileNumberController.removeListener(_onMobileNumberChanged);
     _mobileNumberController.dispose();
     _passwordController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onMobileNumberChanged() {
+    // Cancel previous timer
+    _debounceTimer?.cancel();
+    
+    // Clear companies and selected company when mobile number changes
+    setState(() {
+      _companies = [];
+      _selectedCompanyId = null;
+    });
+
+    final mobileNumber = _mobileNumberController.text.trim();
+    
+    // Only call API if mobile number is valid (10 digits)
+    if (mobileNumber.length == 10 && RegExp(r'^\d{10}$').hasMatch(mobileNumber)) {
+      // Debounce API call by 500ms
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+        _checkMobileNumber(mobileNumber);
+      });
+    }
+  }
+
+  Future<void> _checkMobileNumber(String mobileNumber) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isCheckingMobile = true;
+    });
+
+    try {
+      final result = await ApiService.checkMobile(mobileNumber: mobileNumber);
+      
+      if (result['success'] == true && mounted) {
+        final data = result['data'];
+        if (data != null && data['data'] != null && data['data'] is List) {
+          final companies = List<Map<String, dynamic>>.from(data['data']);
+          setState(() {
+            _companies = companies;
+            // Auto-select if only one company
+            if (companies.length == 1) {
+              _selectedCompanyId = companies[0]['id'];
+              _storeCompanyId(_selectedCompanyId!);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        print('Error checking mobile number: $e');
+        // Don't show error to user, just clear companies
+        setState(() {
+          _companies = [];
+          _selectedCompanyId = null;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingMobile = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _storeCompanyId(int companyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('company_id', companyId);
+      print('✅ Company ID stored: $companyId');
+    } catch (e) {
+      print('❌ Error storing company ID: $e');
+    }
   }
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate company selection if companies are available
+    if (_companies.isNotEmpty && _selectedCompanyId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a company'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // If no companies were fetched, show error
+    if (_companies.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid mobile number to load companies'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
       return;
     }
 
@@ -35,8 +152,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Call the login API
-      final result = await ApiService.loginUser(
+      // Call the login API with company ID
+      final result = await ApiService.loginUserWithCompany(
+        companyId: _selectedCompanyId!,
         mobileNumber: _mobileNumberController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -143,17 +261,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenHeight < 700;
-    final padding = screenWidth * 0.06; // Responsive padding (6% of screen width)
-    final topSpacing = isSmallScreen ? 20.0 : screenHeight * 0.05;
-    final bottomSpacing = isSmallScreen ? 16.0 : 24.0;
-
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -165,249 +274,252 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  horizontal: padding,
-                  vertical: topSpacing,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight - (topSpacing * 2),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+
+                // Logo/Title Section
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.face_retouching_natural,
+                        size: 80,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'InstaMarQ',
+                        style: GoogleFonts.poppins(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Face Recognition Attendance System',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+
+                const SizedBox(height: 40),
+
+                // Login Form
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Logo/Title Section
-                        Container(
-                          padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
+                        Text(
+                          'Welcome Back',
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2196F3),
                           ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.face_retouching_natural,
-                                size: isSmallScreen ? 60 : 80,
-                                color: Colors.white,
-                              ),
-                              SizedBox(height: isSmallScreen ? 12 : 16),
-                              Text(
-                                'InstaMarQ',
-                                style: GoogleFonts.poppins(
-                                  fontSize: isSmallScreen ? 24 : 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                'Face Recognition Attendance System',
-                                style: GoogleFonts.poppins(
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sign in to your account',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey[600],
                           ),
-                        ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+                        ),
+                        const SizedBox(height: 32),
 
-                        SizedBox(height: isSmallScreen ? 24 : 32),
-
-                        // Login Form
-                        Flexible(
-                          child: Container(
-                            padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
+                        // Mobile Number Field
+                        TextFormField(
+                          controller: _mobileNumberController,
+                          decoration: InputDecoration(
+                            labelText: 'Mobile Number',
+                            prefixIcon: const Icon(Icons.phone_outlined),
+                            suffixIcon: _isCheckingMobile
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(12.0),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Welcome Back',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: isSmallScreen ? 22 : 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF2196F3),
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 6 : 8),
-                                  Text(
-                                    'Sign in to your account',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: isSmallScreen ? 13 : 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 24 : 32),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your mobile number';
+                            }
+                            if (!RegExp(r'^\d{10}$').hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
+                              return 'Please enter a valid 10-digit mobile number';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
 
-                                  // Mobile Number Field
-                                  TextFormField(
-                                    controller: _mobileNumberController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Mobile Number',
-                                      prefixIcon: const Icon(Icons.phone_outlined),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    keyboardType: TextInputType.phone,
-                                    validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
-                                        return 'Please enter your mobile number';
-                                      }
-                                      if (!RegExp(r'^\d{10}$').hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
-                                        return 'Please enter a valid 10-digit mobile number';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 16 : 20),
+                        // Company Dropdown Field
+                        if (_companies.isNotEmpty)
+                          DropdownButtonFormField<int>(
+                            value: _selectedCompanyId,
+                            decoration: InputDecoration(
+                              labelText: 'Company',
+                              prefixIcon: const Icon(Icons.business_outlined),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            items: _companies.map((company) {
+                              return DropdownMenuItem<int>(
+                                value: company['id'],
+                                child: Text(
+                                  company['companyName'] ?? 'Unknown Company',
+                                  style: GoogleFonts.poppins(),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCompanyId = value;
+                              });
+                              if (value != null) {
+                                _storeCompanyId(value);
+                              }
+                            },
+                            validator: (value) {
+                              if (_companies.isNotEmpty && value == null) {
+                                return 'Please select a company';
+                              }
+                              return null;
+                            },
+                          ),
+                        if (_companies.isNotEmpty) const SizedBox(height: 20),
 
-                                  // Password Field
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      prefixIcon: const Icon(Icons.lock_outlined),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscurePassword
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _obscurePassword = !_obscurePassword;
-                                          });
-                                        },
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    obscureText: _obscurePassword,
-                                    validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
-                                        return 'Please enter your password';
-                                      }
-                                      if (value.length < 6) {
-                                        return 'Password must be at least 6 characters';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 10 : 12),
+                        // Password Field
+                        TextFormField(
+                          controller: _passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outlined),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          obscureText: _obscurePassword,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        const SizedBox(height: 32),
 
-                                  // Forgot Password
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      onPressed: () {
-                                        // TODO: Implement forgot password functionality
-                                      },
-                                      child: Text(
-                                        'Forgot Password?',
-                                        style: GoogleFonts.poppins(
-                                          color: const Color(0xFF2196F3),
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: isSmallScreen ? 13 : 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 24 : 32),
-
-                                  // Login Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: isSmallScreen ? 50 : 56,
-                                    child: ElevatedButton(
-                                      onPressed: _isLoading ? null : _login,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF2196F3),
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        elevation: 2,
-                                      ),
-                                      child: _isLoading
-                                          ? const CircularProgressIndicator(
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                            )
-                                          : Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(Icons.login),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  'Sign In',
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: isSmallScreen ? 15 : 16,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 20 : 24),
-
-                                  // Register Link
-                                  Row(
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  )
+                                : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      const Icon(Icons.login),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        "Don't have an account?",
+                                        'Sign In',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.grey[600],
-                                          fontSize: isSmallScreen ? 13 : 14,
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pushNamed('/register');
-                                        },
-                                        child: Text(
-                                          'Sign Up',
-                                          style: GoogleFonts.poppins(
-                                            color: const Color(0xFF2196F3),
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: isSmallScreen ? 13 : 14,
-                                          ),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: Link(
+                            uri: Uri.parse('https://xesstechlink.com'),
+                            builder: (context, followLink) => InkWell(
+                              onTap: followLink,
+                              child: Text(
+                                'Contact xesstechlink.com',
+                                style: GoogleFonts.poppins(
+                                  color: const Color(0xFF2196F3),
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                ),
                               ),
                             ),
-                          ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
+                          ),
                         ),
-
-                        SizedBox(height: bottomSpacing),
                       ],
                     ),
                   ),
-                ),
-              );
-            },
+                ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
+
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),

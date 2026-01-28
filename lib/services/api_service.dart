@@ -124,7 +124,7 @@ class ApiService {
     }
   }
 
-  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName}) async {
+  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, String? password}) async {
     final fullUrl = '$baseUrl/register';
     
     // Generate employee_id (format: E001, E002, etc.)
@@ -146,9 +146,10 @@ class ApiService {
     print('  - phone: ${employee.phone}');
     print('  - department: ${employee.position}');
     print('  - salary: ${employee.salary}');
-    print('  - shift: ${shiftName ?? "Not specified"}');
-    print('  - image: ${imageFile?.path ?? "No image"}');
-    print('----------------------------------------');
+      print('  - shift: ${shiftName ?? "Not specified"}');
+      print('  - password: ${password != null && password.isNotEmpty ? password : "Not specified"}');
+      print('  - image: ${imageFile?.path ?? "No image"}');
+      print('----------------------------------------');
     
     try {
       // Create FormData for multipart/form-data request
@@ -179,6 +180,23 @@ class ApiService {
       if (shiftName != null && shiftName.isNotEmpty) {
         formFields['shift'] = shiftName;
       }
+
+      // Add password if provided (required field)
+      if (password != null && password.isNotEmpty) {
+        formFields['password'] = password;
+        print('✅ Password added to formFields: $password');
+      } else {
+        print('⚠️ WARNING: Password is null or empty!');
+      }
+      
+      print('📋 FormFields before creating FormData:');
+      formFields.forEach((key, value) {
+        if (key == 'password') {
+          print('   $key: $value');
+        } else {
+          print('   $key: $value');
+        }
+      });
       
       final formData = FormData.fromMap(formFields);
       
@@ -1035,6 +1053,184 @@ class ApiService {
       print('Stack Trace: $stackTrace');
       print('========================================');
       throw Exception('Error during registration: $e');
+    }
+  }
+
+  // Check Mobile Number API
+  static Future<Map<String, dynamic>> checkMobile({
+    required String mobileNumber,
+  }) async {
+    try {
+      print('========================================');
+      print('CHECK MOBILE API CALL');
+      print('========================================');
+
+      final requestData = {
+        'mobileNumber': mobileNumber,
+      };
+
+      print('URL: $userBaseUrl/check-mobile');
+      print('Method: POST');
+      print('Content-Type: application/json');
+      print('Request Data: $requestData');
+
+      final response = await _userDio.post(
+        '/check-mobile',
+        data: requestData,
+        options: Options(
+          contentType: 'application/json',
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Mobile check successful');
+        print('========================================');
+        return {
+          'success': true,
+          'data': response.data,
+        };
+      } else {
+        print('❌ Mobile check failed with status: ${response.statusCode}');
+        print('========================================');
+        throw Exception('Mobile check failed: ${response.data}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - CHECK MOBILE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Mobile check failed';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - CHECK MOBILE');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error during mobile check: $e');
+    }
+  }
+
+  // User Login with Company API
+  static Future<Map<String, dynamic>> loginUserWithCompany({
+    required int companyId,
+    required String mobileNumber,
+    required String password,
+  }) async {
+    try {
+      print('========================================');
+      print('USER LOGIN WITH COMPANY API CALL');
+      print('========================================');
+
+      final requestData = {
+        'company_id': companyId,
+        'mobileNumber': mobileNumber,
+        'password': password,
+      };
+
+      print('URL: $userBaseUrl/login-with-company');
+      print('Method: POST');
+      print('Content-Type: application/json');
+      print('Request Data: $requestData');
+
+      final response = await _userDio.post(
+        '/login-with-company',
+        data: requestData,
+        options: Options(
+          contentType: 'application/json',
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ User login with company successful');
+        print('========================================');
+
+        // Try multiple possible token locations and keys
+        String? token;
+
+        // Check direct response.data level
+        token ??= response.data['token'] ??
+                  response.data['access_token'] ??
+                  response.data['auth_token'] ??
+                  response.data['jwt'] ??
+                  response.data['bearer'];
+
+        // Check nested in response.data.data level (API structure)
+        if (token == null && response.data['data'] != null) {
+          token = response.data['data']['token'] ??
+                  response.data['data']['access_token'] ??
+                  response.data['data']['auth_token'] ??
+                  response.data['data']['jwt'] ??
+                  response.data['data']['bearer'];
+        }
+
+        print('🔑 Token found in response: ${token != null ? "YES" : "NO"}');
+        if (token != null) {
+          print('🔑 Token value: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
+        }
+
+        return {
+          'success': true,
+          'token': token,
+          'data': response.data,
+        };
+      } else {
+        print('❌ User login with company failed with status: ${response.statusCode}');
+        print('========================================');
+        throw Exception('Login failed: ${response.data}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Login failed';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error during login: $e');
     }
   }
 

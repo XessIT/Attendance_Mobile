@@ -1,4 +1,4 @@
-package com.xesstechlink.face_recognization;
+package com.xesstechlink.instamarq;
 
 import io.flutter.embedding.android.FlutterActivity;
 
