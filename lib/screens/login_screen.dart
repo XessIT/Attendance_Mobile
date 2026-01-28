@@ -197,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               SizedBox(height: isSmallScreen ? 12 : 16),
                               Text(
-                                'Face Recognition',
+                                'InstaMarQ',
                                 style: GoogleFonts.poppins(
                                   fontSize: isSmallScreen ? 24 : 28,
                                   fontWeight: FontWeight.bold,
@@ -205,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               Text(
-                                'Attendance System',
+                                'Face Recognition Attendance System',
                                 style: GoogleFonts.poppins(
                                   fontSize: isSmallScreen ? 14 : 16,
                                   color: Colors.white.withOpacity(0.8),
