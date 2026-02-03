@@ -1,0 +1,124 @@
+{
+  "project_info": {
+    "project_number": "675684878521",
+    "project_id": "finlms-f8227",
+    "storage_bucket": "finlms-f8227.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675684878521:android:118bbe96a6de523827f368",
+        "android_client_info": {
+          "package_name": "com.kaninfotech.dayloan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANACJhyO_NT4ikKM6pYk5pTvHVxf3ni-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675684878521:android:762cab867895900a27f368",
+        "android_client_info": {
+          "package_name": "com.kaninfotech.finlms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANACJhyO_NT4ikKM6pYk5pTvHVxf3ni-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675684878521:android:61d9681e2ec4cf9027f368",
+        "android_client_info": {
+          "package_name": "com.kaninfotech.renewbuddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANACJhyO_NT4ikKM6pYk5pTvHVxf3ni-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675684878521:android:4f9a4537082802ba27f368",
+        "android_client_info": {
+          "package_name": "com.xesstechlink.face_recognization"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANACJhyO_NT4ikKM6pYk5pTvHVxf3ni-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675684878521:android:5a61c449af4abd1e27f368",
+        "android_client_info": {
+          "package_name": "com.xesstechlink.instamarq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANACJhyO_NT4ikKM6pYk5pTvHVxf3ni-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675684878521:android:aac9a7711821850c27f368",
+        "android_client_info": {
+          "package_name": "com.xesstechlink.renew_buddy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANACJhyO_NT4ikKM6pYk5pTvHVxf3ni-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

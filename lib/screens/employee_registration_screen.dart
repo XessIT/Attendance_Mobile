@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,6 +37,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
   DateTime? _dateOfBirth;
   late TextEditingController _dateOfJoiningController;
   late TextEditingController _dateOfBirthController;
+  late TextEditingController _passwordController;
 
   @override
   void initState() {
@@ -50,6 +52,9 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       text: DateFormat('dd MMM yyyy').format(_dateOfJoining!),
     );
     _dateOfBirthController = TextEditingController();
+    _passwordController = TextEditingController(
+      text: _generatePasswordFromDate(_dateOfJoining!),
+    );
   }
 
   @override
@@ -61,7 +66,61 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
     _salaryController.dispose();
     _dateOfJoiningController.dispose();
     _dateOfBirthController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  String _generatePasswordFromDate(DateTime date) {
+    // Format date as YYYYMMDD (numbers only)
+    final year = date.year.toString();
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year$month$day';
+  }
+
+  // Remove commas from salary string for parsing
+  String _removeCommas(String value) {
+    return value.replaceAll(',', '');
+  }
+
+  // Format number with commas (Indian numbering system: 1,00,000)
+  String _formatNumberWithCommas(String value) {
+    // Remove all non-digit characters first
+    final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+    if (digitsOnly.isEmpty) return '';
+    
+    // Parse and format with commas using Indian numbering system
+    try {
+      final number = int.parse(digitsOnly);
+      // Format with Indian numbering system (lakhs, crores)
+      if (number < 1000) {
+        return number.toString();
+      } else if (number < 100000) {
+        // Format as: 12,345
+        final thousands = number ~/ 1000;
+        final remainder = number % 1000;
+        return '$thousands,${remainder.toString().padLeft(3, '0')}';
+      } else {
+        // Format as: 1,23,456 (Indian system)
+        final crores = number ~/ 10000000;
+        final lakhs = (number % 10000000) ~/ 100000;
+        final thousands = (number % 100000) ~/ 1000;
+        final remainder = number % 1000;
+        
+        String result = '';
+        if (crores > 0) {
+          result += '$crores,';
+        }
+        if (lakhs > 0 || crores > 0) {
+          result += '${lakhs.toString().padLeft(2, '0')},';
+        }
+        result += '${thousands.toString().padLeft(2, '0')},';
+        result += remainder.toString().padLeft(3, '0');
+        return result;
+      }
+    } catch (e) {
+      return value;
+    }
   }
 
   Future<void> _captureFaceImage() async {
@@ -144,24 +203,41 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       return;
     }
 
+    if (_dateOfJoining == null) {
+      print('❌ [EMPLOYEE REGISTRATION] Date of joining is not set');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select date of joining'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       // Create employee object
+      // Remove commas from salary before parsing
+      final salaryText = _removeCommas(_salaryController.text.trim());
       final employee = Employee(
         name: _nameController.text.trim(),
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         position: _selectedDepartment?.name ?? 'Employee',
-        salary: double.parse(_salaryController.text.trim()),
+        salary: double.parse(salaryText),
         dateOfJoining: _dateOfJoining,
         dateOfBirth: _dateOfBirth,
         faceData: '', // Will be set after face registration
         createdAt: DateTime.now(),
         shiftId: _selectedShift?.id,
       );
+
+      // Generate password from date of joining (YYYYMMDD format)
+      final password = _generatePasswordFromDate(_dateOfJoining!);
+      print('🔑 [EMPLOYEE REGISTRATION] Generated password: $password');
 
       print('📝 [EMPLOYEE REGISTRATION] Employee object created:');
       print('   Name: ${employee.name}');
@@ -171,16 +247,19 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       print('   Salary: ${employee.salary}');
       print('   Department: ${_selectedDepartment?.name ?? "Not selected"}');
       print('   Shift: ${_selectedShift?.name ?? "Not selected"}');
+      print('   Password: $password');
+      print('   Date of Joining: ${_dateOfJoining?.toString() ?? "Not set"}');
       print('   Face Image Path: ${_faceImage!.path}');
 
       // Create employee in database with image upload (new API handles both)
-      print('📤 [EMPLOYEE REGISTRATION] Calling createEmployee API with image...');
+      print('📤 [EMPLOYEE REGISTRATION] Calling createEmployee API with image and password...');
       final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
       final success = await employeeProvider.createEmployee(
         employee, 
         imageFile: _faceImage!,
         shiftName: _selectedShift?.name,
         departmentName: _selectedDepartment?.name,
+        password: password,
       );
 
       print('📥 [EMPLOYEE REGISTRATION] createEmployee returned: $success');
@@ -604,16 +683,78 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           decoration: const InputDecoration(
             labelText: 'Monthly Salary',
             prefixIcon: Icon(Icons.currency_rupee),
+            helperText: 'Enter amount (commas will be added automatically)',
           ),
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            TextInputFormatter.withFunction((oldValue, newValue) {
+              // Format with commas as user types
+              final text = newValue.text;
+              if (text.isEmpty) {
+                return TextEditingValue(
+                  text: '',
+                  selection: TextSelection.collapsed(offset: 0),
+                );
+              }
+              
+              // Remove any existing commas
+              final digitsOnly = text.replaceAll(',', '');
+              if (digitsOnly.isEmpty) {
+                return TextEditingValue(
+                  text: '',
+                  selection: TextSelection.collapsed(offset: 0),
+                );
+              }
+              
+              // Format with commas
+              final formatted = _formatNumberWithCommas(digitsOnly);
+              
+              // Calculate cursor position
+              // Count digits before cursor in old value
+              final oldCursorPos = oldValue.selection.baseOffset;
+              int digitsBeforeCursor = 0;
+              for (int i = 0; i < oldCursorPos && i < oldValue.text.length; i++) {
+                if (oldValue.text[i] != ',') {
+                  digitsBeforeCursor++;
+                }
+              }
+              
+              // Find position in new formatted string
+              int newCursorPos = 0;
+              int digitCount = 0;
+              for (int i = 0; i < formatted.length; i++) {
+                if (formatted[i] != ',') {
+                  digitCount++;
+                  if (digitCount >= digitsBeforeCursor) {
+                    newCursorPos = i + 1;
+                    break;
+                  }
+                }
+                newCursorPos = i + 1;
+              }
+              
+              // Ensure cursor doesn't go beyond text length
+              if (newCursorPos > formatted.length) {
+                newCursorPos = formatted.length;
+              }
+              
+              return TextEditingValue(
+                text: formatted,
+                selection: TextSelection.collapsed(offset: newCursorPos),
+              );
+            }),
+          ],
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter salary';
             }
-            if (double.tryParse(value) == null) {
+            // Remove commas before parsing
+            final numericValue = _removeCommas(value);
+            if (double.tryParse(numericValue) == null) {
               return 'Please enter a valid number';
             }
-            if (double.parse(value) <= 0) {
+            if (double.parse(numericValue) <= 0) {
               return 'Salary must be greater than 0';
             }
             return null;
@@ -694,11 +835,32 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
               setState(() {
                 _dateOfJoining = picked;
                 _dateOfJoiningController.text = DateFormat('dd MMM yyyy').format(picked);
+                _passwordController.text = _generatePasswordFromDate(picked);
               });
             }
           },
           validator: (value) {
             if (_dateOfJoining == null) return 'Please select date';
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        
+        // Password field (auto-generated from date of joining)
+        TextFormField(
+          controller: _passwordController,
+          readOnly: true,
+          decoration: InputDecoration(
+            labelText: 'Password (Auto-generated)',
+            prefixIcon: const Icon(Icons.lock),
+            helperText: 'Password is generated from date of joining (YYYYMMDD format)',
+            filled: true,
+            fillColor: Colors.grey.shade50,
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Password is required';
+            }
             return null;
           },
         ),

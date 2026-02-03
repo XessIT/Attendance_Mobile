@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/link.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
 
@@ -18,16 +20,130 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isCheckingMobile = false;
+  List<Map<String, dynamic>> _companies = [];
+  int? _selectedCompanyId;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listener to mobile number field
+    _mobileNumberController.addListener(_onMobileNumberChanged);
+  }
 
   @override
   void dispose() {
+    _mobileNumberController.removeListener(_onMobileNumberChanged);
     _mobileNumberController.dispose();
     _passwordController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onMobileNumberChanged() {
+    // Cancel previous timer
+    _debounceTimer?.cancel();
+    
+    // Clear companies and selected company when mobile number changes
+    setState(() {
+      _companies = [];
+      _selectedCompanyId = null;
+    });
+
+    final mobileNumber = _mobileNumberController.text.trim();
+    
+    // Only call API if mobile number is valid (10 digits)
+    if (mobileNumber.length == 10 && RegExp(r'^\d{10}$').hasMatch(mobileNumber)) {
+      // Debounce API call by 500ms
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+        _checkMobileNumber(mobileNumber);
+      });
+    }
+  }
+
+  Future<void> _checkMobileNumber(String mobileNumber) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isCheckingMobile = true;
+    });
+
+    try {
+      final result = await ApiService.checkMobile(mobileNumber: mobileNumber);
+      
+      if (result['success'] == true && mounted) {
+        final data = result['data'];
+        if (data != null && data['data'] != null && data['data'] is List) {
+          final companies = List<Map<String, dynamic>>.from(data['data']);
+          setState(() {
+            _companies = companies;
+            // Auto-select if only one company
+            if (companies.length == 1) {
+              _selectedCompanyId = companies[0]['id'];
+              _storeCompanyId(_selectedCompanyId!);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        print('Error checking mobile number: $e');
+        // Don't show error to user, just clear companies
+        setState(() {
+          _companies = [];
+          _selectedCompanyId = null;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingMobile = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _storeCompanyId(int companyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('company_id', companyId);
+      print('✅ Company ID stored: $companyId');
+    } catch (e) {
+      print('❌ Error storing company ID: $e');
+    }
   }
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate company selection if companies are available
+    if (_companies.isNotEmpty && _selectedCompanyId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a company'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // If no companies were fetched, show error
+    if (_companies.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid mobile number to load companies'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
       return;
     }
 
@@ -36,8 +152,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Call the login API
-      final result = await ApiService.loginUser(
+      // Call the login API with company ID
+      final result = await ApiService.loginUserWithCompany(
+        companyId: _selectedCompanyId!,
         mobileNumber: _mobileNumberController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -179,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Face Recognition',
+                        'InstaMarQ',
                         style: GoogleFonts.poppins(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -187,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       Text(
-                        'Attendance System',
+                        'Face Recognition Attendance System',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           color: Colors.white.withOpacity(0.8),
@@ -242,6 +359,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Mobile Number',
                             prefixIcon: const Icon(Icons.phone_outlined),
+                            suffixIcon: _isCheckingMobile
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(12.0),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : null,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -258,6 +387,43 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
+
+                        // Company Dropdown Field
+                        if (_companies.isNotEmpty)
+                          DropdownButtonFormField<int>(
+                            value: _selectedCompanyId,
+                            decoration: InputDecoration(
+                              labelText: 'Company',
+                              prefixIcon: const Icon(Icons.business_outlined),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            items: _companies.map((company) {
+                              return DropdownMenuItem<int>(
+                                value: company['id'],
+                                child: Text(
+                                  company['companyName'] ?? 'Unknown Company',
+                                  style: GoogleFonts.poppins(),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCompanyId = value;
+                              });
+                              if (value != null) {
+                                _storeCompanyId(value);
+                              }
+                            },
+                            validator: (value) {
+                              if (_companies.isNotEmpty && value == null) {
+                                return 'Please select a company';
+                              }
+                              return null;
+                            },
+                          ),
+                        if (_companies.isNotEmpty) const SizedBox(height: 20),
 
                         // Password Field
                         TextFormField(

@@ -683,7 +683,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  hasTime ? _formatTime(time) : 'Not available',
+                  hasTime ? _formatTime(time) : '-',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -700,7 +700,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _formatTime(String timeString) {
     if (timeString == '-' || timeString.isEmpty) {
-      return 'Not available';
+      return '-';
     }
     try {
       // Handle time format like "11:08:04" or "14:35:18"
