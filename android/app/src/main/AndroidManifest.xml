@@ -15,17 +15,31 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- ===== FORCE REMOVE GALLERY / MEDIA PERMISSIONS ===== -->
-    <!-- (Some plugins auto-add these; we explicitly remove them) -->
-
+    <!-- ===== PERMISSION CONFIGURATION ===== -->
+    <!-- 
+       Google Play Policy Fix:
+       Explicitly remove READ_MEDIA permissions to satisfy the policy requirement
+       since we are using the system Photo Picker (via image_picker).
+    -->
     <uses-permission
         android:name="android.permission.READ_MEDIA_IMAGES"
         tools:node="remove" />
-
     <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_AUDIO"
         tools:node="remove" />
 
+    <!-- 
+       Required for Image Picker on Android 12 (API 32) and below.
+       Restricted to maxSdkVersion 32 because Android 13+ uses Photo Picker (no permission needed).
+    -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- We generally don't need write access for picking images -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:node="remove" />
