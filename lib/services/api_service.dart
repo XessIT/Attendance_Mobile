@@ -2071,6 +2071,136 @@ class ApiService {
     }
   }
 
+  // Get All Leave Requests (Admin)
+  static Future<Map<String, dynamic>> getAllLeaveRequests({
+    String? status,
+    String? search,
+  }) async {
+    try {
+      print('========================================');
+      print('GET ALL LEAVE REQUESTS API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/leave/all');
+
+      final Map<String, dynamic> queryParams = {};
+      if (status != null && status.isNotEmpty && status != 'All') {
+        queryParams['status'] = status;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      print('Query Params: $queryParams');
+
+      final headers = await _getAuthHeaders();
+      print('Headers: $headers');
+
+      final response = await _userDio.get(
+        '/leave/all',
+        queryParameters: queryParams,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ All leave requests loaded successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to load leave requests: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET ALL LEAVE REQUESTS');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load leave requests';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET ALL LEAVE REQUESTS');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error loading leave requests: $e');
+    }
+  }
+
+  // Approve/Reject Leave Request
+  static Future<Map<String, dynamic>> approveLeave(int leaveId, String status) async {
+    try {
+      print('========================================');
+      print('APPROVE LEAVE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/leave/$leaveId/status');
+      print('Method: PATCH');
+      print('Status: $status');
+
+      final headers = await _getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      print('Headers: $headers');
+
+      final response = await _userDio.patch(
+        '/leave/$leaveId/status',
+        data: {'status': status},
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Leave $status successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to $status leave: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - APPROVE LEAVE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to $status leave';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - APPROVE LEAVE');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error $status leave: $e');
+    }
+  }
+
   // Departments API
   static Future<List<dynamic>> getDepartments() async {
     try {

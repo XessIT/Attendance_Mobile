@@ -13,6 +13,7 @@ import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../models/attendance_summary.dart';
 import 'face_attendance_screen_new.dart';
+import 'approve_leave_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -295,7 +296,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            const Spacer(), // Placeholder for future 4th item
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.check_circle_outline,
+                title: 'Approve Leave',
+                subtitle: 'Review Requests',
+                color: Colors.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ApproveLeaveScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ],
