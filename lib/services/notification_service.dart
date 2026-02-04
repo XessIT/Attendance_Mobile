@@ -57,7 +57,7 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
         // Handle notification tap
         if (kDebugMode) {
@@ -86,10 +86,10 @@ class NotificationService {
 
       if (notification != null && android != null) {
         _flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          NotificationDetails(
+          id: notification.hashCode,
+          title: notification.title,
+          body: notification.body,
+          notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               channel.id,
               channel.name,
@@ -106,5 +106,9 @@ class NotificationService {
     if (kDebugMode) {
       print("FCM Token: $token");
     }
+  }
+
+  Future<String?> getFcmToken() async {
+    return await _firebaseMessaging.getToken();
   }
 }

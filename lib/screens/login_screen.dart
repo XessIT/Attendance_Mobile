@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import '../utils/auth_utils.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -210,6 +211,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Navigate to home/dashboard
           if (mounted) {
+            // Update FCM Token
+            try {
+              final fcmToken = await NotificationService().getFcmToken();
+              if (fcmToken != null && token != null) {
+                await ApiService.updateFcmToken(
+                  fcmToken: fcmToken,
+                  authToken: token,
+                );
+              }
+            } catch (e) {
+              print('Error updating FCM token after login: $e');
+            }
+
             String? userType;
             try {
               // Try to extract userType from result['data'] -> 'data' -> 'employee' -> 'userType'

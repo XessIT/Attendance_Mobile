@@ -30,6 +30,31 @@ class ApiService {
     receiveTimeout: const Duration(seconds: 30),
   ));
 
+  // Update FCM Token
+  static Future<Map<String, dynamic>> updateFcmToken({
+    required String fcmToken,
+    required String authToken,
+  }) async {
+    try {
+      print('📤 Updating FCM Token...');
+      final response = await _userDio.post(
+        '/update-fcm-token',
+        data: {'fcmToken': fcmToken},
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $authToken',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+      print('✅ FCM Token update response: ${response.data}');
+      return response.data;
+    } catch (e) {
+      print('❌ Error updating FCM token: $e');
+      throw Exception('Failed to update FCM token: $e');
+    }
+  }
+
   // Employee APIs
   static Future<List<Employee>> getEmployees() async {
     try {
