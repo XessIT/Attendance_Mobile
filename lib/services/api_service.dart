@@ -1186,13 +1186,18 @@ class ApiService {
         data: requestData,
         options: Options(
           contentType: 'application/json',
+          validateStatus: (status) {
+            // Accept both 200 and 404 as valid responses
+            // API returns 404 when no companies found, but with success:true
+            return status == 200 || status == 404;
+          },
         ),
       );
 
       print('Response Status Code: ${response.statusCode}');
       print('Response Data: ${response.data}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 404) {
         print('✅ Mobile check successful');
         print('========================================');
         return {
@@ -1440,6 +1445,93 @@ class ApiService {
       print('Stack Trace: $stackTrace');
       print('========================================');
       throw Exception('Error during login: $e');
+    }
+  }
+
+  // Update FCM Token API
+  static Future<Map<String, dynamic>> updateFcmToken({
+    required String fcmToken,
+  }) async {
+    try {
+      print('========================================');
+      print('UPDATE FCM TOKEN API CALL');
+      print('========================================');
+
+      // Get auth token from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      if (token == null) {
+        print('⚠️ No auth token found - cannot update FCM token');
+        throw Exception('Authentication required to update FCM token');
+      }
+
+      final requestData = {
+        'fcmToken': fcmToken,
+      };
+
+      print('URL: $userBaseUrl/update-fcm-token');
+      print('Method: POST');
+      print('Content-Type: application/json');
+      print('Authorization: Bearer ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
+      print('Request Data: $requestData');
+
+      final response = await _userDio.post(
+        '/update-fcm-token',
+        data: requestData,
+        options: Options(
+          contentType: 'application/json',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ FCM token updated successfully');
+        print('========================================');
+        return {
+          'success': true,
+          'data': response.data,
+        };
+      } else {
+        print('❌ FCM token update failed with status: ${response.statusCode}');
+        print('========================================');
+        throw Exception('FCM token update failed: ${response.data}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - UPDATE FCM TOKEN');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'FCM token update failed';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Request Options: ${e.requestOptions.uri}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e, stackTrace) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - UPDATE FCM TOKEN');
+      print('========================================');
+      print('Error: $e');
+      print('Stack Trace: $stackTrace');
+      print('========================================');
+      throw Exception('Error updating FCM token: $e');
     }
   }
 

@@ -12,12 +12,38 @@ import 'screens/home_screen.dart';
 import 'screens/employee_home_screen.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
- // await NotificationService().initialize();
+
+  // Initialize Firebase differently for web vs mobile
+  try {
+    if (kIsWeb) {
+      // For web, initialize with options
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyBzGgXe2YuR46u2m3O7N5H1o8Q8v3v8Y00",
+          appId: "1:123456789012:web:1234567890abcdef",
+          messagingSenderId: "123456789012",
+          projectId: "test-project",
+          authDomain: "test-project.firebaseapp.com",
+          storageBucket: "test-project.appspot.com",
+        ),
+      );
+    } else {
+      // For mobile, use default initialization
+      await Firebase.initializeApp();
+    }
+
+    // Initialize Notification Service
+    await NotificationService().initialize();
+  } catch (e) {
+    // If Firebase initialization fails, continue without it (for development purposes)
+    debugPrint('Firebase initialization failed: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -34,6 +60,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DepartmentProvider()),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'Face Recognition Attendance',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
+import '../services/app_update_service.dart';
 import '../utils/auth_utils.dart';
 import 'comp_off_screen.dart';
 
@@ -25,6 +26,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   void initState() {
     super.initState();
     _loadDashboardData();
+    _checkForAppUpdates();
   }
 
   Future<void> _loadDashboardData() async {
@@ -54,6 +56,29 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // Check for app updates
+  Future<void> _checkForAppUpdates() async {
+    try {
+      final updateInfo = await AppUpdateService.checkForUpdate(context: context);
+      
+      if (updateInfo != null && updateInfo['updateAvailable'] == true) {
+        if (mounted) {
+          await AppUpdateService.showUpdateDialog(
+            context: context,
+            isForceUpdate: updateInfo['isForceUpdate'] ?? false,
+            newVersion: updateInfo['newVersion'] ?? '',
+            releaseNotes: updateInfo['releaseNotes'] ?? 'Bug fixes and performance improvements',
+            appStoreUrl: updateInfo['downloadUrl'] ?? '',
+            appSize: updateInfo['appSize'],
+            currentVersion: updateInfo['currentVersion'],
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for app updates: $e');
     }
   }
 

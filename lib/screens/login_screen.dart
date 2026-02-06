@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
 
@@ -133,31 +134,29 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // If no companies were fetched, show error
-    if (_companies.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid mobile number to load companies'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Call the login API with company ID
-      final result = await ApiService.loginUserWithCompany(
-        companyId: _selectedCompanyId!,
-        mobileNumber: _mobileNumberController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      Map<String, dynamic> result;
+      
+      // If no companies found, use direct login API
+      // Otherwise, use login with company API
+      if (_companies.isEmpty) {
+        print('📱 No companies found - Using direct login API');
+        result = await ApiService.loginUser(
+          mobileNumber: _mobileNumberController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      } else {
+        print('🏢 Companies found - Using login with company API');
+        result = await ApiService.loginUserWithCompany(
+          companyId: _selectedCompanyId!,
+          mobileNumber: _mobileNumberController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      }
 
       print('🔍 Login API Response: $result');
 
@@ -183,6 +182,17 @@ class _LoginScreenState extends State<LoginScreen> {
             // Verify token was stored
             final storedToken = await AuthUtils.getToken();
             print('🔍 Verification - Stored token exists: ${storedToken != null}');
+            
+            // Extract and store user role from the response
+            try {
+              if (result['data'] != null && result['data'] is Map) {
+                final userRole = (result['data']['userType'] ?? 'employee').toString(); // Ensure it's a String
+                await AuthUtils.setUserRole(userRole);
+                print('👤 User role stored: $userRole');
+              }
+            } catch (e) {
+              print('⚠️ Error storing user role: $e');
+            }
           } else {
             print('❌ Failed to store token');
           }
@@ -207,6 +217,13 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green,
             ),
           );
+
+          // Update FCM token after successful login (await to ensure it completes)
+          try {
+            await _updateFcmToken();
+          } catch (e) {
+            debugPrint('⚠️ FCM token update failed: $e');
+          }
 
           // Navigate to home/dashboard
           if (mounted) {
@@ -256,6 +273,47 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _updateFcmToken() async {
+    debugPrint('========================================');
+    debugPrint('🔔 FCM TOKEN UPDATE STARTED');
+    debugPrint('========================================');
+    
+    try {
+      debugPrint('📱 Attempting to get FCM token...');
+      
+      // Get FCM token
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      
+      debugPrint('📱 FCM Token result: ${fcmToken != null ? "Token received" : "null"}');
+      
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        debugPrint('✅ FCM Token retrieved: ${fcmToken.substring(0, fcmToken.length > 20 ? 20 : fcmToken.length)}...');
+        debugPrint('📤 Sending FCM token to server...');
+        
+        // Call API to update FCM token
+        final result = await ApiService.updateFcmToken(fcmToken: fcmToken);
+        
+        if (result['success'] == true) {
+          debugPrint('✅ FCM token updated on server successfully');
+        } else {
+          debugPrint('⚠️ FCM token update returned unsuccessful response: $result');
+        }
+      } else {
+        debugPrint('⚠️ FCM token is null or empty - skipping update');
+      }
+    } catch (e, stackTrace) {
+      // Don't block login flow if FCM token update fails
+      debugPrint('❌ Error updating FCM token: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // Rethrow to be caught by the outer try-catch
+      rethrow;
+    } finally {
+      debugPrint('========================================');
+      debugPrint('🔔 FCM TOKEN UPDATE COMPLETED');
+      debugPrint('========================================');
     }
   }
 
