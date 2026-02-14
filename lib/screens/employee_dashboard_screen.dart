@@ -24,7 +24,16 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _printTokenInfo();
     _loadDashboardData();
+  }
+
+  Future<void> _printTokenInfo() async {
+    final token = await AuthUtils.getToken();
+    final userType = await AuthUtils.getUserType();
+    print('🔍 Employee Dashboard - Token Info:');
+    print('   - Token: ${token != null ? "${token.substring(0, token.length > 20 ? 20 : token.length)}..." : "null"}');
+    print('   - User Type: $userType');
   }
 
   Future<void> _loadDashboardData() async {

@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // If no companies were fetched, show error
-    if (_companies.isEmpty) {
+   /* if (_companies.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -145,25 +145,59 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
       return;
-    }
+    }*/
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Call the login API with company ID
-      final result = await ApiService.loginUserWithCompany(
-        companyId: _selectedCompanyId!,
-        mobileNumber: _mobileNumberController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      Map<String, dynamic> result;
+      
+      // Use different login methods based on whether companies are available
+      if (_companies.isNotEmpty) {
+        // User has companies - use company-specific login (for admins)
+        result = await ApiService.loginUserWithCompany(
+          companyId: _selectedCompanyId!,
+          mobileNumber: _mobileNumberController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        print('🔍 Using loginUserWithCompany API');
+      } else {
+        // No companies found - use general login (for employees)
+        result = await ApiService.loginUser(
+          mobileNumber: _mobileNumberController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        print('🔍 Using loginUser API (no companies)');
+      }
 
       print('🔍 Login API Response: $result');
 
       if (result['success'] == true) {
-        // Store the token in local storage
-        // Try multiple possible locations in the result
+        // Extract user type first
+        String? userType;
+        try {
+          // Try to extract userType from result['data'] -> 'data' -> 'employee' -> 'userType'
+          // result['data'] is API response body
+          final apiResponse = result['data'];
+          if (apiResponse != null && apiResponse is Map) {
+            final innerData = apiResponse['data'];
+            if (innerData != null && innerData is Map) {
+              final employee = innerData['employee'];
+              if (employee != null && employee is Map) {
+                userType = employee['userType'];
+              }
+            }
+          }
+        } catch (e) {
+          print('Error parsing userType: $e');
+        }
+
+        print('👤 User Type: $userType');
+
+        // Store token in local storage
+        // Try multiple possible locations in result
         String? token = result['token'];
 
         // If not found at top level, check in data nested structure
@@ -200,6 +234,16 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
 
+        // Store user type for navigation on app restart
+        if (userType != null && userType.toString().isNotEmpty) {
+          final userTypeSuccess = await AuthUtils.storeUserType(userType.toString());
+          if (userTypeSuccess) {
+            print('✅ User type stored successfully: $userType');
+          } else {
+            print('❌ Failed to store user type');
+          }
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -210,26 +254,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Navigate to home/dashboard
           if (mounted) {
-            String? userType;
-            try {
-              // Try to extract userType from result['data'] -> 'data' -> 'employee' -> 'userType'
-              // result['data'] is the API response body
-              final apiResponse = result['data'];
-              if (apiResponse != null && apiResponse is Map) {
-                final innerData = apiResponse['data'];
-                if (innerData != null && innerData is Map) {
-                  final employee = innerData['employee'];
-                  if (employee != null && employee is Map) {
-                    userType = employee['userType'];
-                  }
-                }
-              }
-            } catch (e) {
-              print('Error parsing userType: $e');
-            }
-
-            print('👤 User Type: $userType');
-
             if (userType == 'employee') {
               Navigator.of(context).pushReplacementNamed('/employee-home');
             } else {
