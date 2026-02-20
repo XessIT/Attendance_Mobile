@@ -23,10 +23,18 @@ class AppUpdateService {
       // Get platform identifier
       String platform = Theme.of(context).platform == TargetPlatform.iOS ? 'ios' : 'android';
 
+      final url = '$updateCheckUrl?packageName=$packageName&version=$currentVersion&buildNumber=$buildNumber&platform=$platform';
+      debugPrint('========================================');
+      debugPrint('APP UPDATE CHECK API CALL');
+      debugPrint('========================================');
+      debugPrint('URL: $url');
+
       // Call your API to check for updates
-      final response = await http.get(
-        Uri.parse('$updateCheckUrl?packageName=$packageName&version=$currentVersion&buildNumber=$buildNumber&platform=$platform'),
-      );
+      final response = await http.get(Uri.parse(url));
+
+      debugPrint('Response Status Code: ${response.statusCode}');
+      debugPrint('Response Data: ${response.body}');
+      debugPrint('========================================');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -81,8 +89,8 @@ class AppUpdateService {
       context: context,
       barrierDismissible: !isForceUpdate,
       builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => !isForceUpdate,
+        return PopScope(
+          canPop: !isForceUpdate,
           child: AlertDialog(
             title: Row(
               children: [
@@ -99,31 +107,36 @@ class AppUpdateService {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (currentVersion != null)
-                  Text('Current version: $currentVersion', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                Text('New version: $newVersion', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Current version: $currentVersion', 
+                       style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('New version: $newVersion', 
+                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 if (appSize != null) ...[
                   const SizedBox(height: 4),
-                  Text('Size: $appSize', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text('Size: $appSize', 
+                       style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
                 const SizedBox(height: 16),
-                const Text('What\'s new:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('What\'s new:', 
+                           style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text(releaseNotes),
               ],
             ),
             actions: [
               if (!isForceUpdate)
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Later'),
-                ),
-              FilledButton(
+              
+              ElevatedButton(
                 onPressed: () {
                   launchUrlString(appStoreUrl, mode: LaunchMode.externalApplication);
-                  if (isForceUpdate) {
+                  if (!isForceUpdate) {
                     Navigator.of(context).pop();
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isForceUpdate ? Colors.red : Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
                 child: Text(isForceUpdate ? 'Update Now' : 'Update'),
               ),
             ],
