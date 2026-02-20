@@ -113,6 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/login');
         }
+      }
     } else {
       // No token, check if we need to call login directly
       debugPrint('❌ No token found, checking mobile number...');
