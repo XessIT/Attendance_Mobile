@@ -1,7 +1,9 @@
-/*
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -45,9 +47,9 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // Initialize local notifications
-    // Ensure you have an icon named 'ic_notification' or usage '@mipmap/ic_launcher'
+    // Using the custom notification icon
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/notication');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings();
@@ -58,12 +60,13 @@ class NotificationService {
     );
 
     await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
         // Handle notification tap
         if (kDebugMode) {
           print("Notification tapped: ${details.payload}");
         }
+        _handleNotificationTap(details.payload);
       },
     );
 
@@ -71,7 +74,7 @@ class NotificationService {
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'high_importance_channel', // id
       'High Importance Notifications', // title
-      description: 'This channel is used for important notifications.', // description
+      description: 'This channel is used for important notifications.',
       importance: Importance.max,
     );
 
@@ -87,15 +90,16 @@ class NotificationService {
 
       if (notification != null && android != null) {
         _flutterLocalNotificationsPlugin.show(
-          notification.hashCode,
-          notification.title,
-          notification.body,
-          NotificationDetails(
+          id: notification.hashCode,
+          title: notification.title,
+          body: notification.body,
+          notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               channel.id,
               channel.name,
               channelDescription: channel.description,
-              icon: '@mipmap/ic_launcher',
+              // Using the custom notification icon
+              icon: '@drawable/notication',
             ),
           ),
         );
@@ -103,10 +107,75 @@ class NotificationService {
     });
 
     // Handle token
-    String? token = await _firebaseMessaging.getToken();
-    if (kDebugMode) {
-      print("FCM Token: $token");
+    try {
+      String? token = await _firebaseMessaging.getToken();
+      if (kDebugMode) {
+        print("FCM Token: $token");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting FCM Token: $e");
+      }
+    }
+
+    // Handle notification clicks when app is in background or terminated
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      if (kDebugMode) {
+        print("Notification clicked when app was in background: ${message.messageId}");
+      }
+      _handleNotificationMessage(message);
+    });
+
+    // Handle notification clicks when app was completely terminated
+    RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
+    if (initialMessage != null) {
+      if (kDebugMode) {
+        print("Notification clicked when app was terminated: ${initialMessage.messageId}");
+      }
+      _handleNotificationMessage(initialMessage);
     }
   }
+
+  void _handleNotificationTap(String? payload) {
+    // Navigate based on payload or default to home
+    if (navigatorKey.currentContext != null) {
+      _navigateToNotificationScreen(navigatorKey.currentContext!, payload);
+    }
+  }
+
+  void _handleNotificationMessage(RemoteMessage message) {
+    // Navigate based on message data or default to home
+    if (navigatorKey.currentContext != null) {
+      String? screen = message.data['screen'];
+      String? payload = message.data['payload'];
+      _navigateToNotificationScreen(navigatorKey.currentContext!, screen ?? payload);
+    }
+  }
+
+  void _navigateToNotificationScreen(BuildContext context, String? payload) {
+    // Default navigation logic - you can customize this based on your app structure
+    if (payload != null) {
+      if (kDebugMode) {
+        print("Navigating with payload: $payload");
+      }
+      
+      // You can add custom navigation logic based on payload
+      // For example:
+      // if (payload == 'attendance') {
+      //   Navigator.pushNamed(context, '/attendance');
+      // } else if (payload == 'profile') {
+      //   Navigator.pushNamed(context, '/profile');
+      // } else {
+      //   // Default to home screen
+      //   Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      // }
+    }
+
+    // Default behavior: Navigate to home screen and clear all previous routes
+    Navigator.pushNamedAndRemoveUntil(
+      context, 
+      '/home', 
+      (route) => false,
+    );
+  }
 }
-*/

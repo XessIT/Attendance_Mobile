@@ -30,10 +30,9 @@ class AuthUtils {
     return await prefs.setString(_userTypeKey, userType);
   }
 
-  /// Alternative method name for testing
+  /// Alternative method name for testing/legacy
   static Future<bool> storeUserType(String userType) async {
-    final prefs = await SharedPreferences.getInstance();
-    return await prefs.setString(_userTypeKey, userType);
+    return await setUserType(userType);
   }
 
   /// Get stored user type
@@ -42,16 +41,31 @@ class AuthUtils {
     return prefs.getString(_userTypeKey);
   }
 
-  /// Clear authentication token (logout)
-  static Future<bool> clearToken() async {
+  /// Alias for getUserType to support incoming changes
+  static Future<String?> getUserRole() async {
+    return await getUserType();
+  }
+
+  /// Alias for setUserType to support incoming changes
+  static Future<bool> setUserRole(String role) async {
+    return await setUserType(role);
+  }
+
+  /// Clear authentication token and user data (logout)
+  static Future<bool> clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userTypeKey); // Also clear user type
+    await prefs.remove(_userTypeKey);
     return await prefs.remove(_tokenKey);
+  }
+
+  /// Legacy method for clearing token
+  static Future<bool> clearToken() async {
+    return await clearAuthData();
   }
 
   /// Logout user - clear token and perform any additional cleanup
   static Future<void> logout() async {
-    await clearToken();
+    await clearAuthData();
     // Add any additional logout logic here (clear cache, reset providers, etc.)
   }
 }

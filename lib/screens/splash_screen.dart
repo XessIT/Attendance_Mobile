@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../providers/employee_provider.dart';
 import '../providers/attendance_provider.dart';
 import '../utils/auth_utils.dart';
+import '../services/api_service.dart';
+import '../services/app_update_service.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,6 +22,29 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     _startApp();
+  }
+
+  // Check for app updates
+  Future<void> _checkForAppUpdates(BuildContext context) async {
+    try {
+      final updateInfo = await AppUpdateService.checkForUpdate(context: context);
+      
+      if (updateInfo != null && updateInfo['updateAvailable'] == true) {
+        if (mounted) {
+          await AppUpdateService.showUpdateDialog(
+            context: context,
+            isForceUpdate: updateInfo['isForceUpdate'] ?? false,
+            newVersion: updateInfo['newVersion'] ?? '',
+            releaseNotes: updateInfo['releaseNotes'] ?? 'Bug fixes and performance improvements',
+            appStoreUrl: updateInfo['downloadUrl'] ?? '',
+            appSize: updateInfo['appSize'],
+            currentVersion: updateInfo['currentVersion'],
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for app updates: $e');
+    }
   }
 
   Future<void> _startApp() async {
@@ -67,14 +92,18 @@ class _SplashScreenState extends State<SplashScreen> {
           // Handle error silently for now
           debugPrint('Error loading initial data: $e');
         }
-
         if (mounted) {
-          if (userType == 'employee') {
-            debugPrint('👤 Navigating to employee home screen');
-            Navigator.of(context).pushReplacementNamed('/employee-home');
-          } else {
-            debugPrint('👨‍💼 Navigating to admin home screen');
-            Navigator.of(context).pushReplacementNamed('/home');
+          // Check for app updates before navigating
+          await _checkForAppUpdates(context);
+          
+          if (mounted) {
+            if (userType.toLowerCase() == 'employee') {
+              debugPrint('👤 Navigating to employee home screen');
+              Navigator.of(context).pushReplacementNamed('/employee-home');
+            } else {
+              debugPrint('👨‍💼 Navigating to admin home screen');
+              Navigator.of(context).pushReplacementNamed('/home');
+            }
           }
         }
       } else {
@@ -84,10 +113,62 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           Navigator.of(context).pushReplacementNamed('/login');
         }
-      }
     } else {
-      // No token, navigate to login screen
-      debugPrint('❌ No token found, navigating to login screen');
+      // No token, check if we need to call login directly
+      debugPrint('❌ No token found, checking mobile number...');
+
+      try {
+        // Attempt to check mobile number
+        final mobileNumber = "9123456789"; // This should be retrieved from somewhere, using a default for now
+        final response = await ApiService.checkMobile(mobileNumber: mobileNumber);
+
+        debugPrint('📱 Check mobile response: $response');
+
+        // Check if the response indicates "No companies found"
+        if (response['data'] != null &&
+            response['data'] is Map &&
+            response['data']['success'] == true &&
+            response['data']['message'] != null &&
+            response['data']['message'].toString().contains('No companies found')) {
+
+          debugPrint('🏢 No companies found for this mobile number, calling login API directly...');
+
+          // Call login API directly with default credentials
+          final loginResponse = await ApiService.loginUser(
+            mobileNumber: mobileNumber,
+            password: "admin123", // Default password as per the curl example
+          );
+
+          debugPrint('🔐 Login response: $loginResponse');
+
+          if (loginResponse['success'] == true && loginResponse['token'] != null) {
+            // Save the token and navigate to home
+            await AuthUtils.setToken(loginResponse['token']);
+
+            debugPrint('✅ Direct login successful, navigating to home screen');
+
+            // Load initial data for authenticated user
+            try {
+              await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+              await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
+            } catch (e) {
+              // Handle error silently for now
+              debugPrint('Error loading initial data: $e');
+            }
+
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed('/home');
+            }
+            return; // Exit early since we've handled the direct login
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error during mobile check or direct login: $e');
+        // Continue to regular login flow if there's an error
+      }
+
+      // Navigate to login screen if no direct login was performed
+      debugPrint('➡️ Navigating to login screen');
 
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/login');

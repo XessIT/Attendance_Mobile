@@ -11,6 +11,7 @@ import 'employee_registration_screen.dart';
 import 'comp_off_screen.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
+import '../services/app_update_service.dart';
 import '../models/attendance_summary.dart';
 import 'face_attendance_screen_new.dart';
 import 'approve_leave_screen.dart';
@@ -30,6 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _refreshData();
+    _checkForAppUpdates();
   }
 
   Future<void> _refreshData() async {
@@ -58,6 +60,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       // Silently ignore in UI if summary fetch fails; keep existing UI functional
+    }
+  }
+
+  // Check for app updates
+  Future<void> _checkForAppUpdates() async {
+    try {
+      final updateInfo = await AppUpdateService.checkForUpdate(context: context);
+      
+      if (updateInfo != null && updateInfo['updateAvailable'] == true) {
+        if (mounted) {
+          await AppUpdateService.showUpdateDialog(
+            context: context,
+            isForceUpdate: updateInfo['isForceUpdate'] ?? false,
+            newVersion: updateInfo['newVersion'] ?? '',
+            releaseNotes: updateInfo['releaseNotes'] ?? 'Bug fixes and performance improvements',
+            appStoreUrl: updateInfo['downloadUrl'] ?? '',
+            appSize: updateInfo['appSize'],
+            currentVersion: updateInfo['currentVersion'],
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for app updates: $e');
     }
   }
 
