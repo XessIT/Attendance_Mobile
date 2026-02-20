@@ -14,6 +14,7 @@ import '../services/location_service.dart';
 import '../models/attendance_summary.dart';
 import 'face_attendance_screen_new.dart';
 import 'approve_leave_screen.dart';
+import 'manual_attendance_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -157,6 +158,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _navigateToManualAttendance() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const ManualAttendanceScreen()),
+    );
+
+    if (result == true) {
+      _refreshData(); // Refresh list after successful entry
     }
   }
 
@@ -312,6 +324,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.edit_calendar,
+                title: 'Manual Attendance',
+                subtitle: 'Manual Entry',
+                color: Colors.orange.shade700,
+                onTap: _navigateToManualAttendance,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Spacer(), // Placeholder to keep the grid layout consistent
           ],
         ),
       ],

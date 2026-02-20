@@ -6,6 +6,7 @@ import '../providers/employee_provider.dart';
 import '../models/employee.dart';
 import 'employee_registration_screen.dart';
 import 'employee_edit_screen.dart';
+import 'manual_attendance_screen.dart';
 
 enum EmployeeFilter { active, inactive, all }
 
@@ -18,47 +19,47 @@ class EmployeeListScreen extends StatefulWidget {
 
 class _EmployeeListScreenState extends State<EmployeeListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
   EmployeeFilter _selectedFilter = EmployeeFilter.active;
 
   @override
   void initState() {
     super.initState();
-    _loadEmployees();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadEmployees();
+    });
   }
 
-  List<Employee> _getFilteredEmployees(EmployeeProvider employeeProvider) {
-    // First get all employees
-    List<Employee> allEmployees = employeeProvider.employees;
-    
-    // Apply filter based on selected filter
-    switch (_selectedFilter) {
-      case EmployeeFilter.active:
-        allEmployees = allEmployees.where((e) => e.isActive).toList();
-        break;
-      case EmployeeFilter.inactive:
-        allEmployees = allEmployees.where((e) => !e.isActive).toList();
-        break;
-      case EmployeeFilter.all:
-        // No filtering needed
-        break;
-    }
-    
-    // Apply search query if exists
-    if (_searchQuery.isNotEmpty) {
-      allEmployees = allEmployees.where((employee) {
-        return employee.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               (employee.email?.toLowerCase() ?? '').contains(_searchQuery.toLowerCase()) ||
-               employee.position.toLowerCase().contains(_searchQuery.toLowerCase());
-      }).toList();
-    }
-    
-    return allEmployees;
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+      if (!employeeProvider.isMoreLoading && employeeProvider.hasNextPage) {
+        _loadMoreEmployees();
+      }
+    }
+  }
+
 
   Future<void> _loadEmployees() async {
     try {
-      await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+      String? status;
+      if (_selectedFilter == EmployeeFilter.active) status = 'active';
+      if (_selectedFilter == EmployeeFilter.inactive) status = 'inactive';
+
+      await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees(
+        search: _searchQuery.isEmpty ? null : _searchQuery,
+        status: status,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -68,6 +69,21 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _loadMoreEmployees() async {
+    try {
+      String? status;
+      if (_selectedFilter == EmployeeFilter.active) status = 'active';
+      if (_selectedFilter == EmployeeFilter.inactive) status = 'inactive';
+
+      await Provider.of<EmployeeProvider>(context, listen: false).loadMoreEmployees(
+        search: _searchQuery.isEmpty ? null : _searchQuery,
+        status: status,
+      );
+    } catch (e) {
+      // Error handled in provider
     }
   }
 
@@ -132,7 +148,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                   );
                 }
 
-                final employees = _getFilteredEmployees(employeeProvider);
+                final employees = employeeProvider.employees;
 
                 if (employees.isEmpty) {
                   return Center(
@@ -170,11 +186,23 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                 return RefreshIndicator(
                   onRefresh: _loadEmployees,
                   child: ListView.builder(
+                    controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: employees.length,
+                    itemCount: employeeProvider.employees.length + (employeeProvider.hasNextPage ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final employee = employees[index];
-                      return _buildEmployeeCard(employee, index);
+                      if (index < employeeProvider.employees.length) {
+                        final employee = employeeProvider.employees[index];
+                        return _buildEmployeeCard(employee, index);
+                      } else {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: employeeProvider.isMoreLoading
+                                ? const CircularProgressIndicator()
+                                : const SizedBox.shrink(),
+                          ),
+                        );
+                      }
                     },
                   ),
                 );
@@ -231,6 +259,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                 setState(() {
                   _searchQuery = value;
                 });
+                _loadEmployees(); // Trigger server-side search
               },
             ),
           ),
@@ -375,7 +404,16 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                 ],
               ),
             ),
-            
+            const PopupMenuItem(
+              value: 'manual_attendance',
+              child: Row(
+                children: [
+                  Icon(Icons.add_task, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text('Manual Attendance'),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -408,6 +446,13 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
       
       case 'delete':
         await _deleteEmployee(employee);
+        break;
+      
+      case 'manual_attendance':
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ManualAttendanceScreen(employee: employee)),
+        );
         break;
     }
   }

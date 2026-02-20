@@ -31,33 +31,38 @@ class ApiService {
   ));
 
   // Employee APIs
-  static Future<List<Employee>> getEmployees() async {
+  static Future<Map<String, dynamic>> getEmployees({
+    int page = 1,
+    int limit = 10,
+    String? search,
+    String? department,
+    String? status,
+    String? sort,
+    String? order,
+  }) async {
     try {
       print('========================================');
-      print('GET EMPLOYEES API CALL');
+      print('GET EMPLOYEES API CALL (PAGINATED)');
       print('========================================');
-      print('URL: $baseUrl/employees');
+      
+      final queryParameters = {
+        'page': page,
+        'limit': limit,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (department != null && department.isNotEmpty) 'department': department,
+        if (status != null && status.isNotEmpty) 'status': status,
+        if (sort != null && sort.isNotEmpty) 'sort': sort,
+        if (order != null && order.isNotEmpty) 'order': order,
+      };
+
+      print('URL: $userBaseUrl/employee');
+      print('Parameters: $queryParameters');
       print('Method: GET');
       
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      
-      if (token != null) {
-        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
-      } else {
-        print('⚠️ No auth token found');
-      }
-      
-      // Create options with Authorization header
-      final options = Options(
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
+      final headers = await _getAuthHeaders();
       
       print('📤 Sending request...');
-      final response = await _dio.get('/employees', options: options);
+      final response = await _userDio.get('/employee', queryParameters: queryParameters, options: Options(headers: headers));
       
       print('Response Status Code: ${response.statusCode}');
       print('Response Data Type: ${response.data.runtimeType}');
@@ -65,27 +70,38 @@ class ApiService {
       if (response.statusCode == 200) {
         print('✅ Employees loaded successfully');
         
-        // Handle different response formats
         List<dynamic> employeesList;
-        if (response.data is Map && response.data['employees'] is List) {
-          // Format: { "count": 1, "employees": [...], "success": true }
-          employeesList = response.data['employees'];
-        } else if (response.data is Map && response.data['data'] is List) {
-          // Format: { "data": [...] }
-          employeesList = response.data['data'];
+        Map<String, dynamic>? pagination;
+
+        if (response.data is Map) {
+          if (response.data['pagination'] != null) {
+            // Enhanced format with pagination metadata
+            employeesList = response.data['data'] ?? [];
+            pagination = response.data['pagination'];
+          } else if (response.data['employees'] is List) {
+            employeesList = response.data['employees'];
+          } else if (response.data['data'] is List) {
+            employeesList = response.data['data'];
+          } else {
+             employeesList = [];
+          }
         } else if (response.data is List) {
-          // Format: [...]
           employeesList = response.data;
         } else {
           print('❌ Unexpected response format');
-          print('Response: ${response.data}');
           throw Exception('Unexpected response format');
         }
         
         print('📋 Found ${employeesList.length} employees');
+        if (pagination != null) {
+          print('📄 Page: ${pagination['currentPage']} of ${pagination['totalPages']}');
+        }
         print('========================================');
         
-        return employeesList.map((json) => Employee.fromJson(json)).toList();
+        return {
+          'employees': employeesList.map((json) => Employee.fromJson(json)).toList(),
+          'pagination': pagination,
+        };
       }
       
       print('❌ Failed with status code: ${response.statusCode}');
@@ -2429,6 +2445,40 @@ class ApiService {
       if (e.response != null) {
          // Pass the specific error message (e.g., "Insufficient balance")
         throw Exception(e.response?.data['error'] ?? e.response?.data['message'] ?? 'Failed to apply');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Manual Attendance Entry API
+  static Future<Map<String, dynamic>> addManualAttendance(Map<String, dynamic> attendanceData) async {
+    try {
+      print('========================================');
+      print('MANUAL ATTENDANCE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/attendance/manual');
+      print('Data: $attendanceData');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.post(
+        '/attendance/manual',
+        data: attendanceData,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception(response.data['error'] ?? response.data['message'] ?? 'Failed to update attendance');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['error'] ?? e.response?.data['message'] ?? 'Failed to update attendance');
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
