@@ -1,33 +1,38 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
-/// Authentication utility class for managing tokens and user type
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+/// Authentication utility class for managing tokens and user type.
+/// Token and user type are stored in Flutter Secure Storage.
 class AuthUtils {
   static const String _tokenKey = 'auth_token';
   static const String _userTypeKey = 'user_type';
 
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   /// Check if user is authenticated (token exists)
   static Future<bool> isAuthenticated() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
+    final token = await getToken();
     return token != null && token.isNotEmpty;
   }
 
-  /// Get stored authentication token
+  /// Get stored authentication token from secure storage
   static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    return await _storage.read(key: _tokenKey);
   }
 
-  /// Store authentication token
+  /// Store authentication token in secure storage
   static Future<bool> setToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    return await prefs.setString(_tokenKey, token);
+    await _storage.write(key: _tokenKey, value: token);
+    return true;
   }
 
-  /// Store user type
+  /// Store user type (role) in secure storage
   static Future<bool> setUserType(String userType) async {
-    final prefs = await SharedPreferences.getInstance();
-    return await prefs.setString(_userTypeKey, userType);
+    await _storage.write(key: _userTypeKey, value: userType);
+    return true;
   }
 
   /// Alternative method name for testing/legacy
@@ -35,37 +40,64 @@ class AuthUtils {
     return await setUserType(userType);
   }
 
-  /// Get stored user type
+  /// Get stored user type from secure storage
   static Future<String?> getUserType() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userTypeKey);
+    return await _storage.read(key: _userTypeKey);
   }
 
-  /// Alias for getUserType to support incoming changes
+  /// Alias for getUserType
   static Future<String?> getUserRole() async {
     return await getUserType();
   }
 
-  /// Alias for setUserType to support incoming changes
+  /// Alias for setUserType
   static Future<bool> setUserRole(String role) async {
     return await setUserType(role);
   }
 
-  /// Clear authentication token and user data (logout)
-  static Future<bool> clearAuthData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userTypeKey);
-    return await prefs.remove(_tokenKey);
+  /// Decode JWT payload and return userType (or role) from token.
+  /// Returns null if token is invalid or claim is missing.
+  static String? getRoleFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      String payload = parts[1];
+      while (payload.length % 4 != 0) {
+        payload += '=';
+      }
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final map = json.decode(decoded) as Map<String, dynamic>;
+      final userType = map['userType'] ?? map['role'];
+      return userType?.toString();
+    } catch (_) {
+      return null;
+    }
   }
 
-  /// Legacy method for clearing token
+  /// Get role for navigation: from storage first, then decode from token.
+  static Future<String?> getRoleForNavigation() async {
+    String? role = await getUserType();
+    if (role != null && role.isNotEmpty) return role;
+    final token = await getToken();
+    if (token == null) return null;
+    role = getRoleFromToken(token);
+    if (role != null) await setUserType(role);
+    return role;
+  }
+
+  /// Clear authentication token and user data (logout)
+  static Future<bool> clearAuthData() async {
+    await _storage.delete(key: _userTypeKey);
+    await _storage.delete(key: _tokenKey);
+    return true;
+  }
+
   static Future<bool> clearToken() async {
     return await clearAuthData();
   }
 
-  /// Logout user - clear token and perform any additional cleanup
   static Future<void> logout() async {
     await clearAuthData();
-    // Add any additional logout logic here (clear cache, reset providers, etc.)
   }
 }

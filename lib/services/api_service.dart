@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../models/employee.dart';
 import '../models/attendance.dart';
 import '../models/salary.dart';
+import '../utils/auth_utils.dart';
 import 'location_service.dart';
 
 class ApiService {
@@ -230,10 +231,7 @@ class ApiService {
         print('⚠️ No image file provided or file does not exist');
       }
       
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      
+      final token = await AuthUtils.getToken();
       print('📤 Sending request...');
       if (token != null) {
         print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
@@ -351,11 +349,9 @@ class ApiService {
       print('Method: PUT');
       print('Content-Type: application/json');
       
-      // Get auth token from SharedPreferences
+      final token = await AuthUtils.getToken();
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
       final storedCompanyId = prefs.getInt('company_id');
-      
       if (token != null) {
         print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
       } else {
@@ -486,10 +482,7 @@ class ApiService {
       print('URL: $userBaseUrl/employee/$employeeId/activate');
       print('Method: PATCH');
       
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      
+      final token = await AuthUtils.getToken();
       if (token != null) {
         print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
       } else {
@@ -498,7 +491,6 @@ class ApiService {
       
       print('📤 Sending request...');
       
-      // Create options with Authorization header
       final options = Options(
         headers: {
           'Content-Type': 'application/json',
@@ -575,10 +567,7 @@ class ApiService {
       print('URL: $userBaseUrl/employee/$employeeId/deactivate');
       print('Method: PATCH');
       
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      
+      final token = await AuthUtils.getToken();
       if (token != null) {
         print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
       } else {
@@ -587,7 +576,6 @@ class ApiService {
       
       print('📤 Sending request...');
       
-      // Create options with Authorization header
       final options = Options(
         headers: {
           'Content-Type': 'application/json',
@@ -872,10 +860,7 @@ class ApiService {
     print('----------------------------------------');
     
     try {
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      
+      final token = await AuthUtils.getToken();
       if (token != null) {
         print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
       } else {
@@ -999,9 +984,7 @@ class ApiService {
     print('================================================\n');
 
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
+      final token = await AuthUtils.getToken();
       print(token != null
           ? '🔑 Token Found'
           : '⚠️ Token NOT Found');
@@ -1473,10 +1456,7 @@ class ApiService {
       print('UPDATE FCM TOKEN API CALL');
       print('========================================');
 
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
+      final token = await AuthUtils.getToken();
       if (token == null) {
         print('⚠️ No auth token found - cannot update FCM token');
         throw Exception('Authentication required to update FCM token');
@@ -1553,12 +1533,10 @@ class ApiService {
 
   // Shift Management APIs
 
-  // Get authorization headers with token
+  // Get authorization headers with token (from secure storage)
   static Future<Map<String, String>> _getAuthHeaders() async {
     try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
+      final token = await AuthUtils.getToken();
       return {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
@@ -2318,10 +2296,7 @@ class ApiService {
       print('URL: $userBaseUrl/departments');
       print('Method: GET');
       
-      // Get auth token from SharedPreferences
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      
+      final token = await AuthUtils.getToken();
       if (token != null) {
         print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
       } else {

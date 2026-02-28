@@ -176,85 +176,47 @@ class _LoginScreenState extends State<LoginScreen> {
        print('🔍 Login API Response: $result');
 
       if (result['success'] == true) {
-        // Extract user type first
-        String? userType;
-        try {
-          // Try to extract userType from result['data'] -> 'data' -> 'employee' -> 'userType'
-          // result['data'] is API response body
-          final apiResponse = result['data'];
-          if (apiResponse != null && apiResponse is Map) {
-            final innerData = apiResponse['data'];
-            if (innerData != null && innerData is Map) {
-              final employee = innerData['employee'];
-              if (employee != null && employee is Map) {
-                userType = employee['userType'];
-              }
-            }
-          }
-        } catch (e) {
-          print('Error parsing userType: $e');
-        }
-
-        print('👤 User Type: $userType');
-
-        // Store token in local storage
-        // Try multiple possible locations in result
+        // Get token from response
         String? token = result['token'];
-
-        // If not found at top level, check in data nested structure
-        if (token == null && result['data'] != null) {
-          final data = result['data'];
-          if (data is Map) {
-            token = data['token'] ?? data['access_token'] ?? data['auth_token'];
-          }
+        if (token == null && result['data'] != null && result['data'] is Map) {
+          final data = result['data'] as Map;
+          token = data['token']?.toString() ?? data['access_token']?.toString() ?? data['auth_token']?.toString();
         }
 
-        print('🔑 Token from result: $token');
-
-        if (token != null && token.toString().isNotEmpty) {
-          final success = await AuthUtils.setToken(token.toString());
-          if (success) {
-            print('✅ Token stored successfully: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
-            // Verify token was stored
-            final storedToken = await AuthUtils.getToken();
-            print('🔍 Verification - Stored token exists: ${storedToken != null}');
-            
-            // Extract and store user role from the response
-            try {
-              if (result['data'] != null && result['data'] is Map) {
-                final userRole = (result['data']['userType'] ?? 'employee').toString(); // Ensure it's a String
-                await AuthUtils.setUserRole(userRole);
-                print('👤 User role stored: $userRole');
-              }
-            } catch (e) {
-              print('⚠️ Error storing user role: $e');
-            }
-          } else {
-            print('❌ Failed to store token');
-          }
-        } else {
-          print('⚠️ No token found in API response');
-          // Show warning but still navigate since login was successful
+        if (token == null || token.isEmpty) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Login successful, but token storage failed. Some features may not work properly.'),
+                content: Text('Login successful but no token received. Please try again.'),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
               ),
             );
           }
+          return;
         }
 
-        // Store user type for navigation on app restart
-        if (userType != null && userType.toString().isNotEmpty) {
-          final userTypeSuccess = await AuthUtils.storeUserType(userType.toString());
-          if (userTypeSuccess) {
-            print('✅ User type stored successfully: $userType');
-          } else {
-            print('❌ Failed to store user type');
-          }
+        // Store token in secure storage
+        await AuthUtils.setToken(token);
+        print('✅ Token stored in secure storage');
+
+        // Get role from JWT token (single source of truth), fallback to response
+        String? role = AuthUtils.getRoleFromToken(token);
+        if (role == null || role.isEmpty) {
+          try {
+            final data = result['data'];
+            if (data is Map) {
+              final inner = data['data'];
+              if (inner is Map && inner['employee'] is Map) {
+                role = (inner['employee'] as Map)['userType']?.toString();
+              }
+              role ??= data['userType']?.toString();
+            }
+          } catch (_) {}
+          role ??= 'employee';
         }
+        await AuthUtils.setUserType(role);
+        print('👤 Role stored: $role');
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -264,20 +226,17 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
 
-          // Update FCM token after successful login (await to ensure it completes)
           try {
             await _updateFcmToken();
           } catch (e) {
             debugPrint('⚠️ FCM token update failed: $e');
           }
 
-          // Navigate to home/dashboard
-          if (mounted) {
-            if (userType == 'employee') {
-              Navigator.of(context).pushReplacementNamed('/employee-home');
-            } else {
-              Navigator.of(context).pushReplacementNamed('/home');
-            }
+          // Navigate by role (same logic as splash screen)
+          if (role.toLowerCase() == 'employee') {
+            Navigator.of(context).pushReplacementNamed('/employee-home');
+          } else {
+            Navigator.of(context).pushReplacementNamed('/home');
           }
         }
       } else {
