@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../models/employee.dart';
 import '../models/attendance.dart';
 import '../models/salary.dart';
+import '../models/leave_balance.dart';
 import '../utils/auth_utils.dart';
 import 'location_service.dart';
 
@@ -20,15 +21,25 @@ class ApiService {
   // Dio instance for face recognition and attendance APIs
   static final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
+    sendTimeout: const Duration(seconds: 60),
+    headers: {
+      'Connection': 'keep-alive',
+      'Accept': '*/*',
+    },
   ));
 
   // Dio instance for user management APIs
   static final Dio _userDio = Dio(BaseOptions(
     baseUrl: userBaseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
+    sendTimeout: const Duration(seconds: 60),
+    headers: {
+      'Connection': 'keep-alive',
+      'Accept': '*/*',
+    },
   ));
 
   // Employee APIs
@@ -153,7 +164,7 @@ class ApiService {
     print('========================================');
     print('EMPLOYEE REGISTRATION API CALL');
     print('========================================');
-    print('URL: $fullUrl');
+    print('📍 URL: $fullUrl');
     print('Method: POST');
     print('Content-Type: multipart/form-data');
     print('Employee Data:');
@@ -168,176 +179,218 @@ class ApiService {
       print('  - image: ${imageFile?.path ?? "No image"}');
       print('----------------------------------------');
     
-    try {
-      // Create FormData for multipart/form-data request
-      final Map<String, dynamic> formFields = {
-        'name': employee.name,
-        'employee_id': employeeId,
-        'phone': employee.phone,
-        'department': departmentName ?? employee.position, // Use departmentName if provided, fallback to position
-        'salary': employee.salary.toString(),
-      };
-      
-      // Only include email if it's provided
-      if (employee.email != null && employee.email!.isNotEmpty) {
-        formFields['email'] = employee.email!;
-      }
-      
-      // Include date of joining if provided
-      if (employee.dateOfJoining != null) {
-        formFields['date_of_joining'] = employee.dateOfJoining!.toIso8601String().split('T')[0];
-      }
-      
-      // Include date of birth if provided
-      if (employee.dateOfBirth != null) {
-        formFields['date_of_birth'] = employee.dateOfBirth!.toIso8601String().split('T')[0];
-      }
-
-      // Add shift if provided
-      if (shiftName != null && shiftName.isNotEmpty) {
-        formFields['shift'] = shiftName;
-      }
-
-      // Add password if provided (required field)
-      if (password != null && password.isNotEmpty) {
-        formFields['password'] = password;
-        print('✅ Password added to formFields: $password');
-      } else {
-        print('⚠️ WARNING: Password is null or empty!');
-      }
-      
-      print('📋 FormFields before creating FormData:');
-      formFields.forEach((key, value) {
-        if (key == 'password') {
-          print('   $key: $value');
-        } else {
-          print('   $key: $value');
+    int retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        if (retryCount > 0) {
+          print('🔄 Retry attempt ${retryCount}/${maxRetries}...');
+          await Future.delayed(Duration(seconds: retryCount * 2)); // Exponential backoff
         }
-      });
-      
-      final formData = FormData.fromMap(formFields);
-      
-      // Add image file if provided
-      if (imageFile != null && await imageFile.exists()) {
-        formData.files.add(MapEntry(
-          'image',
-          await MultipartFile.fromFile(
-            imageFile.path,
-            filename: imageFile.path.split('/').last,
-          ),
-        ));
-        print('✅ Image file added to form data');
-      } else {
-        print('⚠️ No image file provided or file does not exist');
-      }
-      
-      final token = await AuthUtils.getToken();
-      print('📤 Sending request...');
-      if (token != null) {
-        print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
-      } else {
-        print('⚠️ No auth token found');
-      }
-      
-      // Create options with Authorization header
-      final options = Options(
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-      
-      final response = await _dio.post('/register', data: formData, options: options);
-      
-      print('Status Code: ${response.statusCode}');
-      print('Response Headers: ${response.headers}');
-      print('Response Body: ${jsonEncode(response.data)}');
-      print('========================================');
-      
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // Check if API call was successful
-        if (response.data['success'] == true) {
-          print('✅ Employee created successfully!');
-          
-          // The API returns: {"employee_id":1,"message":"...","success":true}
-          // Extract employee_id from response (could be 'employee_id' or 'id')
-          final returnedId = response.data['employee_id'] ?? 
-                            response.data['id'] ?? 
-                            null;
-          
-          // If API returns full employee data in 'data' field, use it
-          Map<String, dynamic>? employeeData = response.data['data'];
-          
-          // Create Employee object - use API response data if available, otherwise use original employee data
-          final createdEmployee = Employee(
-            id: returnedId ?? employeeData?['id'] ?? employeeData?['employee_id'],
-            name: employeeData?['name'] ?? employee.name,
-            email: employeeData?['email'] ?? employee.email,
-            phone: employeeData?['phone'] ?? employee.phone,
-            position: employeeData?['department'] ?? 
-                     employeeData?['position'] ?? 
-                     employee.position,
-            salary: employeeData?['salary'] != null 
-                ? double.parse(employeeData!['salary'].toString()) 
-                : employee.salary,
-            faceData: employeeData?['face_data'] ?? 
-                     employeeData?['faceData'] ?? 
-                     employee.faceData,
-            createdAt: employeeData?['created_at'] != null
-                ? DateTime.parse(employeeData!['created_at'])
-                : DateTime.now(),
-            isActive: employeeData?['is_active'] ?? 
-                     employeeData?['isActive'] ?? 
-                     employee.isActive,
-          );
-          
-          print('📋 Created Employee Details:');
-          print('   ID: ${createdEmployee.id}');
-          print('   Name: ${createdEmployee.name}');
-          print('   Email: ${createdEmployee.email}');
-          
-          return createdEmployee;
-        } else {
-          print('❌ Response indicates failure: ${response.data['message'] ?? 'Unknown error'}');
-          throw Exception(response.data['message'] ?? 'Failed to create employee');
-        }
-      }
-      print('❌ Unexpected status code: ${response.statusCode}');
-      throw Exception('Failed to create employee: Status ${response.statusCode}');
-    } on DioException catch (e) {
-      print('========================================');
-      print('❌ DIO EXCEPTION OCCURRED');
-      print('========================================');
-      print('Error Type: ${e.type}');
-      print('Error Message: ${e.message}');
-      
-      if (e.response != null) {
-        print('Response Status Code: ${e.response?.statusCode}');
-        print('Response Headers: ${e.response?.headers}');
-        print('Response Data: ${jsonEncode(e.response?.data)}');
         
-        final errorMessage = e.response?.data['error'] ?? 
-                            e.response?.data['message'] ?? 
-                            e.response?.data.toString() ??
-                            'Failed to create employee';
-        print('Extracted Error Message: $errorMessage');
+        // Create FormData for multipart/form-data request
+        final Map<String, dynamic> formFields = {
+          'name': employee.name,
+          'employee_id': employeeId,
+          'phone': employee.phone,
+          'department': departmentName ?? employee.position, // Use departmentName if provided, fallback to position
+          'salary': employee.salary.toString(),
+        };
+        
+        // Only include email if it's provided
+        if (employee.email != null && employee.email!.isNotEmpty) {
+          formFields['email'] = employee.email!;
+        }
+        
+        // Include date of joining if provided
+        if (employee.dateOfJoining != null) {
+          formFields['date_of_joining'] = employee.dateOfJoining!.toIso8601String().split('T')[0];
+        }
+        
+        // Include date of birth if provided
+        if (employee.dateOfBirth != null) {
+          formFields['date_of_birth'] = employee.dateOfBirth!.toIso8601String().split('T')[0];
+        }
+
+        // Add shift if provided
+        if (shiftName != null && shiftName.isNotEmpty) {
+          formFields['shift'] = shiftName;
+        }
+
+        // Add password if provided (required field)
+        if (password != null && password.isNotEmpty) {
+          formFields['password'] = password;
+          print('✅ Password added to formFields: $password');
+        } else {
+          print('⚠️ WARNING: Password is null or empty!');
+        }
+        
+        print('📋 FormFields before creating FormData:');
+        formFields.forEach((key, value) {
+          if (key == 'password') {
+            print('   $key: $value');
+          } else {
+            print('   $key: $value');
+          }
+        });
+        
+        final formData = FormData.fromMap(formFields);
+        
+        // Add image file if provided
+        if (imageFile != null && await imageFile.exists()) {
+          formData.files.add(MapEntry(
+            'image',
+            await MultipartFile.fromFile(
+              imageFile.path,
+              filename: imageFile.path.split('/').last,
+            ),
+          ));
+          print('✅ Image file added to form data');
+        } else {
+          print('⚠️ No image file provided or file does not exist');
+        }
+        
+        final token = await AuthUtils.getToken();
+        print('📤 Sending request...');
+        print('🔗 Full Request URL: $fullUrl/register');
+        if (token != null) {
+          print('🔑 Authorization: Bearer ${token.substring(0, 20)}...');
+        } else {
+          print('⚠️ No auth token found');
+        }
+        
+        // Create options with Authorization header
+        final options = Options(
+          headers: {
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        );
+        
+        final response = await _dio.post('/register', data: formData, options: options);
+        
+        print('📥 Response Status Code: ${response.statusCode}');
+        print('📥 Response Headers: ${response.headers}');
+        print('📥 Response Body: ${jsonEncode(response.data)}');
         print('========================================');
-        throw Exception(errorMessage);
-      } else {
-        print('No response received from server');
-        print('Request Options: ${e.requestOptions.uri}');
-        print('Request Data Type: ${e.requestOptions.data.runtimeType}');
+        
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          // Check if API call was successful
+          if (response.data['success'] == true) {
+            print('✅ Employee created successfully!');
+            
+            // The API returns: {"employee_id":1,"message":"...","success":true}
+            // Extract employee_id from response (could be 'employee_id' or 'id')
+            final returnedId = response.data['employee_id'] ?? 
+                              response.data['id'] ?? 
+                              null;
+            
+            // If API returns full employee data in 'data' field, use it
+            Map<String, dynamic>? employeeData = response.data['data'];
+            
+            // Create Employee object - use API response data if available, otherwise use original employee data
+            final createdEmployee = Employee(
+              id: returnedId ?? employeeData?['id'] ?? employeeData?['employee_id'],
+              name: employeeData?['name'] ?? employee.name,
+              email: employeeData?['email'] ?? employee.email,
+              phone: employeeData?['phone'] ?? employee.phone,
+              position: employeeData?['department'] ?? 
+                       employeeData?['position'] ?? 
+                       employee.position,
+              salary: employeeData?['salary'] != null 
+                  ? double.parse(employeeData!['salary'].toString()) 
+                  : employee.salary,
+              faceData: employeeData?['face_data'] ?? 
+                       employeeData?['faceData'] ?? 
+                       employee.faceData,
+              createdAt: employeeData?['created_at'] != null
+                  ? DateTime.parse(employeeData!['created_at'])
+                  : DateTime.now(),
+              isActive: employeeData?['is_active'] ?? 
+                       employeeData?['isActive'] ?? 
+                       employee.isActive,
+              payloan: employeeData?['payloan'] != null
+                  ? double.parse(employeeData!['payloan'].toString())
+                  : employee.payloan,
+            );
+            
+            print('📋 Created Employee Details:');
+            print('   ID: ${createdEmployee.id}');
+            print('   Name: ${createdEmployee.name}');
+            print('   Email: ${createdEmployee.email}');
+            print('   Payloan: ${createdEmployee.payloan}');
+            
+            return createdEmployee;
+          } else {
+            print('❌ Response indicates failure: ${response.data['message'] ?? 'Unknown error'}');
+            throw Exception(response.data['message'] ?? 'Failed to create employee');
+          }
+        }
+        print('❌ Unexpected status code: ${response.statusCode}');
+        throw Exception('Failed to create employee: Status ${response.statusCode}');
+      } on DioException catch (e) {
         print('========================================');
-        throw Exception('Network error: ${e.message}');
+        print('❌ DIO EXCEPTION OCCURRED');
+        print('========================================');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        
+        // Check if this is a connection-related error that can be retried
+        final isConnectionError = e.type == DioExceptionType.connectionTimeout ||
+                                 e.type == DioExceptionType.sendTimeout ||
+                                 e.type == DioExceptionType.receiveTimeout ||
+                                 e.type == DioExceptionType.connectionError ||
+                                 e.message?.contains('Broken pipe') == true ||
+                                 e.message?.contains('Connection reset') == true;
+        
+        if (isConnectionError && retryCount < maxRetries) {
+          retryCount++;
+          print('🔄 Connection error detected, retrying... (Attempt $retryCount/$maxRetries)');
+          continue;
+        }
+        
+        if (e.response != null) {
+          print('Response Status Code: ${e.response?.statusCode}');
+          print('Response Headers: ${e.response?.headers}');
+          print('Response Data: ${jsonEncode(e.response?.data)}');
+          
+          final errorMessage = e.response?.data['error'] ?? 
+                              e.response?.data['message'] ?? 
+                              e.response?.data.toString() ??
+                              'Failed to create employee';
+          print('Extracted Error Message: $errorMessage');
+          print('========================================');
+          throw Exception(errorMessage);
+        } else {
+          print('No response received from server');
+          print('Request Options: ${e.requestOptions.uri}');
+          print('Request Data Type: ${e.requestOptions.data.runtimeType}');
+          print('========================================');
+          
+          if (isConnectionError) {
+            throw Exception('Network connection error: ${e.message}. Please check your internet connection and try again.');
+          } else {
+            throw Exception('Network error: ${e.message}');
+          }
+        }
+      } catch (e, stackTrace) {
+        if (retryCount < maxRetries && e.toString().contains('Broken pipe')) {
+          retryCount++;
+          print('🔄 Broken pipe error detected, retrying... (Attempt $retryCount/$maxRetries)');
+          continue;
+        }
+        
+        print('========================================');
+        print('❌ GENERAL EXCEPTION OCCURRED');
+        print('========================================');
+        print('Error: $e');
+        print('Stack Trace: $stackTrace');
+        print('========================================');
+        throw Exception('Error creating employee: $e');
       }
-    } catch (e, stackTrace) {
-      print('========================================');
-      print('❌ GENERAL EXCEPTION OCCURRED');
-      print('========================================');
-      print('Error: $e');
-      print('Stack Trace: $stackTrace');
-      print('========================================');
-      throw Exception('Error creating employee: $e');
     }
+    
+    throw Exception('Failed to create employee after $maxRetries attempts');
   }
 
   static Future<Employee> updateEmployee(Employee employee) async {
@@ -768,6 +821,80 @@ class ApiService {
       });
       return response.statusCode == 200;
     } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Calculate all salaries API
+  static Future<Map<String, dynamic>> calculateAllSalaries({
+    required String startDate,
+    required String endDate,
+  }) async {
+    try {
+      print('========================================');
+      print('CALCULATE ALL SALARIES API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/employee/salary/calculate-all');
+      print('Method: POST');
+      print('Content-Type: application/json');
+      print('Request Body:');
+      print('  - start_date: $startDate');
+      print('  - end_date: $endDate');
+      print('----------------------------------------');
+      
+      final headers = await _getAuthHeaders();
+      
+      print('📤 Sending request...');
+      final response = await _userDio.post(
+        '/employee/salary/calculate-all',
+        data: {
+          'start_date': startDate,
+          'end_date': endDate,
+        },
+        options: Options(headers: headers),
+      );
+      
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('========================================');
+      
+      if (response.statusCode == 200) {
+        print('✅ Salaries calculated successfully');
+        return Map<String, dynamic>.from(response.data);
+      }
+      
+      print('❌ Failed with status code: ${response.statusCode}');
+      print('========================================');
+      throw Exception('Failed to calculate salaries');
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - CALCULATE ALL SALARIES');
+      print('========================================');
+      
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+        
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to calculate salaries';
+        
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - CALCULATE ALL SALARIES');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
       throw Exception('Error: $e');
     }
   }
@@ -2284,6 +2411,69 @@ class ApiService {
       print('Error: $e');
       print('========================================');
       throw Exception('Error $status leave: $e');
+    }
+  }
+
+  // Get Employee Leave Balance
+  static Future<LeaveBalanceResponse> getLeaveBalance(int employeeId) async {
+    try {
+      print('========================================');
+      print('GET LEAVE BALANCE API CALL');
+      print('========================================');
+      print('URL: $userBaseUrl/leave/balance?employeeId=$employeeId');
+      print('Method: GET');
+      print('Employee ID: $employeeId');
+
+      final headers = await _getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      print('Headers: $headers');
+
+      final response = await _userDio.get(
+        '/leave/balance',
+        queryParameters: {'employeeId': employeeId},
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Leave balance loaded successfully');
+        print('========================================');
+        return LeaveBalanceResponse.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load leave balance: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET LEAVE BALANCE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to load leave balance';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('Error Type: ${e.type}');
+        print('Error Message: ${e.message}');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET LEAVE BALANCE');
+      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('========================================');
+      throw Exception('Error loading leave balance: $e');
     }
   }
 

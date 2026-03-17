@@ -145,129 +145,406 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // CALENDAR SECTION
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _focusedDay,
-            calendarFormat: _calendarFormat,
-            
-            selectedDayPredicate: (day) {
-              return isSameDay(_selectedDay, day);
-            },
-            onDaySelected: (selectedDay, focusedDay) {
-              if (!isSameDay(_selectedDay, selectedDay)) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                  _updateSelectedDayRecords();
-                });
-              }
-            },
-            onFormatChanged: (format) {
-              if (_calendarFormat != format) {
-                setState(() {
-                  _calendarFormat = format;
-                });
-              }
-            },
-            onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
-              _loadReport(); // Reload data for the new month
-            },
-            
-            // Calendar Style
-            headerStyle: HeaderStyle(
-              titleCentered: true,
-              formatButtonVisible: false,
-              titleTextStyle: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: false,
-              todayDecoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: const BoxDecoration(
-                color: Color(0xFF2196F3),
-                shape: BoxShape.circle,
-              ),
-              defaultTextStyle: GoogleFonts.poppins(),
-              weekendTextStyle: GoogleFonts.poppins(color: Colors.red[300]),
-            ),
-            
-            // Custom Builders for Markers
-            calendarBuilders: CalendarBuilders(
-              markerBuilder: (context, date, events) {
-                // Normalize date to UTC for map lookup
-                final key = DateTime.utc(date.year, date.month, date.day);
-                final status = _attendanceMap[key];
-                
-                if (status == null) return null;
-                
-                Color markerColor;
-                if (status == 'present') markerColor = Colors.green;
-                else if (status == 'absent') markerColor = Colors.red;
-                else if (status == 'late') markerColor = Colors.orange;
-                else if (status.contains('half')) markerColor = Colors.purple;
-                else return null;
-
-                return Positioned(
-                  bottom: 1,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: markerColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-
-        // SUMMARY SECTION
-        if (_reportData != null)
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // CALENDAR SECTION
           Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                Expanded(child: _buildMiniSummaryCard('Present', _reportData!['summary']['present'] ?? 0, Colors.green)),
-                const SizedBox(width: 8),
-                Expanded(child: _buildMiniSummaryCard('Absent', _reportData!['summary']['absent'] ?? 0, Colors.red)),
-                const SizedBox(width: 8),
-                Expanded(child: _buildMiniSummaryCard('Late', _reportData!['summary']['late'] ?? 0, Colors.orange)),
-                const SizedBox(width: 8),
-                Expanded(child: _buildMiniSummaryCard('Half Day', _reportData!['summary']['halfDays'] ?? 0, Colors.purple)),
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
+            child: TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDay, day);
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                if (!isSameDay(_selectedDay, selectedDay)) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                    _updateSelectedDayRecords();
+                  });
+                }
+              },
+              onFormatChanged: (format) {
+                if (_calendarFormat != format) {
+                  setState(() {
+                    _calendarFormat = format;
+                  });
+                }
+              },
+              onPageChanged: (focusedDay) {
+                _focusedDay = focusedDay;
+                _loadReport(); // Reload data for the new month
+              },
+              
+              // Calendar Style
+              headerStyle: HeaderStyle(
+                titleCentered: true,
+                formatButtonVisible: false,
+                titleTextStyle: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                rightChevronIcon: const Icon(Icons.chevron_right),
+                leftChevronIcon: const Icon(Icons.chevron_left),
+                headerPadding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                formatButtonDecoration: BoxDecoration(
+                  color: const Color(0xFF2196F3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                formatButtonTextStyle: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+                headerMargin: const EdgeInsets.only(bottom: 16),
+                leftChevronPadding: const EdgeInsets.only(left: 16),
+                rightChevronPadding: const EdgeInsets.only(right: 16),
+              ),
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                todayDecoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: const BoxDecoration(
+                  color: Color(0xFF2196F3),
+                  shape: BoxShape.circle,
+                ),
+                defaultTextStyle: GoogleFonts.poppins(),
+                weekendTextStyle: GoogleFonts.poppins(color: Colors.red[300]),
+              ),
+              
+              // Custom Builders for enhanced highlighting
+              calendarBuilders: CalendarBuilders(
+                headerTitleBuilder: (context, day) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('MMMM yyyy').format(day),
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _showLegendDialog(),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                defaultBuilder: (context, day, focusedDay) {
+                  // Normalize date to UTC for map lookup
+                  final key = DateTime.utc(day.year, day.month, day.day);
+                  final status = _attendanceMap[key];
+                  
+                  if (status == null) {
+                    return null;
+                  }
+                  
+                  Color backgroundColor;
+                  Color textColor;
+                  IconData? statusIcon;
+                  
+                  if (status == 'present') {
+                    backgroundColor = Colors.green.withOpacity(0.15);
+                    textColor = Colors.green;
+                    statusIcon = Icons.check_circle;
+                  } else if (status == 'absent') {
+                    backgroundColor = Colors.red.withOpacity(0.15);
+                    textColor = Colors.red;
+                    statusIcon = Icons.cancel;
+                  } else if (status == 'late') {
+                    backgroundColor = Colors.orange.withOpacity(0.15);
+                    textColor = Colors.orange;
+                    statusIcon = Icons.access_time;
+                  } else if (status != null && status.contains('half')) {
+                    backgroundColor = Colors.purple.withOpacity(0.15);
+                    textColor = Colors.purple;
+                    statusIcon = Icons.remove_circle;
+                  } else {
+                    return null;
+                  }
+                  
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: textColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Text(
+                            '${day.day}',
+                            style: GoogleFonts.poppins(
+                              color: textColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 2,
+                          right: 2,
+                          child: Icon(
+                            statusIcon,
+                            size: 12,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                
+                todayBuilder: (context, day, focusedDay) {
+                  // Normalize date to UTC for map lookup
+                  final key = DateTime.utc(day.year, day.month, day.day);
+                  final status = _attendanceMap[key];
+                  
+                  Color backgroundColor = Colors.blue.withOpacity(0.3);
+                  Color textColor = Colors.blue;
+                  IconData? statusIcon;
+                  FontWeight fontWeight = FontWeight.bold;
+                  
+                  if (status == null) {
+                    // Return default today styling if no status
+                    return Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: textColor,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${day.day}',
+                          style: GoogleFonts.poppins(
+                            color: textColor,
+                            fontWeight: fontWeight,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  if (status == 'present') {
+                    backgroundColor = Colors.green.withOpacity(0.3);
+                    textColor = Colors.green;
+                    statusIcon = Icons.check_circle;
+                  } else if (status == 'absent') {
+                    backgroundColor = Colors.red.withOpacity(0.3);
+                    textColor = Colors.red;
+                    statusIcon = Icons.cancel;
+                  } else if (status == 'late') {
+                    backgroundColor = Colors.orange.withOpacity(0.3);
+                    textColor = Colors.orange;
+                    statusIcon = Icons.access_time;
+                  } else if (status != null && status.contains('half')) {
+                    backgroundColor = Colors.purple.withOpacity(0.3);
+                    textColor = Colors.purple;
+                    statusIcon = Icons.remove_circle;
+                  }
+                  
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: textColor,
+                        width: 2,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Text(
+                            '${day.day}',
+                            style: GoogleFonts.poppins(
+                              color: textColor,
+                              fontWeight: fontWeight,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        if (statusIcon != null)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Icon(
+                              statusIcon,
+                              size: 12,
+                              color: textColor,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+                
+                selectedBuilder: (context, day, focusedDay) {
+                  // Normalize date to UTC for map lookup
+                  final key = DateTime.utc(day.year, day.month, day.day);
+                  final status = _attendanceMap[key];
+                  
+                  Color backgroundColor = const Color(0xFF2196F3);
+                  Color textColor = Colors.white;
+                  IconData? statusIcon;
+                  
+                  if (status == null) {
+                    // Return default selected styling if no status
+                    return Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: backgroundColor.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${day.day}',
+                          style: GoogleFonts.poppins(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  if (status == 'present') {
+                    backgroundColor = Colors.green;
+                    statusIcon = Icons.check_circle;
+                  } else if (status == 'absent') {
+                    backgroundColor = Colors.red;
+                    statusIcon = Icons.cancel;
+                  } else if (status == 'late') {
+                    backgroundColor = Colors.orange;
+                    statusIcon = Icons.access_time;
+                  } else if (status != null && status.contains('half')) {
+                    backgroundColor = Colors.purple;
+                    statusIcon = Icons.remove_circle;
+                  }
+                  
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: backgroundColor.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Text(
+                            '${day.day}',
+                            style: GoogleFonts.poppins(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        if (statusIcon != null)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Icon(
+                              statusIcon,
+                              size: 12,
+                              color: textColor,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+                
+                // Keep the marker builder as fallback for any days not handled above
+                markerBuilder: (context, date, events) {
+                  // This is now handled by the builders above, so return null
+                  return null;
+                },
+              ),
+            ),
           ),
 
-        // DETAILS SECTION
-        Expanded(
-          child: Container(
+          // SUMMARY SECTION
+          if (_reportData != null)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(child: _buildMiniSummaryCard('Present', _reportData!['summary']['present'] ?? 0, Colors.green)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildMiniSummaryCard('Absent', _reportData!['summary']['absent'] ?? 0, Colors.red)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildMiniSummaryCard('Late', _reportData!['summary']['late'] ?? 0, Colors.orange)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildMiniSummaryCard('Half Day', _reportData!['summary']['halfDays'] ?? 0, Colors.purple)),
+                ],
+              ),
+            ),
+
+          // DETAILS SECTION
+          Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -305,35 +582,126 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 if (_isLoading)
                    const Center(child: CircularProgressIndicator())
                 else if (_selectedDayRecords.isEmpty)
-                  Expanded(
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 30),
                     child: Center(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 30),
-                            Icon(Icons.event_note, size: 48, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No records for this day',
-                              style: GoogleFonts.poppins(color: Colors.grey[500]),
-                            ),
-                          ],
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_note, size: 48, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No records for this day',
+                            style: GoogleFonts.poppins(color: Colors.grey[500]),
+                          ),
+                        ],
                       ),
                     ),
                   )
                 else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _selectedDayRecords.length,
-                      itemBuilder: (context, index) {
-                        return _buildRecordItem(_selectedDayRecords[index]);
-                      },
-                    ),
+                  Column(
+                    children: _selectedDayRecords.map((record) => _buildRecordItem(record)).toList(),
                   ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLegendDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Attendance Legend',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Color codes for attendance status:',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16.0,
+              runSpacing: 12.0,
+              children: [
+                _buildLegendItem('Present', Colors.green, Icons.check_circle),
+                _buildLegendItem('Absent', Colors.red, Icons.cancel),
+                _buildLegendItem('Late', Colors.orange, Icons.access_time),
+                _buildLegendItem('Half Day', Colors.purple, Icons.remove_circle),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tap any day in the calendar to see detailed attendance information.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Got it!',
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF2196F3),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 12,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

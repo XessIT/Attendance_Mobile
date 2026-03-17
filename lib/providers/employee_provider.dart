@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/employee.dart';
 import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
 
 class EmployeeProvider with ChangeNotifier {
   List<Employee> _employees = [];
@@ -15,6 +16,9 @@ class EmployeeProvider with ChangeNotifier {
   bool _hasNextPage = false;
   final int _limit = 10;
 
+  // Caching state
+  DateTime? _lastFetchTime;
+
   List<Employee> get employees => _employees;
   bool get isLoading => _isLoading;
   bool get isMoreLoading => _isMoreLoading;
@@ -23,6 +27,37 @@ class EmployeeProvider with ChangeNotifier {
 
   // Load initial employees
   Future<void> loadEmployees({String? search, String? department, String? status}) async {
+    // For non-filtered requests, try to load from cache first
+    if (search == null && department == null && status == null) {
+      final cachedEmployees = await LocalStorageService.getCachedEmployees();
+      if (cachedEmployees != null) {
+        _employees = cachedEmployees;
+        _currentPage = 1;
+        _totalPages = 1;
+        _hasNextPage = false;
+        _error = null;
+        notifyListeners();
+        print('✅ Loaded employees from local cache');
+        return;
+      }
+    }
+
+    // For filtered requests, try to load from filtered cache first
+    if (search != null || status != null) {
+      final searchQuery = search ?? '';
+      final cachedFilteredEmployees = await LocalStorageService.getCachedFilteredEmployees(searchQuery, status);
+      if (cachedFilteredEmployees != null) {
+        _employees = cachedFilteredEmployees;
+        _currentPage = 1;
+        _totalPages = 1;
+        _hasNextPage = false;
+        _error = null;
+        notifyListeners();
+        print('✅ Loaded filtered employees from local cache (search: "$searchQuery", status: $status)');
+        return;
+      }
+    }
+
     _setLoading(true);
     _currentPage = 1;
     try {
@@ -43,6 +78,15 @@ class EmployeeProvider with ChangeNotifier {
       } else {
         _totalPages = 1;
         _hasNextPage = false;
+      }
+      
+      // Cache employees based on request type
+      if (search == null && department == null && status == null) {
+        await LocalStorageService.cacheEmployees(_employees);
+        _lastFetchTime = DateTime.now();
+      } else if (search != null || status != null) {
+        final searchQuery = search ?? '';
+        await LocalStorageService.cacheFilteredEmployees(searchQuery, status, _employees);
       }
       
       _error = null;
@@ -99,9 +143,13 @@ class EmployeeProvider with ChangeNotifier {
       print('   ID: ${newEmployee.id}');
       print('   Name: ${newEmployee.name}');
       print('   Email: ${newEmployee.email}');
+      print('   Payloan: ${newEmployee.payloan}');
       
       _employees.add(newEmployee);
       print('📦 [EMPLOYEE PROVIDER] Employee added to local list. Total employees: ${_employees.length}');
+      
+      // Update cache when new employee is added
+      await LocalStorageService.cacheEmployees(_employees);
       
       _error = null;
       notifyListeners();
@@ -132,6 +180,8 @@ class EmployeeProvider with ChangeNotifier {
       final index = _employees.indexWhere((e) => e.id == employee.id);
       if (index != -1) {
         _employees[index] = updatedEmployee;
+        // Update cache when employee is updated
+        await LocalStorageService.cacheEmployees(_employees);
       }
       _error = null;
       notifyListeners();
@@ -151,6 +201,8 @@ class EmployeeProvider with ChangeNotifier {
       final success = await ApiService.deleteEmployee(id);
       if (success) {
         _employees.removeWhere((e) => e.id == id);
+        // Update cache when employee is deleted
+        await LocalStorageService.cacheEmployees(_employees);
       }
       _error = null;
       notifyListeners();
@@ -228,8 +280,32 @@ class EmployeeProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Refresh data
-  Future<void> refresh() async {
-    await loadEmployees();
+  // Refresh data (bypass cache)
+  Future<void> refresh({String? search, String? status}) async {
+    if (search != null || status != null) {
+      final searchQuery = search ?? '';
+      await LocalStorageService.clearFilteredEmployeeCache(searchQuery, status);
+    } else {
+      await LocalStorageService.clearEmployeeCache();
+    }
+    await loadEmployees(search: search, status: status);
   }
-} 
+
+  // Clear cache
+  void clearCache({String? search, String? status}) async {
+    if (search != null || status != null) {
+      final searchQuery = search ?? '';
+      await LocalStorageService.clearFilteredEmployeeCache(searchQuery, status);
+    } else {
+      await LocalStorageService.clearEmployeeCache();
+    }
+    _lastFetchTime = null;
+  }
+
+  // Client-side search for instant results
+  List<Employee> searchEmployeesLocally(String query, {String? status}) {
+    // Get all cached employees
+    final allEmployees = _employees.isNotEmpty ? _employees : <Employee>[];
+    return LocalStorageService.filterEmployeesLocally(allEmployees, query, status);
+  }
+}

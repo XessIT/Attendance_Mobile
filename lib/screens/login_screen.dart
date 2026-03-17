@@ -306,70 +306,108 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF2196F3),
-              Color(0xFF1976D2),
+              const Color(0xFF667EEA),
+              const Color(0xFF764BA2),
+              const Color(0xFF2196F3),
             ],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
+        child: Stack(
+          children: [
+            // Animated background elements
+            _buildAnimatedBackground(),
+            
+            // Main content
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 40),
 
                 // Logo/Title Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.face_retouching_natural,
-                        size: 80,
-                        color: Colors.white,
+                Hero(
+                  tag: 'app_logo',
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'InstaMarQ',
-                        style: GoogleFonts.poppins(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
-                      ),
-                      Text(
-                        'Face Recognition Attendance System',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.face_retouching_natural,
+                            size: 60,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          'InstaMarQ',
+                          style: GoogleFonts.poppins(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Face Recognition Attendance',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+                ).animate().fadeIn(duration: 800.ms).scale(begin: const Offset(0.8, 0.8)),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
                 // Login Form
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFF667EEA).withOpacity(0.1),
                         blurRadius: 20,
-                        offset: const Offset(0, 10),
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
@@ -381,17 +419,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           'Welcome Back',
                           style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2196F3),
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1A202C),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Sign in to your account',
+                          'Sign in to continue to your account',
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 16,
                             color: Colors.grey[600],
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -401,24 +440,72 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _mobileNumberController,
                           decoration: InputDecoration(
                             labelText: 'Mobile Number',
-                            prefixIcon: const Icon(Icons.phone_outlined),
+                            labelStyle: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                            prefixIcon: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: const Icon(
+                                Icons.phone_outlined,
+                                color: Color(0xFF667EEA),
+                              ),
+                            ),
                             suffixIcon: _isCheckingMobile
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: Padding(
-                                      padding: EdgeInsets.all(12.0),
+                                ? Container(
+                                    padding: const EdgeInsets.all(16),
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          const Color(0xFF667EEA),
+                                        ),
                                       ),
                                     ),
                                   )
                                 : null,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF667EEA),
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 1,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 16,
                             ),
                           ),
                           keyboardType: TextInputType.phone,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your mobile number';
@@ -437,9 +524,43 @@ class _LoginScreenState extends State<LoginScreen> {
                             value: _selectedCompanyId,
                             decoration: InputDecoration(
                               labelText: 'Company',
-                              prefixIcon: const Icon(Icons.business_outlined),
+                              labelStyle: GoogleFonts.poppins(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                              prefixIcon: Container(
+                                padding: const EdgeInsets.all(12),
+                                child: const Icon(
+                                  Icons.business_outlined,
+                                  color: Color(0xFF667EEA),
+                                ),
+                              ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF667EEA),
+                                  width: 2,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 16,
                               ),
                             ),
                             items: _companies.map((company) {
@@ -473,24 +594,73 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _passwordController,
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outlined),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                            labelStyle: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                            prefixIcon: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: const Icon(
+                                Icons.lock_outlined,
+                                color: Color(0xFF667EEA),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
+                            ),
+                            suffixIcon: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
                             ),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF667EEA),
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Colors.red,
+                                width: 1,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 16,
                             ),
                           ),
                           obscureText: _obscurePassword,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your password';
@@ -507,49 +677,95 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Login Button
                         SizedBox(
                           width: double.infinity,
-                          height: 56,
+                          height: 60,
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2196F3),
+                              backgroundColor: const Color(0xFF667EEA),
                               foregroundColor: Colors.white,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              elevation: 2,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 24,
+                              ),
+                            ).copyWith(
+                              overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                                (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.pressed)) {
+                                    return const Color(0xFF5A67D8).withOpacity(0.2);
+                                  }
+                                  if (states.contains(WidgetState.hovered)) {
+                                    return const Color(0xFF5A67D8).withOpacity(0.1);
+                                  }
+                                  return null;
+                                },
+                              ),
                             ),
                             child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ? SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: const AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
                                   )
                                 : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Icon(Icons.login),
-                                      const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.login_rounded,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 12),
                                       Text(
                                         'Sign In',
                                         style: GoogleFonts.poppins(
-                                          fontSize: 16,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
                                         ),
                                       ),
                                     ],
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
                         Center(
-                          child: Link(
-                            uri: Uri.parse('https://xesstechlink.com'),
-                            builder: (context, followLink) => InkWell(
-                              onTap: followLink,
-                              child: Text(
-                                'Contact xesstechlink.com',
-                                style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2196F3),
-                                  fontWeight: FontWeight.w600,
-                                  decoration: TextDecoration.underline,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF667EEA).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Link(
+                              uri: Uri.parse('https://xesstechlink.com'),
+                              builder: (context, followLink) => InkWell(
+                                onTap: followLink,
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    'Contact xesstechlink.com',
+                                    style: GoogleFonts.poppins(
+                                      color: const Color(0xFF667EEA),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -560,12 +776,129 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
               ],
             ),
           ),
         ),
+      ],
+    ),)
+  );
+}
+
+// Animated background widget
+Widget _buildAnimatedBackground() {
+  return Stack(
+    children: [
+      // Floating circles
+      Positioned(
+        top: -50,
+        left: -50,
+        child: _buildFloatingCircle(
+          const Color(0xFFFFFFFF).withOpacity(0.1),
+          120,
+          const Duration(seconds: 20),
+        ),
       ),
-    );
-  }
+      Positioned(
+        top: 100,
+        right: -30,
+        child: _buildFloatingCircle(
+          const Color(0xFFFFFFFF).withOpacity(0.08),
+          80,
+          const Duration(seconds: 15),
+        ),
+      ),
+      Positioned(
+        bottom: 200,
+        left: -20,
+        child: _buildFloatingCircle(
+          const Color(0xFFFFFFFF).withOpacity(0.06),
+          100,
+          const Duration(seconds: 25),
+        ),
+      ),
+      Positioned(
+        bottom: -40,
+        right: 100,
+        child: _buildFloatingCircle(
+          const Color(0xFFFFFFFF).withOpacity(0.1),
+          60,
+          const Duration(seconds: 18),
+        ),
+      ),
+      
+      // Moving dots pattern
+      Positioned.fill(
+        child: _buildMovingDots(),
+      ),
+    ],
+  );
+}
+
+// Floating circle widget
+Widget _buildFloatingCircle(Color color, double size, Duration duration) {
+  return Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+    ),
+  ).animate(
+    onPlay: (controller) => controller.repeat(),
+  ).moveY(
+    begin: -20,
+    end: 20,
+    duration: duration,
+    curve: Curves.easeInOut,
+  ).moveX(
+    begin: -10,
+    end: 10,
+    duration: Duration(milliseconds: duration.inMilliseconds ~/ 2),
+    curve: Curves.easeInOut,
+  ).fade(
+    begin: 0.3,
+    end: 0.8,
+    duration: Duration(milliseconds: duration.inMilliseconds ~/ 3),
+    curve: Curves.easeInOut,
+  );
+}
+
+// Moving dots pattern
+Widget _buildMovingDots() {
+  return Stack(
+    children: List.generate(15, (index) {
+      final random = index * 137; // Simple pseudo-random seed
+      final size = 2.0 + (random % 4);
+      final opacity = 0.1 + (random % 3) * 0.1;
+      final duration = 10 + (random % 10);
+      
+      return Positioned(
+        top: (random % 600).toDouble(),
+        left: (random % 400).toDouble(),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(opacity),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ).animate(
+        onPlay: (controller) => controller.repeat(),
+      ).fade(
+        begin: 0.0,
+        end: 1.0,
+        duration: Duration(seconds: duration),
+        curve: Curves.easeInOut,
+      ).scale(
+        begin: const Offset(0.5, 0.5),
+        end: const Offset(1.5, 1.5),
+        duration: Duration(seconds: duration),
+        curve: Curves.easeInOut,
+      );
+    }),
+  );
+}
 }

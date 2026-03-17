@@ -200,30 +200,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
+      backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Section
-              _buildWelcomeSection(),
-              const SizedBox(height: 24),
+        color: const Color(0xFF2196F3),
+        child: CustomScrollView(
+          slivers: [
+            // SliverAppBar(
+            //   floating: true,
+            //   backgroundColor: const Color(0xFFF8FAFC),
+            //   elevation: 0,
+            //   actions: [
+            //     Container(
+            //       margin: const EdgeInsets.only(right: 16),
+            //       decoration: BoxDecoration(
+            //         color: Colors.white,
+            //         borderRadius: BorderRadius.circular(12),
+            //         boxShadow: [
+            //           BoxShadow(
+            //             color: Colors.black.withOpacity(0.05),
+            //             blurRadius: 10,
+            //             offset: const Offset(0, 2),
+            //           ),
+            //         ],
+            //       ),
+            //       child: IconButton(
+            //         icon: const Icon(Icons.notifications_outlined, color: Color(0xFF64748B)),
+            //         onPressed: () {
+            //           // TODO: Implement notifications
+            //         },
+            //       ),
+            //     ),
+            //   ],
+            // ),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Welcome Section
+                  _buildWelcomeSection(),
+                  const SizedBox(height: 24),
 
-              // Quick Actions
-              _buildQuickActions(),
-              const SizedBox(height: 24),
+                  // Quick Actions
+                  _buildQuickActions(),
+                  const SizedBox(height: 24),
 
-              // Statistics Cards (source counts from attendance summary API)
-              _buildStatisticsCards(),
-              const SizedBox(height: 24),
+                  // Statistics Cards
+                  _buildStatisticsCards(),
+                  const SizedBox(height: 24),
 
-              // Today's Attendance
-              _buildTodayAttendance(),
-            ],
-          ),
+                  // Today's Attendance
+                  _buildTodayAttendance(),
+                  const SizedBox(height: 20),
+                ]),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -231,39 +263,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildWelcomeSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF667EEA),
+            const Color(0xFF764BA2),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: const Color(0xFF667EEA).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Welcome Back!',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.waving_hand,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome Back!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
-            'Manage your employee attendance with face recognition',
+            'Manage your employee attendance with advanced face recognition technology',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 14,
               color: Colors.white.withOpacity(0.9),
+              height: 1.4,
             ),
           ),
         ],
@@ -278,7 +346,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           'Quick Actions',
           style: GoogleFonts.poppins(
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -294,7 +362,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onTap: _handleMarkAttendance,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
                 icon: Icons.person_add,
@@ -311,28 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.timelapse,
-                title: 'Compensatory Off',
-                subtitle: 'Request Credit/Leave',
-                color: Colors.purple,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CompOffScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
                 icon: Icons.check_circle_outline,
@@ -351,9 +398,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.timelapse,
+                title: 'Compensatory Off',
+                subtitle: 'Request Credit/Leave',
+                color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CompOffScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
                 icon: Icons.edit_calendar,
@@ -363,7 +427,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onTap: _navigateToManualAttendance,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             const Spacer(), // Placeholder to keep the grid layout consistent
           ],
         ),
@@ -381,47 +445,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: [
+                    color.withOpacity(0.1),
+                    color.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
                 color: color,
-                size: 32,
+                size: 24,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.grey,
+                fontSize: 10,
+                color: const Color(0xFF64748B),
               ),
               textAlign: TextAlign.center,
             ),
@@ -436,12 +512,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (context, employeeProvider, attendanceProvider, child) {
         // Use the provided employeeProvider
         final totalEmployeesFromList = employeeProvider.employees.length;
-         final int summaryTotalEmployees = _attendanceSummary?.totalEmployees ?? totalEmployeesFromList;
-         final int summaryLate = _attendanceSummary?.totalLate ?? 0;
-         final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
-         final int summaryHalfDay = _attendanceSummary?.totalHalfDay ?? 0;
-         // Add late check-ins to present count
-         final int summaryPresent = (_attendanceSummary?.totalPresent ?? attendanceProvider.todayAttendance.length) + summaryLate;
+        final int summaryTotalEmployees = _attendanceSummary?.totalEmployees ?? totalEmployeesFromList;
+        final int summaryLate = _attendanceSummary?.totalLate ?? 0;
+        final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
+        final int summaryHalfDay = _attendanceSummary?.totalHalfDay ?? 0;
+        // Add late check-ins to present count
+        final int summaryPresent = (_attendanceSummary?.totalPresent ?? attendanceProvider.todayAttendance.length) + summaryLate;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,53 +525,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'Statistics',
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
+            const SizedBox(height: 12),
+            // New Statistics UI - Horizontal Scroll Cards
+            SizedBox(
+              height: 130,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildModernStatCard(
                     title: 'Total Employees',
                     value: summaryTotalEmployees.toString(),
                     icon: Icons.people,
                     color: Colors.blue,
+                    percentage: null,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
+                  const SizedBox(width: 12),
+                  _buildModernStatCard(
                     title: 'Present Today',
                     value: summaryPresent.toString(),
                     icon: Icons.check_circle,
                     color: Colors.green,
+                    percentage: summaryTotalEmployees > 0 ? (summaryPresent / summaryTotalEmployees * 100).round() : null,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
+                  const SizedBox(width: 12),
+                  _buildModernStatCard(
                     title: 'Absent',
                     value: summaryAbsent.toString(),
                     icon: Icons.trending_up,
                     color: Colors.orange,
+                    percentage: summaryTotalEmployees > 0 ? (summaryAbsent / summaryTotalEmployees * 100).round() : null,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
+                  const SizedBox(width: 12),
+                  _buildModernStatCard(
                     title: 'Late Check In',
                     value: summaryLate.toString(),
                     icon: Icons.access_time,
                     color: Colors.purple,
+                    percentage: summaryTotalEmployees > 0 ? (summaryLate / summaryTotalEmployees * 100).round() : null,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         );
@@ -503,24 +576,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
   }
 
-  // Attendance summary UI removed to rely solely on API-driven statistics
-
-  Widget _buildStatCard({
+  Widget _buildModernStatCard({
     required String title,
     required String value,
     required IconData icon,
     required Color color,
+    int? percentage,
   }) {
     return Container(
+      width: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: color.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -529,24 +613,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 24),
-              const Spacer(),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
                   color: color,
+                  size: 20,
                 ),
               ),
+              const Spacer(),
+              if (percentage != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$percentage%',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 3),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey,
+              fontSize: 10,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -556,14 +669,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTodayAttendance() {
     final attendanceList = _attendanceData ?? [];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Today\'s Attendance',
           style: GoogleFonts.poppins(
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -571,14 +684,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.1),
+              width: 1,
+            ),
           ),
           child: attendanceList.isEmpty
               ? Padding(
@@ -587,8 +704,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Text(
                       'No attendance records for today',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey,
+                        fontSize: 10,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ),
@@ -631,11 +748,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     }
                     
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey.withOpacity(0.1),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,14 +780,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       name,
                                       style: GoogleFonts.poppins(
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 16,
+                                        fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       '$employeeId • $department',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 12,
+                                        fontSize: 10,
                                         color: Colors.grey[600],
                                       ),
                                     ),
@@ -677,12 +798,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: statusColor,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: statusColor.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Text(
                                   status.toUpperCase(),
                                   style: GoogleFonts.poppins(
-                                    fontSize: 11,
+                                    fontSize: 8,
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -690,7 +818,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Expanded(
@@ -730,10 +858,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }) {
     final hasTime = time != '-' && time.isNotEmpty;
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -746,7 +885,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    fontSize: 11,
+                    fontSize: 10,
                     color: Colors.grey[600],
                   ),
                 ),
@@ -754,7 +893,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   hasTime ? _formatTime(time) : '-',
                   style: GoogleFonts.poppins(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: hasTime ? color : Colors.grey,
                   ),

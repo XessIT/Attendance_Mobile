@@ -250,6 +250,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       print('   Password: $password');
       print('   Date of Joining: ${_dateOfJoining?.toString() ?? "Not set"}');
       print('   Face Image Path: ${_faceImage!.path}');
+      print('   Payloan: ${employee.payloan}');
 
       // Create employee in database with image upload (new API handles both)
       print('📤 [EMPLOYEE REGISTRATION] Calling createEmployee API with image and password...');

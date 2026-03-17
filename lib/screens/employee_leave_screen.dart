@@ -5,6 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../services/api_service.dart';
+import '../utils/auth_utils.dart';
+import '../models/leave_balance.dart';
+import 'leave_balance_detail_screen.dart';
 
 class EmployeeLeaveScreen extends StatefulWidget {
   const EmployeeLeaveScreen({super.key});
@@ -17,7 +20,7 @@ class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Column(
         children: [
           Container(
@@ -30,6 +33,7 @@ class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
               tabs: const [
                 Tab(text: 'Apply Leave'),
                 Tab(text: 'My Leaves'),
+                Tab(text: 'Leave Balance'),
               ],
             ),
           ),
@@ -38,6 +42,7 @@ class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
               children: [
                 const ApplyLeaveTab(),
                 const MyLeavesTab(),
+                const LeaveBalanceTab(),
               ],
             ),
           ),
@@ -816,34 +821,242 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
               weekendTextStyle: GoogleFonts.poppins(color: Colors.red[300]),
             ),
             
-            // Custom Builders for Markers
+            // Custom Builders for enhanced highlighting
             calendarBuilders: CalendarBuilders(
-              markerBuilder: (context, date, events) {
-                final key = DateTime.utc(date.year, date.month, date.day);
+              headerTitleBuilder: (context, day) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      DateFormat('MMMM yyyy').format(day),
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _showLegendDialog(),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+              
+              defaultBuilder: (context, day, focusedDay) {
+                final key = DateTime.utc(day.year, day.month, day.day);
                 final leavesOnDay = _leavesMap[key];
                 
-                if (leavesOnDay == null || leavesOnDay.isEmpty) return null;
+                if (leavesOnDay == null || leavesOnDay.isEmpty) {
+                  return null;
+                }
                 
-                Color markerColor = Colors.grey;
+                Color backgroundColor;
+                Color textColor;
+                IconData? statusIcon;
+                
                 bool hasApproved = leavesOnDay.any((l) => (l['status'] ?? '').toString().toLowerCase() == 'approved');
                 bool hasPending = leavesOnDay.any((l) => (l['status'] ?? '').toString().toLowerCase() == 'pending');
                 bool hasRejected = leavesOnDay.any((l) => (l is Map && (l['status'] ?? '').toString().toLowerCase() == 'rejected') || (l is Map && (l['status'] ?? '').toString().toLowerCase() == 'cancelled'));
                 
-                if (hasApproved) markerColor = Colors.green;
-                else if (hasPending) markerColor = Colors.orange;
-                else if (hasRejected) markerColor = Colors.red;
-
-                return Positioned(
-                  bottom: 1,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: markerColor,
-                      shape: BoxShape.circle,
+                if (hasApproved) {
+                  backgroundColor = Colors.red.withOpacity(0.15);
+                  textColor = Colors.red;
+                  statusIcon = Icons.check_circle;
+                } else if (hasPending) {
+                  backgroundColor = Colors.red.withOpacity(0.25);
+                  textColor = Colors.red.shade700;
+                  statusIcon = Icons.hourglass_empty;
+                } else if (hasRejected) {
+                  backgroundColor = Colors.red.withOpacity(0.15);
+                  textColor = Colors.red;
+                  statusIcon = Icons.cancel;
+                } else {
+                  return null;
+                }
+                
+                return Container(
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: textColor.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          '${day.day}',
+                          style: GoogleFonts.poppins(
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: Icon(
+                          statusIcon,
+                          size: 12,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
+              },
+              
+              todayBuilder: (context, day, focusedDay) {
+                final key = DateTime.utc(day.year, day.month, day.day);
+                final leavesOnDay = _leavesMap[key];
+                
+                Color backgroundColor = Colors.blue.withOpacity(0.3);
+                Color textColor = Colors.blue;
+                IconData? statusIcon;
+                FontWeight fontWeight = FontWeight.bold;
+                
+                if (leavesOnDay != null && leavesOnDay.isNotEmpty) {
+                  bool hasApproved = leavesOnDay.any((l) => (l['status'] ?? '').toString().toLowerCase() == 'approved');
+                  bool hasPending = leavesOnDay.any((l) => (l['status'] ?? '').toString().toLowerCase() == 'pending');
+                  bool hasRejected = leavesOnDay.any((l) => (l is Map && (l['status'] ?? '').toString().toLowerCase() == 'rejected') || (l is Map && (l['status'] ?? '').toString().toLowerCase() == 'cancelled'));
+                  
+                  if (hasApproved) {
+                    backgroundColor = Colors.red.withOpacity(0.3);
+                    textColor = Colors.red;
+                    statusIcon = Icons.check_circle;
+                  } else if (hasPending) {
+                    backgroundColor = Colors.red.withOpacity(0.35);
+                    textColor = Colors.red.shade700;
+                    statusIcon = Icons.hourglass_empty;
+                  } else if (hasRejected) {
+                    backgroundColor = Colors.red.withOpacity(0.3);
+                    textColor = Colors.red;
+                    statusIcon = Icons.cancel;
+                  }
+                }
+                
+                return Container(
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: textColor,
+                      width: 2,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          '${day.day}',
+                          style: GoogleFonts.poppins(
+                            color: textColor,
+                            fontWeight: fontWeight,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      if (statusIcon != null)
+                        Positioned(
+                          top: 2,
+                          right: 2,
+                          child: Icon(
+                            statusIcon,
+                            size: 12,
+                            color: textColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+              
+              selectedBuilder: (context, day, focusedDay) {
+                final key = DateTime.utc(day.year, day.month, day.day);
+                final leavesOnDay = _leavesMap[key];
+                
+                Color backgroundColor = const Color(0xFF2196F3);
+                Color textColor = Colors.white;
+                IconData? statusIcon;
+                
+                if (leavesOnDay != null && leavesOnDay.isNotEmpty) {
+                  bool hasApproved = leavesOnDay.any((l) => (l['status'] ?? '').toString().toLowerCase() == 'approved');
+                  bool hasPending = leavesOnDay.any((l) => (l['status'] ?? '').toString().toLowerCase() == 'pending');
+                  bool hasRejected = leavesOnDay.any((l) => (l is Map && (l['status'] ?? '').toString().toLowerCase() == 'rejected') || (l is Map && (l['status'] ?? '').toString().toLowerCase() == 'cancelled'));
+                  
+                  if (hasApproved) {
+                    backgroundColor = Colors.red;
+                    statusIcon = Icons.check_circle;
+                  } else if (hasPending) {
+                    backgroundColor = Colors.red.shade700;
+                    statusIcon = Icons.hourglass_empty;
+                  } else if (hasRejected) {
+                    backgroundColor = Colors.red;
+                    statusIcon = Icons.cancel;
+                  }
+                }
+                
+                return Container(
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: backgroundColor.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          '${day.day}',
+                          style: GoogleFonts.poppins(
+                            color: textColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      if (statusIcon != null)
+                        Positioned(
+                          top: 2,
+                          right: 2,
+                          child: Icon(
+                            statusIcon,
+                            size: 12,
+                            color: textColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+              
+              // Keep the marker builder as fallback for any days not handled above
+              markerBuilder: (context, date, events) {
+                // This is now handled by the builders above, so return null
+                return null;
               },
             ),
           ),
@@ -924,6 +1137,104 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                   ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showLegendDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Leave Status Legend',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Color codes for leave status:',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16.0,
+              runSpacing: 12.0,
+              children: [
+                _buildLegendItem('Approved', Colors.red, Icons.check_circle),
+                _buildLegendItem('Pending', Colors.red.shade700, Icons.hourglass_empty),
+                _buildLegendItem('Rejected', Colors.red, Icons.cancel),
+                _buildLegendItem('Cancelled', Colors.red, Icons.block),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tap any day in the calendar to see detailed leave information.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Got it!',
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF2196F3),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 12,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -1110,11 +1421,644 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                     color: Colors.grey[700],
                   ),
                 ),
+          ],),
+        ],]
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TAB 3: LEAVE BALANCE
+// ---------------------------------------------------------------------------
+class LeaveBalanceTab extends StatefulWidget {
+  const LeaveBalanceTab({super.key});
+
+  @override
+  State<LeaveBalanceTab> createState() => _LeaveBalanceTabState();
+}
+
+class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
+  LeaveBalanceResponse? _leaveBalanceResponse;
+  bool _isLoading = true;
+  String? _error;
+  int? _employeeId;
+  String? _employeeName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEmployeeInfo();
+  }
+
+  Future<void> _loadEmployeeInfo() async {
+    try {
+      final employeeId = await AuthUtils.getCurrentEmployeeId();
+      if (employeeId != null) {
+        setState(() {
+          _employeeId = employeeId;
+        });
+        _loadLeaveBalance();
+      } else {
+        setState(() {
+          _error = 'Employee ID not found. Please login again.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to get employee information: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadLeaveBalance() async {
+    if (_employeeId == null) return;
+
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final response = await ApiService.getLeaveBalance(_employeeId!);
+      
+      if (mounted) {
+        setState(() {
+          _leaveBalanceResponse = response;
+          _employeeName = response.data.employee.name;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading
+        ? _buildLoadingState()
+        : _error != null
+            ? _buildErrorState()
+            : _buildContent();
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
-          ],
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2196F3).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                    strokeWidth: 3,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Loading Leave Balance...',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Fetching your leave information',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.red,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Error Loading Leave Balance',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error ?? 'An unknown error occurred',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF2196F3),
+                    const Color(0xFF1976D2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _loadLeaveBalance,
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Try Again',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Employee Info Card
+          _buildEmployeeInfoCard(),
+          const SizedBox(height: 20),
+          
+          // Leave Balance Cards
+          ..._leaveBalanceResponse!.data.leaveBalances.map((balance) {
+            return _buildLeaveBalanceCard(balance);
+          }).toList(),
+          
+          // View Details Button
+          const SizedBox(height: 24),
+          // Container(
+          //   width: double.infinity,
+          //   height: 50,
+          //   decoration: BoxDecoration(
+          //     gradient: LinearGradient(
+          //       begin: Alignment.topLeft,
+          //       end: Alignment.bottomRight,
+          //       colors: [
+          //         const Color(0xFF2196F3),
+          //         const Color(0xFF1976D2),
+          //       ],
+          //     ),
+          //     borderRadius: BorderRadius.circular(12),
+          //   ),
+          //   child: Material(
+          //     color: Colors.transparent,
+          //     child: InkWell(
+          //       onTap: () {
+          //         if (_employeeId != null && _employeeName != null) {
+          //           Navigator.push(
+          //             context,
+          //             MaterialPageRoute(
+          //               builder: (context) => LeaveBalanceDetailScreen(
+          //                 employeeId: _employeeId.toString(),
+          //                 employeeName: _employeeName!,
+          //                 department: 'Employee',
+          //               ),
+          //             ),
+          //           );
+          //         }
+          //       },
+          //       borderRadius: BorderRadius.circular(12),
+          //       child: const Center(
+          //         child: Row(
+          //           mainAxisAlignment: MainAxisAlignment.center,
+          //           children: [
+          //             Icon(Icons.visibility_rounded, color: Colors.white, size: 20),
+          //             SizedBox(width: 8),
+          //             Text(
+          //               'View Detailed Balance',
+          //               style: TextStyle(
+          //                 color: Colors.white,
+          //                 fontWeight: FontWeight.w600,
+          //                 fontSize: 16,
+          //               ),
+          //             ),
+          //           ],
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmployeeInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF2196F3).withOpacity(0.1),
+            const Color(0xFF1976D2).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF2196F3).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF2196F3),
+                      const Color(0xFF1976D2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Leave Balance Summary',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _employeeName ?? 'Employee',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Text(
+                      '${_leaveBalanceResponse!.data.period.monthName} ${_leaveBalanceResponse!.data.period.year}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLeaveBalanceCard(LeaveBalance balance) {
+    final isPaid = balance.isPaid;
+    final isUncapped = balance.isUncapped;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isPaid ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isPaid ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isPaid ? Icons.paid_rounded : Icons.money_off_rounded,
+                    size: 24,
+                    color: isPaid ? Colors.green[700] : Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        balance.leaveType,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[900],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isPaid ? Colors.green[50] : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isPaid ? 'PAID' : 'UNPAID',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: isPaid ? Colors.green[700] : Colors.grey[600],
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          if (isUncapped)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'UNCAPPED',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue[700],
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            
+            // Monthly Stats
+            if (balance.monthlyAllowance != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Monthly Balance',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[900],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMiniStat(
+                            'Allowance',
+                            balance.monthlyAllowanceText,
+                            Icons.calendar_today_rounded,
+                            Colors.blue,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            'Used',
+                            balance.usedThisMonth.toString(),
+                            Icons.remove_circle_rounded,
+                            Colors.orange,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            'Remaining',
+                            balance.remainingThisMonthText,
+                            Icons.check_circle_rounded,
+                            Colors.green,
+                            isHighlighted: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Yearly Stats
+            if (balance.yearlyAllowance != null)
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.purple[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Yearly Balance',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey[900],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMiniStat(
+                            'Allowance',
+                            balance.yearlyAllowanceText,
+                            Icons.event_rounded,
+                            Colors.purple,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            'Used',
+                            balance.usedThisYear.toString(),
+                            Icons.remove_circle_rounded,
+                            Colors.orange,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMiniStat(
+                            'Remaining',
+                            balance.remainingThisYearText,
+                            Icons.check_circle_rounded,
+                            Colors.green,
+                            isHighlighted: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value, IconData icon, Color color, {bool isHighlighted = false}) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: color,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
+            color: isHighlighted ? Colors.green[700] : Colors.grey[800],
+          ),
+        ),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 9,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -13,6 +13,7 @@ class Employee {
   final int? companyId; // Company ID the employee belongs to
   final DateTime? dateOfJoining;
   final DateTime? dateOfBirth; // Added date of birth
+  final double? payloan; // Added payloan field
 
   Employee({
     this.id,
@@ -29,6 +30,7 @@ class Employee {
     this.companyId,
     this.dateOfJoining,
     this.dateOfBirth,
+    this.payloan, // Added payloan parameter
   });
 
   factory Employee.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,11 @@ class Employee {
         ? DateTime.parse(json['date_of_birth'])
         : null;
     
+    // Parse payloan if available
+    final double? payloanValue = json['payloan'] != null
+        ? double.parse(json['payloan'].toString())
+        : null;
+    
     return Employee(
       id: json['id'],
       name: json['name'] ?? '',
@@ -70,6 +77,7 @@ class Employee {
       companyId: json['company_id'],
       dateOfJoining: joiningDate,
       dateOfBirth: birthDate,
+      payloan: payloanValue, // Added payloan field
     );
   }
 
@@ -124,6 +132,7 @@ class Employee {
     int? companyId,
     DateTime? dateOfJoining,
     DateTime? dateOfBirth,
+    double? payloan, // Added payloan parameter
   }) {
     return Employee(
       id: id ?? this.id,
@@ -140,6 +149,7 @@ class Employee {
       companyId: companyId ?? this.companyId,
       dateOfJoining: dateOfJoining ?? this.dateOfJoining,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      payloan: payloan ?? this.payloan, // Added payloan field
     );
   }
 } 

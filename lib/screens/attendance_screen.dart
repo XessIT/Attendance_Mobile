@@ -11,6 +11,7 @@ import '../providers/employee_provider.dart';
 import '../models/attendance.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
+import '../services/local_storage_service.dart';
 import 'face_attendance_screen_new.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -25,7 +26,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   int? _selectedEmployeeId;
   Map<String, dynamic>? _reportData;
   bool _isLoading = false;
+  bool _isReportLoading = false;
   String? _error;
+  DateTime? _lastReportDate;
+  String _searchQuery = '';
+  String _selectedStatus = 'All';
 
   @override
   void initState() {
@@ -40,9 +45,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
 
     try {
-      await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
-      await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
-      await _loadFullReport();
+      // Load employees and report data in parallel for better performance
+      // Note: We don't need AttendanceProvider.loadAttendance() since we use fetchEmployeeFullReport
+      await Future.wait([
+        Provider.of<EmployeeProvider>(context, listen: false).loadEmployees(),
+        _loadFullReport(),
+      ]);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -65,6 +73,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _loadFullReport() async {
+    // Try to load from cache first
+    final cachedReport = await LocalStorageService.getCachedAttendanceReport(_selectedDate);
+    if (cachedReport != null) {
+      if (mounted) {
+        setState(() {
+          _reportData = cachedReport;
+          _lastReportDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+        });
+      }
+      print('✅ Loaded attendance report from local cache');
+      return;
+    }
+
+    setState(() {
+      _isReportLoading = true;
+    });
+
     try {
       final startDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
       final endDate = startDate;
@@ -72,15 +97,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         startDate: startDate,
         endDate: endDate,
       );
+      
+      // Cache the fetched data
+      await LocalStorageService.cacheAttendanceReport(_selectedDate, data);
+      
       if (mounted) {
         setState(() {
           _reportData = data;
+          _lastReportDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
         });
       }
+      print('✅ Loaded and cached attendance report from API');
     } catch (e) {
       if (mounted) {
         setState(() {
           _error = e.toString();
+        });
+      }
+      print('❌ Error loading attendance report: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isReportLoading = false;
         });
       }
     }
@@ -156,8 +194,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   backgroundColor: Colors.green,
                 ),
               );
-              // Refresh data
-              _loadData();
+              // Refresh only report data, not full reload
+              await LocalStorageService.clearAttendanceReportCache(_selectedDate);
+              await _loadFullReport();
             } else {
               throw Exception(result['message'] ?? 'Failed to mark attendance');
             }
@@ -186,12 +225,268 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  void _selectDate() async {
+    final DateTime? newDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
 
+    if (newDate != null) {
+      setState(() {
+        _selectedDate = newDate;
+      });
+      await _loadFullReport();
+    }
+  }
+
+  void _showEmployeeFilterDialog() async {
+    final employees = Provider.of<EmployeeProvider>(context, listen: false).employees;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF2196F3),
+                    const Color(0xFF1976D2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.filter_list_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Filter by Employee',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Text(
+              'Select employee to filter',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[300]!,
+                  width: _selectedEmployeeId == null ? 2 : 1,
+                ),
+                color: _selectedEmployeeId == null ? const Color(0xFF2196F3).withOpacity(0.1) : Colors.white,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedEmployeeId = null;
+                    });
+                    Navigator.pop(context);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.transparent,
+                            border: Border.all(
+                              color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[400]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: _selectedEmployeeId == null
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 12,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'All Employees',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: _selectedEmployeeId == null ? FontWeight.w600 : FontWeight.w500,
+                              color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            ...employees.map((employee) {
+              final isSelected = _selectedEmployeeId == employee.id;
+              
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF2196F3) : Colors.grey[300]!,
+                    width: isSelected ? 2 : 1,
+                  ),
+                  color: isSelected ? const Color(0xFF2196F3).withOpacity(0.1) : Colors.white,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedEmployeeId = employee.id;
+                      });
+                      Navigator.pop(context);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected ? const Color(0xFF2196F3) : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[400]!,
+                                width: 2,
+                              ),
+                            ),
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 12,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              employee.name,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[700],
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2196F3).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              employee.position ?? 'General',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF2196F3),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16, bottom: 16, left: 16),
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.grey[200]!,
+                  Colors.grey[300]!,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.pop(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Center(
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-   
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _reportData == null
@@ -203,7 +498,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Error loading data',
-                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 8),
                       Padding(
@@ -252,86 +547,303 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _buildHeaderSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Date selector
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: _selectDate,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF2196F3),
+            const Color(0xFF1976D2),
+            Colors.white,
+          ],
+          stops: const [0.0, 0.3, 1.0],
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            // Date selector
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: _selectDate,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Icons.calendar_today, color: Color(0xFF2196F3), size: 20),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              DateFormat('EEEE, MMMM d, y').format(_selectedDate),
+                              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[800]),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.today, color: Color(0xFF2196F3), size: 20),
+                              onPressed: () async {
+                                setState(() {
+                                  _selectedDate = DateTime.now();
+                                });
+                                await _loadFullReport();
+                              },
+                              tooltip: 'Today',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, color: Color(0xFF2196F3)),
-                        const SizedBox(width: 8),
-                        Text(
-                          DateFormat('EEEE, MMMM d, y').format(_selectedDate),
-                          style: GoogleFonts.poppins(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Search and Filter Bar
+            Consumer<EmployeeProvider>(
+              builder: (context, employeeProvider, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search by employee name...',
+                      hintStyle: GoogleFonts.poppins(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Container(
+                        padding: const EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.search_rounded,
+                          color: Colors.grey[600],
+                          size: 20,
                         ),
-                        const Spacer(),
-                        const Icon(Icons.arrow_drop_down),
-                      ],
+                      ),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              color: _selectedEmployeeId != null 
+                                  ? Colors.orange.withOpacity(0.1)
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.filter_list_rounded,
+                                color: _selectedEmployeeId != null 
+                                    ? Colors.orange[700]
+                                    : Colors.grey[600],
+                                size: 20,
+                              ),
+                              onPressed: _showEmployeeFilterDialog,
+                              tooltip: 'Filter',
+                            ),
+                          ),
+                          if (_searchQuery.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.clear_rounded,
+                                  color: Colors.grey[600],
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                                tooltip: 'Clear search',
+                              ),
+                            ),
+                        ],
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, 
+                        vertical: 14,
+                      ),
                     ),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[800],
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                   ),
+                );
+              },
+            ),
+            
+            // Filter Chips
+            if (_selectedEmployeeId != null || _searchQuery.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    if (_selectedEmployeeId != null)
+                      Consumer<EmployeeProvider>(
+                        builder: (context, employeeProvider, child) {
+                          final employee = employeeProvider.employees.firstWhere(
+                            (emp) => emp.id == _selectedEmployeeId,
+                            orElse: () => employeeProvider.employees.first,
+                          );
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.orange[200]!),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.filter_list_rounded,
+                                  size: 14,
+                                  color: Colors.orange[700],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  employee.name,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.orange[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedEmployeeId = null;
+                                    });
+                                  },
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 14,
+                                    color: Colors.orange[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    if (_searchQuery.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.search_rounded,
+                              size: 14,
+                              color: Colors.blue[700],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _searchQuery.length > 15 
+                                  ? '${_searchQuery.substring(0, 15)}...'
+                                  : _searchQuery,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 14,
+                                color: Colors.blue[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              IconButton(
-                onPressed: () async {
-                  setState(() {
-                    _selectedDate = DateTime.now();
-                  });
-                  await _loadFullReport();
-                },
-                icon: const Icon(Icons.today),
-                tooltip: 'Today',
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Employee filter
-          Consumer<EmployeeProvider>(
-            builder: (context, employeeProvider, child) {
-              final employees = employeeProvider.employees;
-              
-              return DropdownButtonFormField<int>(
-                value: _selectedEmployeeId,
-                decoration: const InputDecoration(
-                  labelText: 'Filter by Employee',
-                  prefixIcon: Icon(Icons.person),
-                ),
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('All Employees'),
-                  ),
-                  ...employees.map((employee) => DropdownMenuItem(
-                    value: employee.id,
-                    child: Text(employee.name),
-                  )),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedEmployeeId = value;
-                  });
-                },
-              );
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatisticsSection() {
+    if (_isReportLoading && _reportData == null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        height: 120,
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
     
     // Filter by employee if selected
@@ -429,12 +941,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 20),
           const SizedBox(height: 4),
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -442,7 +954,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 9,
               color: color,
             ),
           ),
@@ -452,6 +964,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Widget _buildAttendanceList() {
+    if (_isReportLoading && _reportData == null) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
     final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
     
     // Filter by employee if selected
@@ -476,7 +994,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Text(
               'No attendance records',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -494,14 +1012,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadFullReport,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: filteredDetails.length,
-        itemBuilder: (context, index) {
-          final detail = filteredDetails[index] as Map<String, dynamic>;
-          return _buildEnhancedAttendanceCard(detail, index);
-        },
+      onRefresh: () async {
+        await LocalStorageService.clearAttendanceReportCache(_selectedDate);
+        await _loadFullReport();
+      },
+      child: Stack(
+        children: [
+          ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filteredDetails.length,
+            itemBuilder: (context, index) {
+              final detail = filteredDetails[index] as Map<String, dynamic>;
+              return _buildEnhancedAttendanceCard(detail, index);
+            },
+          ),
+          if (_isReportLoading)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                color: Colors.white.withOpacity(0.9),
+                child: const Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('Updating attendance data...'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -551,12 +1096,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 28,
+                    radius: 24,
                     backgroundColor: statusColor.withOpacity(0.1),
                     child: Icon(
                       statusIcon,
                       color: statusColor,
-                      size: 28,
+                      size: 24,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -567,29 +1112,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         Text(
                           employeeName,
                           style: GoogleFonts.poppins(
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.badge, size: 14, color: Colors.grey.shade600),
+                            Icon(Icons.badge, size: 12, color: Colors.grey.shade600),
                             const SizedBox(width: 4),
                             Text(
                               employeeId,
                               style: GoogleFonts.poppins(
-                                fontSize: 13,
+                                fontSize: 10,
                                 color: Colors.grey.shade600,
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Icon(Icons.business, size: 14, color: Colors.grey.shade600),
+                            Icon(Icons.business, size: 12, color: Colors.grey.shade600),
                             const SizedBox(width: 4),
                             Text(
                               department,
                               style: GoogleFonts.poppins(
-                                fontSize: 13,
+                                fontSize: 10,
                                 color: Colors.grey.shade600,
                               ),
                             ),
@@ -607,7 +1152,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     child: Text(
                       status.toUpperCase(),
                       style: GoogleFonts.poppins(
-                        fontSize: 11,
+                        fontSize: 8,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
@@ -687,12 +1232,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.celebration, size: 16, color: Colors.amber.shade700),
+                      Icon(Icons.celebration, size: 14, color: Colors.amber.shade700),
                       const SizedBox(width: 8),
                       Text(
                         'Holiday: $holidayName',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
+                          fontSize: 9,
                           color: Colors.amber.shade700,
                           fontWeight: FontWeight.w500,
                         ),
@@ -711,12 +1256,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.schedule, size: 16, color: Colors.blue.shade700),
+                      Icon(Icons.schedule, size: 14, color: Colors.blue.shade700),
                       const SizedBox(width: 8),
                       Text(
                         'Half Day',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
+                          fontSize: 9,
                           color: Colors.blue.shade700,
                           fontWeight: FontWeight.w500,
                         ),
@@ -748,7 +1293,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: color),
+          Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -757,7 +1302,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    fontSize: 11,
+                    fontSize: 8,
                     color: Colors.grey.shade600,
                   ),
                 ),
@@ -765,7 +1310,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 Text(
                   hasTime ? _formatTime(time) : 'Not available',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: hasTime ? color : Colors.grey,
                   ),
@@ -793,13 +1338,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 11,
+                fontSize: 8,
                 color: color,
                 fontWeight: FontWeight.w500,
               ),
@@ -897,12 +1442,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        radius: 30,
+                        radius: 26,
                         backgroundColor: _getStatusColor(status.toString().toLowerCase()).withOpacity(0.1),
                         child: Icon(
                           _getStatusIcon(status.toString().toLowerCase()),
                           color: _getStatusColor(status.toString().toLowerCase()),
-                          size: 30,
+                          size: 26,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -913,14 +1458,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             Text(
                               employeeName,
                               style: GoogleFonts.poppins(
-                                fontSize: 20,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               '$employeeId • $department',
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: 11,
                                 color: Colors.grey.shade600,
                               ),
                             ),
@@ -945,7 +1490,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Text(
                     'Timing Information',
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1058,19 +1603,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 1)),
-    );
-    
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-      await _loadFullReport();
-    }
-  }
-} 
+  // Future<void> _selectDate() async {
+  //   final DateTime? picked = await showDatePicker(
+  //     context: context,
+  //     initialDate: _selectedDate,
+  //     firstDate: DateTime(2020),
+  //     lastDate: DateTime.now().add(const Duration(days: 1)),
+  //   );
+  //
+  //   if (picked != null && picked != _selectedDate) {
+  //     setState(() {
+  //       _selectedDate = picked;
+  //       _reportData = null; // Clear current data to show loading
+  //     });
+  //     await _loadFullReport();
+  //   }
+  // }
+}
