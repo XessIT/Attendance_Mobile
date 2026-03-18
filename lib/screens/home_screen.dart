@@ -181,26 +181,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             foregroundColor: Colors.white,
             actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                  onPressed: () {
-                    // TODO: Implement notifications
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Notifications coming soon!'),
-                        backgroundColor: Color(0xFF1565C0),
-                      ),
-                    );
-                  },
-                  tooltip: 'Notifications',
-                ),
-              ),
+              // Container(
+              //   margin: const EdgeInsets.only(right: 8),
+              //   decoration: BoxDecoration(
+              //     color: Colors.white.withOpacity(0.2),
+              //     borderRadius: BorderRadius.circular(12),
+              //   ),
+              //   child: IconButton(
+              //     icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+              //     onPressed: () {
+              //       // TODO: Implement notifications
+              //       ScaffoldMessenger.of(context).showSnackBar(
+              //         const SnackBar(
+              //           content: Text('Notifications coming soon!'),
+              //           backgroundColor: Color(0xFF1565C0),
+              //         ),
+              //       );
+              //     },
+              //     tooltip: 'Notifications',
+              //   ),
+              // ),
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: _logout,

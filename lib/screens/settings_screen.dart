@@ -24,17 +24,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xFF2196F3),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.grey[50]!,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Shift Management Section
             _buildSectionHeader('Shift Management'),
             const SizedBox(height: 16),
@@ -42,17 +48,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Add New Shift Button
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 48,
               child: ElevatedButton.icon(
                 onPressed: () => _showShiftDialog(context),
                 icon: const Icon(Icons.add),
                 label: Text(
                   'Add New Shift',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2196F3),
                   foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: Colors.black.withValues(alpha: 0.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -87,12 +95,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Error loading shifts',
-                            style: GoogleFonts.poppins(fontSize: 16, color: Colors.red),
+                            style: GoogleFonts.poppins(fontSize: 14, color: Colors.red),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             shiftProvider.error!,
-                            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+                            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
@@ -116,12 +124,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'No shifts configured',
-                            style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
+                            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Add your first shift to get started',
-                            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+                            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -144,16 +152,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFF2196F3),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF2196F3),
+        ),
       ),
     );
   }
@@ -161,11 +177,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildShiftCard(BuildContext context, Shift shift) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.grey[50]!,
+            ],
+          ),
+        ),
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   shift.name,
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF2196F3),
                   ),
@@ -224,7 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   '${shift.formattedFromTime} - ${shift.formattedToTime}',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 14,
                     color: Colors.black87,
                   ),
                 ),
@@ -241,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     'Grace: ${shift.formattedGraceFromTime} - ${shift.formattedGraceToTime}',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.orange[700],
                     ),
                   ),
@@ -256,7 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     'No grace period',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.grey,
                     ),
                   ),
@@ -265,6 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ],
         ),
+      ),
       ),
     );
   }
@@ -401,7 +431,20 @@ class _ShiftDialogState extends State<ShiftDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: SingleChildScrollView(
+      elevation: 8,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              Colors.grey[50]!,
+            ],
+          ),
+        ),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
@@ -412,8 +455,8 @@ class _ShiftDialogState extends State<ShiftDialog> {
               Text(
                 widget.shift == null ? 'Add New Shift' : 'Edit Shift',
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                   color: const Color(0xFF2196F3),
                 ),
               ),
@@ -460,15 +503,15 @@ class _ShiftDialogState extends State<ShiftDialog> {
               SwitchListTile(
                 title: Text(
                   'Enable Grace Period',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 subtitle: Text(
                   'Allow late arrival within grace period',
-                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                  style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey),
                 ),
                 value: _hasGracePeriod,
                 onChanged: (value) => setState(() => _hasGracePeriod = value),
-                activeColor: const Color(0xFF2196F3),
+                activeThumbColor: const Color(0xFF2196F3),
               ),
 
               // Grace Time Fields
@@ -499,7 +542,7 @@ class _ShiftDialogState extends State<ShiftDialog> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.poppins(color: Colors.grey),
+                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -512,7 +555,7 @@ class _ShiftDialogState extends State<ShiftDialog> {
                     ),
                     child: Text(
                       widget.shift == null ? 'Add Shift' : 'Update Shift',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -520,6 +563,7 @@ class _ShiftDialogState extends State<ShiftDialog> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -551,7 +595,7 @@ class _ShiftDialogState extends State<ShiftDialog> {
         child: Text(
           value?.format(context) ?? 'Select time',
           style: GoogleFonts.poppins(
-            fontSize: 16,
+            fontSize: 14,
             color: value != null ? Colors.black : Colors.grey,
           ),
         ),

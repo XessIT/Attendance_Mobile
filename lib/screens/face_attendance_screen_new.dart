@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -245,14 +246,51 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
     setState(() {
       _isProcessing = true;
       _capturedImage = imageFile;
-      _status = 'Processing attendance...';
+      _status = 'Checking face...';
     });
 
     try {
+      // ✅ STEP 1: Detect face locally
+      final hasFace = await _detectFace(imageFile);
+
+      if (!hasFace) {
+        setState(() {
+          _isProcessing = false;
+          _status = 'Face not detected';
+          _capturedImage = null;
+        });
+
+        // ❌ Don't call API
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Face not detected. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
+        // 🔁 Retry if loop enabled
+        if (mounted && widget.shouldLoop) {
+          Future.delayed(const Duration(seconds: 2), () {
+            _captureAndRecognize();
+          });
+        }
+
+        return; // 🚫 STOP HERE
+      }
+
+      // ✅ STEP 2: Face detected → proceed
+      setState(() {
+        _status = 'Face detected. Processing attendance...';
+      });
+
       final finalImageFile = await _compressImage(imageFile);
+
+      // ✅ CALL API ONLY HERE
       await _markAttendanceWithImage(finalImageFile);
 
-      // ✅ முக்கியம்: next detection auto start (only if shouldLoop is true)
+      // 🔁 Loop again
       if (mounted && widget.shouldLoop) {
         Future.delayed(const Duration(seconds: 1), () {
           _captureAndRecognize();
@@ -266,7 +304,6 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         _capturedImage = null;
       });
 
-      // error இருந்தாலும் retry (only if shouldLoop is true)
       if (mounted && widget.shouldLoop) {
         Future.delayed(const Duration(seconds: 2), () {
           _captureAndRecognize();
@@ -370,6 +407,24 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         );
       }
     }
+  }
+
+  Future<bool> _detectFace(File imageFile) async {
+    final inputImage = InputImage.fromFile(imageFile);
+
+    final faceDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        performanceMode: FaceDetectorMode.fast,
+        enableContours: false,
+        enableLandmarks: false,
+      ),
+    );
+
+    final faces = await faceDetector.processImage(inputImage);
+
+    faceDetector.close();
+
+    return faces.isNotEmpty;
   }
 
   Future<File> _compressImage(File imageFile) async {

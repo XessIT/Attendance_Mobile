@@ -543,7 +543,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
               child: _buildActionCard(
                 icon: Icons.check_circle_outline,
@@ -560,11 +564,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
+            const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
                 icon: Icons.timelapse,
@@ -581,7 +581,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
               child: _buildActionCard(
                 icon: Icons.face,
@@ -592,7 +596,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Spacer(), // Placeholder to keep the grid layout consistent
+            const Expanded(child: SizedBox()), // Placeholder for empty slot
           ],
         ),
       ],
@@ -655,6 +659,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: const Color(0xFF1E293B),
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
             const SizedBox(height: 2),
             Text(
@@ -664,6 +671,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: const Color(0xFF64748B),
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/link.dart';
@@ -54,8 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final mobileNumber = _mobileNumberController.text.trim();
     
-    // Only call API if mobile number is valid (10 digits)
-    if (mobileNumber.length == 10 && RegExp(r'^\d{10}$').hasMatch(mobileNumber)) {
+    // Only call API if mobile number is valid (10 digits and starts with 6-9)
+    if (mobileNumber.length == 10 && RegExp(r'^[6789]\d{9}$').hasMatch(mobileNumber)) {
       // Debounce API call by 500ms
       _debounceTimer = Timer(const Duration(milliseconds: 500), () {
         _checkMobileNumber(mobileNumber);
@@ -438,6 +439,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Mobile Number Field
                         TextFormField(
                           controller: _mobileNumberController,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
                           decoration: InputDecoration(
                             labelText: 'Mobile Number',
                             labelStyle: GoogleFonts.poppins(
@@ -510,9 +515,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your mobile number';
                             }
-                            if (!RegExp(r'^\d{10}$').hasMatch(value.replaceAll(RegExp(r'\s+'), ''))) {
+                            
+                            // Check if it's exactly 10 digits
+                            if (value.length != 10) {
                               return 'Please enter a valid 10-digit mobile number';
                             }
+                            
+                            // Check if it starts with valid Indian mobile number prefixes
+                            if (!RegExp(r'^[6789]').hasMatch(value)) {
+                              return 'Mobile number must start with 6, 7, 8, or 9';
+                            }
+                            
                             return null;
                           },
                         ),
