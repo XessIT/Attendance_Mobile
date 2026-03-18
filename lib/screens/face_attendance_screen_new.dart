@@ -14,7 +14,9 @@ import '../providers/attendance_provider.dart';
 import '../models/attendance.dart';
 
 class FaceAttendanceScreen extends StatefulWidget {
-  const FaceAttendanceScreen({super.key});
+  final bool shouldLoop;
+  
+  const FaceAttendanceScreen({super.key, this.shouldLoop = true});
 
   @override
   State<FaceAttendanceScreen> createState() => _FaceAttendanceScreenState();
@@ -250,8 +252,8 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       final finalImageFile = await _compressImage(imageFile);
       await _markAttendanceWithImage(finalImageFile);
 
-      // ✅ முக்கியம்: next detection auto start
-      if (mounted) {
+      // ✅ முக்கியம்: next detection auto start (only if shouldLoop is true)
+      if (mounted && widget.shouldLoop) {
         Future.delayed(const Duration(seconds: 1), () {
           _captureAndRecognize();
         });
@@ -264,8 +266,8 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         _capturedImage = null;
       });
 
-      // error இருந்தாலும் retry
-      if (mounted) {
+      // error இருந்தாலும் retry (only if shouldLoop is true)
+      if (mounted && widget.shouldLoop) {
         Future.delayed(const Duration(seconds: 2), () {
           _captureAndRecognize();
         });

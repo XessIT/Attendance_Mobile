@@ -6,6 +6,7 @@ import '../providers/attendance_provider.dart';
 import '../utils/auth_utils.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'dashboard_screen.dart';
+import 'test_dashboard_screen.dart';
 import 'employee_list_screen.dart';
 import 'attendance_screen.dart';
 import 'salary_screen.dart';
@@ -25,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<Offset> _slideAnimation;
 
   final List<Widget> _screens = [
-    const DashboardScreen(),
+    const DashboardScreen(), // Back to original dashboard with fixes
     const EmployeeListScreen(),
     const AttendanceScreen(),
     const SalaryScreen(),
@@ -37,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _loadData();
     _initAnimations();
+    // Start animation immediately so the first screen is visible
+    _animationController.forward(from: 0.0);
   }
 
   void _initAnimations() {
@@ -79,9 +82,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadData() async {
     try {
+      debugPrint('🏠 [HOME SCREEN] Loading initial data...');
       await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+      debugPrint('✅ [HOME SCREEN] Employees loaded');
       await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
+      debugPrint('✅ [HOME SCREEN] Attendance loaded');
+      debugPrint('✅ [HOME SCREEN] Initial data loading completed');
     } catch (e) {
+      debugPrint('❌ [HOME SCREEN] Error loading initial data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -206,9 +214,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         duration: const Duration(milliseconds: 350),
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(
-            opacity: _fadeAnimation,
+            opacity: animation,
             child: SlideTransition(
-              position: _slideAnimation,
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
               child: child,
             ),
           );

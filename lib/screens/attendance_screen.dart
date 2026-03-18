@@ -533,7 +533,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ],
                 ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _handleMarkAttendance,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FaceAttendanceScreen(shouldLoop: true),
+            ),
+          );
+        },
         backgroundColor: const Color(0xFF2196F3),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.face),
@@ -846,13 +853,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
     
-    // Filter by employee if selected
-    final filteredDetails = _selectedEmployeeId != null
-        ? dayWiseDetails.where((detail) {
-            final empId = detail['employeeId']?.toString();
-            return empId == _selectedEmployeeId.toString();
-          }).toList()
-        : dayWiseDetails;
+    // Filter by employee if selected and by search query
+    var filteredDetails = dayWiseDetails.where((detail) {
+      // Employee filter
+      final employeeMatch = _selectedEmployeeId == null ||
+          detail['employeeId']?.toString() == _selectedEmployeeId.toString();
+      
+      // Search filter
+      final searchMatch = _searchQuery.isEmpty ||
+          detail['employeeName']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) == true;
+      
+      return employeeMatch && searchMatch;
+    }).toList();
     
     // Calculate counts from dayWiseDetails for accurate statistics
     int present = 0;
@@ -972,13 +984,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
     
-    // Filter by employee if selected
-    final filteredDetails = _selectedEmployeeId != null
-        ? dayWiseDetails.where((detail) {
-            final empId = detail['employeeId']?.toString();
-            return empId == _selectedEmployeeId.toString();
-          }).toList()
-        : dayWiseDetails;
+    // Filter by employee if selected and by search query
+    var filteredDetails = dayWiseDetails.where((detail) {
+      // Employee filter
+      final employeeMatch = _selectedEmployeeId == null ||
+          detail['employeeId']?.toString() == _selectedEmployeeId.toString();
+      
+      // Search filter
+      final searchMatch = _searchQuery.isEmpty ||
+          detail['employeeName']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) == true;
+      
+      return employeeMatch && searchMatch;
+    }).toList();
 
     if (filteredDetails.isEmpty) {
       return Center(
@@ -1602,21 +1619,4 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
     );
   }
-
-  // Future<void> _selectDate() async {
-  //   final DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: _selectedDate,
-  //     firstDate: DateTime(2020),
-  //     lastDate: DateTime.now().add(const Duration(days: 1)),
-  //   );
-  //
-  //   if (picked != null && picked != _selectedDate) {
-  //     setState(() {
-  //       _selectedDate = picked;
-  //       _reportData = null; // Clear current data to show loading
-  //     });
-  //     await _loadFullReport();
-  //   }
-  // }
 }

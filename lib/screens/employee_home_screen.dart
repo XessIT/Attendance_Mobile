@@ -22,7 +22,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
 
   final List<Widget> _screens = [
     const EmployeeDashboardScreen(),
-    const FaceAttendanceScreen(),
+    const FaceAttendanceScreen(shouldLoop: false),
     const EmployeeAttendanceScreen(),
     const EmployeeLeaveScreen(),
   ];
