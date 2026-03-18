@@ -232,18 +232,18 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
         children: [
           // Search and Filter Bar with Gradient
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF2196F3),
-                  const Color(0xFF1976D2),
-                  Colors.white,
-                ],
-                stops: const [0.0, 0.3, 1.0],
-              ),
-            ),
+            // decoration: BoxDecoration(
+            //   gradient: LinearGradient(
+            //     begin: Alignment.topCenter,
+            //     end: Alignment.bottomCenter,
+            //     colors: [
+            //       const Color(0xFF2196F3),
+            //       const Color(0xFF1976D2),
+            //       Colors.white,
+            //     ],
+            //     stops: const [0.0, 0.3, 1.0],
+            //   ),
+            // ),
             child: Container(
               padding: const EdgeInsets.all(16),
               child: Column(

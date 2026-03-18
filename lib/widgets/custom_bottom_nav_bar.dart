@@ -103,12 +103,12 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
                 width: isSelected ? iconSize * 1.2 : iconSize,
                 height: isSelected ? iconSize * 1.2 : iconSize,
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF4CAF50) : Colors.transparent,
+                  color: isSelected ? item.activeColor : Colors.transparent,
                   shape: BoxShape.circle,
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF4CAF50).withOpacity(0.3),
+                            color: item.activeColor.withOpacity(0.3),
                             blurRadius: 4,
                             spreadRadius: 1,
                           ),
@@ -129,7 +129,7 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
                   curve: widget.curve,
                   child: DefaultTextStyle.merge(
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF4CAF50),
+                      color: item.activeColor,
                       fontWeight: FontWeight.w600,
                       fontSize: fontSize,
                     ),

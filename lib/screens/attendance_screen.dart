@@ -554,18 +554,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Widget _buildHeaderSection() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF2196F3),
-            const Color(0xFF1976D2),
-            Colors.white,
-          ],
-          stops: const [0.0, 0.3, 1.0],
-        ),
-      ),
+      // decoration: BoxDecoration(
+      //   gradient: LinearGradient(
+      //     begin: Alignment.topCenter,
+      //     end: Alignment.bottomCenter,
+      //     colors: [
+      //       const Color(0xFF2196F3),
+      //       const Color(0xFF1976D2),
+      //       Colors.white,
+      //     ],
+      //     stops: const [0.0, 0.3, 1.0],
+      //   ),
+      // ),
       child: Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1033,37 +1033,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         await LocalStorageService.clearAttendanceReportCache(_selectedDate);
         await _loadFullReport();
       },
-      child: Stack(
-        children: [
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: filteredDetails.length,
-            itemBuilder: (context, index) {
-              final detail = filteredDetails[index] as Map<String, dynamic>;
-              return _buildEnhancedAttendanceCard(detail, index);
-            },
-          ),
-          if (_isReportLoading)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.white.withOpacity(0.9),
-                child: const Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(width: 16),
-                      Text('Updating attendance data...'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: filteredDetails.length,
+        itemBuilder: (context, index) {
+          final detail = filteredDetails[index] as Map<String, dynamic>;
+          return _buildEnhancedAttendanceCard(detail, index);
+        },
       ),
     );
   }

@@ -39,8 +39,11 @@ class AppUpdateService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
+          final String newVersion = data['newVersion'] ?? '';
+          final bool isNewer = _isVersionLower(currentVersion, newVersion);
+          
           return {
-            'updateAvailable': data['updateAvailable'] ?? false,
+            'updateAvailable': isNewer,
             'isForceUpdate': data['isForceUpdate'] ?? false,
             'isUnsupported': data['isUnsupported'] ?? false,
             'currentVersion': data['currentVersion'] ?? currentVersion,
@@ -67,6 +70,26 @@ class AppUpdateService {
   static String _getStoreUrl() {
     // Return Play Store URL for Android, App Store URL for iOS
     return '$playStoreBaseUrl$packageName';
+  }
+
+  /// Compares two version strings (e.g., "1.0.8" and "1.0.9").
+  /// Returns true if [current] is lower than [latest].
+  static bool _isVersionLower(String current, String latest) {
+    if (latest.isEmpty) return false;
+    
+    try {
+      final List<int> currentParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      final List<int> latestParts = latest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+      for (int i = 0; i < latestParts.length; i++) {
+        final int currentPart = i < currentParts.length ? currentParts[i] : 0;
+        if (latestParts[i] > currentPart) return true;
+        if (latestParts[i] < currentPart) return false;
+      }
+    } catch (e) {
+      debugPrint('Error comparing versions: $e');
+    }
+    return false;
   }
 
   static Future<void> launchAppStore() async {

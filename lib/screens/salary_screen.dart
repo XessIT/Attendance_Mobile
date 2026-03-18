@@ -170,14 +170,14 @@ class _SalaryScreenState extends State<SalaryScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF2196F3),
-                    const Color(0xFF1976D2),
-                  ],
-                ),
+                // gradient: LinearGradient(
+                //   begin: Alignment.topLeft,
+                //   end: Alignment.bottomRight,
+                //   colors: [
+                //     const Color(0xFF2196F3),
+                //     const Color(0xFF1976D2),
+                //   ],
+                // ),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -434,18 +434,18 @@ class _SalaryScreenState extends State<SalaryScreen> {
 
   Widget _buildFilterSection() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF2196F3),
-            const Color(0xFF1976D2),
-            Colors.white,
-          ],
-          stops: const [0.0, 0.3, 1.0],
-        ),
-      ),
+      // decoration: BoxDecoration(
+      //   gradient: LinearGradient(
+      //     begin: Alignment.topCenter,
+      //     end: Alignment.bottomCenter,
+      //     colors: [
+      //       const Color(0xFF2196F3),
+      //       const Color(0xFF1976D2),
+      //       Colors.white,
+      //     ],
+      //     stops: const [0.0, 0.3, 1.0],
+      //   ),
+      // ),
       child: Container(
         padding: const EdgeInsets.all(16),
         child: Column(
