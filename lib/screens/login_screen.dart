@@ -754,45 +754,46 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF667EEA).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Link(
-                              uri: Uri.parse('https://xesstechlink.com'),
-                              builder: (context, followLink) => InkWell(
-                                onTap: followLink,
-                                borderRadius: BorderRadius.circular(20),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  child: Text(
-                                    'Powered by xesstechlink.com',
-                                    style: GoogleFonts.poppins(
-                                      color: const Color(0xFF667EEA),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 10,
-                                      decoration: TextDecoration.none,
+
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
+                            const SizedBox(height: 16),
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:  Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Link(
+                                  uri: Uri.parse('https://xesstechlink.com'),
+                                  builder: (context, followLink) => InkWell(
+                                    onTap: followLink,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      child: Text(
+                                        'Powered by xesstechlink.com',
+                                        style: GoogleFonts.poppins(
+                                          color:  Colors.black,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 10,
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
 
                 const SizedBox(height: 10),
                           ],
