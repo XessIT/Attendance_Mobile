@@ -306,17 +306,16 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF667EEA),
-              const Color(0xFF764BA2),
-              const Color(0xFF2196F3),
+              const Color(0xFF1565C0), // Dark Blue
+              const Color(0xFF42A5F5), // Light Blue
             ],
-            stops: const [0.0, 0.5, 1.0],
           ),
         ),
         child: Stack(
@@ -326,11 +325,17 @@ class _LoginScreenState extends State<LoginScreen> {
             
             // Main content
             SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Center(
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                    const SizedBox(height: 10),
 
                 // Logo/Title Section
                 Hero(
@@ -362,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: const Icon(
                             Icons.face_retouching_natural,
-                            size: 60,
+                            size: 40,
                             color: Colors.white,
                           ),
                         ),
@@ -370,7 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           'InstaMarQ',
                           style: GoogleFonts.poppins(
-                            fontSize: 28,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                             letterSpacing: 1.2,
@@ -391,11 +396,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ).animate().fadeIn(duration: 800.ms).scale(begin: const Offset(0.8, 0.8)),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 15),
 
                 // Login Form
                 Container(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
@@ -420,21 +425,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           'Welcome Back',
                           style: GoogleFonts.poppins(
-                            fontSize: 28,
+                            fontSize: 22,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1A202C),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           'Sign in to continue to your account',
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
+                            fontSize: 14,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 20),
 
                         // Mobile Number Field
                         TextFormField(
@@ -685,7 +690,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        const SizedBox(height: 32),
+
 
                         // Login Button
                         SizedBox(
@@ -749,7 +754,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 16),
                         Center(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -771,11 +776,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     vertical: 4,
                                   ),
                                   child: Text(
-                                    'Contact xesstechlink.com',
+                                    'Powered by xesstechlink.com',
                                     style: GoogleFonts.poppins(
                                       color: const Color(0xFF667EEA),
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                      fontSize: 10,
                                       decoration: TextDecoration.none,
                                     ),
                                   ),
@@ -789,15 +794,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ).animate().fadeIn(duration: 600.ms, delay: 200.ms).slideY(begin: 0.1),
 
-                const SizedBox(height: 30),
-              ],
+                const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
+          ],
         ),
-      ],
-    ),)
-  );
-}
+      ),
+    );
+  }
 
 // Animated background widget
 Widget _buildAnimatedBackground() {

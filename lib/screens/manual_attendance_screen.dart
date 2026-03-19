@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/employee.dart';
 import '../providers/employee_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/premium_app_bar.dart';
 
 class ManualAttendanceScreen extends StatefulWidget {
   final Employee? employee;
@@ -234,44 +235,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF1565C0), // Dark Blue
-                Color(0xFF42A5F5), // Light Blue
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: false,
-            title: Text(
-              'Manual Attendance',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            foregroundColor: Colors.white,
-          ),
-        ),
+      appBar: const PremiumAppBar(
+        title: 'Manual Attendance',
       ),
       body: SingleChildScrollView(
         child: Padding(

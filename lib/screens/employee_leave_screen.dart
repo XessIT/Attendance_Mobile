@@ -19,6 +19,8 @@ class EmployeeLeaveScreen extends StatefulWidget {
 class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
   @override
   Widget build(BuildContext context) {
+    final bool isSmallDevice = MediaQuery.of(context).size.width < 380;
+
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -29,11 +31,11 @@ class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
               labelColor: const Color(0xFF2196F3),
               unselectedLabelColor: Colors.grey,
               indicatorColor: const Color(0xFF2196F3),
-              labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              tabs: const [
-                Tab(text: 'Apply Leave'),
-                Tab(text: 'My Leaves'),
-                Tab(text: 'Leave Balance'),
+              labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: isSmallDevice ? 12 : 14),
+              tabs: [
+                Tab(text: isSmallDevice ? 'Apply' : 'Apply Leave'),
+                Tab(text: isSmallDevice ? 'Leaves' : 'My Leaves'),
+                Tab(text: isSmallDevice ? 'Balance' : 'Leave Balance'),
               ],
             ),
           ),
@@ -1844,19 +1846,19 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
             // Header Row
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isPaid ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    isPaid ? Icons.paid_rounded : Icons.money_off_rounded,
-                    size: 24,
-                    color: isPaid ? Colors.green[700] : Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 16),
+                // Container(
+                //   padding: const EdgeInsets.all(12),
+                //   decoration: BoxDecoration(
+                //     color: isPaid ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                //     borderRadius: BorderRadius.circular(12),
+                //   ),
+                //   child: Icon(
+                //     isPaid ? Icons.paid_rounded : Icons.money_off_rounded,
+                //     size: 24,
+                //     color: isPaid ? Colors.green[700] : Colors.grey[600],
+                //   ),
+                // ),
+               // const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

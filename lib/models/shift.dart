@@ -45,8 +45,9 @@ class Shift {
   }
 
   // Convert HH:MM:SS to HH:MM format for internal use
-  static String timeFromApiFormat(String timeString) {
-    return timeString.substring(0, 5); // Remove seconds
+  static String timeFromApiFormat(String? timeString) {
+    if (timeString == null || timeString.length < 5) return timeString ?? '';
+    return timeString.substring(0, 5); // Remove seconds if present
   }
 
   // Calculate grace period in minutes from grace times
@@ -72,7 +73,7 @@ class Shift {
   factory Shift.fromJson(Map<String, dynamic> json) {
     return Shift(
       id: json['id'],
-      name: json['name'] ?? '',
+      name: json['name'] ?? json['shiftName'] ?? json['shift_name'] ?? '',
       fromTime: json['from_time'] ?? json['fromTime'] ?? '',
       toTime: json['to_time'] ?? json['toTime'] ?? '',
       hasGracePeriod: json['has_grace_period'] ?? json['hasGracePeriod'] ?? false,
@@ -142,13 +143,13 @@ class Shift {
   factory Shift.fromApiJson(Map<String, dynamic> json) {
     return Shift(
       id: json['id'],
-      name: json['shiftName'] ?? '',
-      fromTime: json['fromTime'] != null ? timeFromApiFormat(json['fromTime']) : '',
-      toTime: json['toTime'] != null ? timeFromApiFormat(json['toTime']) : '',
-      hasGracePeriod: (json['gracePeriod'] ?? 0) > 0,
-      graceFromTime: json['graceFromTime'] != null ? timeFromApiFormat(json['graceFromTime']) : null,
-      graceToTime: json['graceToTime'] != null ? timeFromApiFormat(json['graceToTime']) : null,
-      gracePeriodMinutes: json['gracePeriod'],
+      name: json['shiftName'] ?? json['shift_name'] ?? json['name'] ?? json['shift'] ?? '',
+      fromTime: timeFromApiFormat(json['fromTime'] ?? json['from_time']),
+      toTime: timeFromApiFormat(json['toTime'] ?? json['to_time']),
+      hasGracePeriod: (json['gracePeriod'] ?? json['grace_period'] ?? 0) > 0,
+      graceFromTime: timeFromApiFormat(json['graceFromTime'] ?? json['grace_from_time']),
+      graceToTime: timeFromApiFormat(json['graceToTime'] ?? json['grace_to_time']),
+      gracePeriodMinutes: json['gracePeriod'] ?? json['grace_period'],
     );
   }
 

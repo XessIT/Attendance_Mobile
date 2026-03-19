@@ -39,13 +39,14 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: widget.margin,
       decoration: BoxDecoration(
         color: widget.backgroundColor,
         borderRadius: BorderRadius.circular(30),
         boxShadow: widget.showElevation
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(0.15),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -53,22 +54,32 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
             : null,
       ),
       child: SafeArea(
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: widget.containerHeight,
-          padding: widget.containerPadding,
-          child: Row(
-            mainAxisAlignment: widget.mainAxisAlignment,
-            children: widget.items.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => widget.onItemSelected(index),
-                  child: _buildItem(item, widget.selectedIndex == index),
-                ),
-              );
-            }).toList(),
+          child: Padding(
+            padding: widget.containerPadding,
+            child: Row(
+              mainAxisAlignment: widget.mainAxisAlignment,
+              children: widget.items.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final isSelected = widget.selectedIndex == index;
+
+                return Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => widget.onItemSelected(index),
+                      borderRadius: BorderRadius.circular(widget.itemCornerRadius),
+                      highlightColor: Colors.transparent,
+                      splashColor: item.activeColor.withOpacity(0.1),
+                      child: _buildItem(item, isSelected),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),
@@ -95,7 +106,6 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: [
               AnimatedContainer(
                 duration: widget.animationDuration,

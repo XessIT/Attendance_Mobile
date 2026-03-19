@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/auth_utils.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
+import '../widgets/premium_app_bar.dart';
 import 'employee_dashboard_screen.dart';
 import 'employee_attendance_screen.dart';
 import 'employee_leave_screen.dart';
@@ -15,7 +16,7 @@ class EmployeeHomeScreen extends StatefulWidget {
 }
 
 class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProviderStateMixin {
-  int _currentIndex = 1;
+  int _currentIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -30,7 +31,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
   @override
   void initState() {
     super.initState();
+    _currentIndex = 0;
     _initAnimations();
+    _animationController.forward(from: 0.0);
   }
 
   void _initAnimations() {
@@ -48,7 +51,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
     ));
     
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.3),
+      begin: const Offset(0.0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animationController,
@@ -101,88 +104,45 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF1565C0), // Dark Blue
-                Color(0xFF42A5F5), // Light Blue
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+      appBar: PremiumAppBar(
+        title: 'InstaMarQ',
+        titleWidget: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/app_icon_cropped.png',
+                width: 26,
+                height: 26,
+                fit: BoxFit.cover,
               ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: false,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    'assets/icons/app_icon_cropped.png',
-                    width: 26,
-                    height: 26,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const Text('InstaMarQ'),
-              ],
             ),
-            foregroundColor: Colors.white,
-            actions: [
-              // Container(
-              //   margin: const EdgeInsets.only(right: 8),
-              //   decoration: BoxDecoration(
-              //     color: Colors.white.withOpacity(0.2),
-              //     borderRadius: BorderRadius.circular(12),
-              //   ),
-              //   child: IconButton(
-              //     icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-              //     onPressed: () {
-              //       // TODO: Implement notifications
-              //       ScaffoldMessenger.of(context).showSnackBar(
-              //         const SnackBar(
-              //           content: Text('Notifications coming soon!'),
-              //           backgroundColor: Color(0xFF1565C0),
-              //         ),
-              //       );
-              //     },
-              //     tooltip: 'Notifications',
-              //   ),
-              // ),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: _logout,
-                tooltip: 'Logout',
-              ),
-            ],
-          ),
+            const SizedBox(width: 10),
+            const Text('InstaMarQ'),
+          ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 350),
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(
-            opacity: _fadeAnimation,
+            opacity: animation,
             child: SlideTransition(
-              position: _slideAnimation,
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
               child: child,
             ),
           );
@@ -215,7 +175,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
           BottomNavyBarItem(
             icon: Icons.face_retouching_natural,
             title: Text(
-              'Mark Attendance',
+              'Attendance',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,

@@ -72,8 +72,8 @@ class Employee {
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
       isActive: json['is_active'] == 1 || json['is_active'] == true || json['is_active'] == null,
-      shiftId: json['shift_id'],
-      shiftName: json['shift'], // API returns shift name
+      shiftId: json['shift_id'] is int ? json['shift_id'] : int.tryParse(json['shift_id']?.toString() ?? ''),
+      shiftName: json['shift'] ?? json['shift_name'] ?? json['shiftName'], // API returns shift name
       companyId: json['company_id'],
       dateOfJoining: joiningDate,
       dateOfBirth: birthDate,

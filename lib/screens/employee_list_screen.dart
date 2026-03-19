@@ -608,11 +608,11 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(
-                          Icons.attach_money,
-                          size: 12,
-                          color: Colors.green.shade600,
-                        ),
+                        // Icon(
+                        //   Icons.,
+                        //   size: 12,
+                        //   color: Colors.green.shade600,
+                        // ),
                         const SizedBox(width: 4),
                         Text(
                           formatIndianCurrency(employee.salary),

@@ -417,19 +417,6 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
             // Header Row
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isPaid ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    isPaid ? Icons.paid_rounded : Icons.money_off_rounded,
-                    size: 24,
-                    color: isPaid ? Colors.green[700] : Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

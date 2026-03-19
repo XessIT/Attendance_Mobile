@@ -592,10 +592,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            child: const Icon(Icons.calendar_today, color: Color(0xFF2196F3), size: 20),
-                          ),
+                          // Container(
+                          //   padding: const EdgeInsets.all(8),
+                          //   child: const Icon(Icons.calendar_today, color: Color(0xFF2196F3), size: 20),
+                          // ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(

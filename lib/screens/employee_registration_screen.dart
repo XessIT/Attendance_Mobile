@@ -12,6 +12,7 @@ import '../providers/employee_provider.dart';
 import '../providers/shift_provider.dart';
 import '../providers/department_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/premium_app_bar.dart';
 
 class EmployeeRegistrationScreen extends StatefulWidget {
   const EmployeeRegistrationScreen({super.key});
@@ -311,10 +312,8 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register Employee'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+      appBar: const PremiumAppBar(
+        title: 'Register Employee',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
