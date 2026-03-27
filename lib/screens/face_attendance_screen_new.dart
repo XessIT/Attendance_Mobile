@@ -51,17 +51,17 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
     });
     
     // Test snackbar after 3 seconds to verify it's working
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Test: Snackbar is working!'),
-            backgroundColor: Colors.blue,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    });
+    // Future.delayed(const Duration(seconds: 3), () {
+    //   if (mounted) {
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       SnackBar(
+    //         content: Text('Test: Snackbar is working!'),
+    //         backgroundColor: Colors.blue,
+    //         duration: const Duration(seconds: 2),
+    //       ),
+    //     );
+    //   }
+    // });
   }
 
   Future<void> _initializeCamera() async {
@@ -256,23 +256,13 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       if (!hasFace) {
         setState(() {
           _isProcessing = false;
-          _status = 'Face not detected';
+          _status = 'Face not detected, scanning...';
           _capturedImage = null;
         });
 
-        // ❌ Don't call API
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Face not detected. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-
-        // 🔁 Retry if loop enabled
+        // ❌ Don't call API, just continue scanning silently
         if (mounted && widget.shouldLoop) {
-          Future.delayed(const Duration(seconds: 2), () {
+          Future.delayed(const Duration(milliseconds: 300), () {
             _captureAndRecognize();
           });
         }
@@ -1014,6 +1004,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
   CameraController? _controller;
   bool _isCapturing = false;
   bool _hasCaptured = false;
+  FaceDetector? _faceDetector;
 
   @override
   void initState() {
@@ -1030,14 +1021,21 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
 
     try {
       await _controller!.initialize();
+      _faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          performanceMode: FaceDetectorMode.fast,
+          enableContours: false,
+          enableLandmarks: false,
+        ),
+      );
       setState(() {}); // Rebuild to show camera preview
       
       // Wait 2 seconds to show the camera preview with face circle before auto-capturing
       await Future.delayed(const Duration(seconds: 2));
       
-      // Capture from stream after showing preview
+      // Keep camera open and capture continuously until face is detected
       if (mounted && !_hasCaptured) {
-        _captureFromStream();
+        _startAutoCaptureLoop();
       }
     } catch (e) {
       print('Camera initialization error: $e');
@@ -1045,6 +1043,45 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
         Navigator.pop(context);
       }
     }
+  }
+
+  Future<void> _startAutoCaptureLoop() async {
+    if (_controller == null || !_controller!.value.isInitialized || _isCapturing) {
+      return;
+    }
+
+    _isCapturing = true;
+    try {
+      while (mounted && !_hasCaptured) {
+        try {
+          final XFile image = await _controller!.takePicture();
+          final file = File(image.path);
+          final hasFace = await _detectFaceInCamera(file);
+
+          if (hasFace) {
+            _hasCaptured = true;
+            if (mounted) {
+              Navigator.pop(context, file);
+            }
+            return;
+          }
+        } catch (e) {
+          print('Auto capture attempt failed: $e');
+        }
+
+        // Small delay before trying the next frame
+        await Future.delayed(const Duration(milliseconds: 400));
+      }
+    } finally {
+      _isCapturing = false;
+    }
+  }
+
+  Future<bool> _detectFaceInCamera(File imageFile) async {
+    if (_faceDetector == null) return false;
+    final inputImage = InputImage.fromFile(imageFile);
+    final faces = await _faceDetector!.processImage(inputImage);
+    return faces.isNotEmpty;
   }
 
   Future<void> _captureFromStream() async {
@@ -1200,6 +1237,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
 
   @override
   void dispose() {
+    _faceDetector?.close();
     _controller?.dispose();
     super.dispose();
   }

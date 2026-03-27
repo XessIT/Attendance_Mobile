@@ -6,6 +6,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
 
@@ -26,12 +28,25 @@ class _LoginScreenState extends State<LoginScreen> {
   List<Map<String, dynamic>> _companies = [];
   int? _selectedCompanyId;
   Timer? _debounceTimer;
+  final LocalAuthentication _localAuthentication = LocalAuthentication();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  bool _isBiometricAvailable = false;
+  bool _isBiometricSupported = false;
+  bool _isBiometricLoading = false;
+  bool _hasAttemptedAutoBiometric = false;
+  static const String _biometricMobileKey = 'biometric_mobile_number';
+  static const String _biometricPasswordKey = 'biometric_password';
+  static const String _biometricCompanyIdKey = 'biometric_company_id';
+  static const String _biometricEnabledKey = 'biometric_enabled';
 
   @override
   void initState() {
     super.initState();
     // Add listener to mobile number field
     _mobileNumberController.addListener(_onMobileNumberChanged);
+    _initializeBiometricAuth();
   }
 
   @override
@@ -116,6 +131,382 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _initializeBiometricAuth() async {
+    try {
+      final canCheckBiometrics = await _localAuthentication.canCheckBiometrics;
+      final isDeviceSupported = await _localAuthentication.isDeviceSupported();
+      final prefs = await SharedPreferences.getInstance();
+      final isBiometricEnabled = prefs.getBool(_biometricEnabledKey) ?? false;
+      final storedMobile = await _secureStorage.read(key: _biometricMobileKey);
+      final storedPassword = await _secureStorage.read(key: _biometricPasswordKey);
+      final hasStoredCredentials = storedMobile != null &&
+          storedMobile.isNotEmpty &&
+          storedPassword != null &&
+          storedPassword.isNotEmpty;
+      if (!mounted) return;
+      setState(() {
+        _isBiometricSupported = canCheckBiometrics && isDeviceSupported;
+        _isBiometricAvailable = canCheckBiometrics &&
+            isDeviceSupported &&
+            isBiometricEnabled &&
+            hasStoredCredentials;
+        _hasAttemptedAutoBiometric = false;
+      });
+      if (_isBiometricAvailable) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _triggerAutoBiometricLogin();
+          }
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isBiometricSupported = false;
+        _isBiometricAvailable = false;
+      });
+    }
+  }
+
+  Future<void> _storeBiometricCredentials({
+    required String mobileNumber,
+    required String password,
+    int? companyId,
+  }) async {
+    await _secureStorage.write(key: _biometricMobileKey, value: mobileNumber);
+    await _secureStorage.write(key: _biometricPasswordKey, value: password);
+    if (companyId != null) {
+      await _secureStorage.write(
+        key: _biometricCompanyIdKey,
+        value: companyId.toString(),
+      );
+    } else {
+      await _secureStorage.delete(key: _biometricCompanyIdKey);
+    }
+  }
+
+  Future<void> _setBiometricEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_biometricEnabledKey, enabled);
+  }
+
+  Future<void> _disableBiometrics() async {
+    if (_isLoading || _isBiometricLoading) return;
+
+    setState(() {
+      _isBiometricLoading = true;
+    });
+
+    try {
+      await _setBiometricEnabled(false);
+      await _secureStorage.delete(key: _biometricMobileKey);
+      await _secureStorage.delete(key: _biometricPasswordKey);
+      await _secureStorage.delete(key: _biometricCompanyIdKey);
+
+      if (!mounted) return;
+      setState(() {
+        _isBiometricAvailable = false;
+        _hasAttemptedAutoBiometric = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fingerprint login disabled'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to disable fingerprint: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBiometricLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _triggerAutoBiometricLogin() async {
+    if (_hasAttemptedAutoBiometric ||
+        !_isBiometricAvailable ||
+        _isLoading ||
+        _isBiometricLoading) {
+      return;
+    }
+    _hasAttemptedAutoBiometric = true;
+    await _loginWithBiometrics(showErrorSnackBar: false);
+  }
+
+  Future<void> _enableBiometrics() async {
+    if (_isLoading || _isBiometricLoading) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    // Validate company selection if companies are available
+    if (_companies.isNotEmpty && _selectedCompanyId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a company'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isBiometricLoading = true;
+    });
+
+    try {
+      final authenticated = await _localAuthentication.authenticate(
+        localizedReason: 'Authenticate to enable fingerprint sign in',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+
+      if (!authenticated) return;
+
+      await _storeBiometricCredentials(
+        mobileNumber: _mobileNumberController.text.trim(),
+        password: _passwordController.text.trim(),
+        companyId: _selectedCompanyId,
+      );
+      await _setBiometricEnabled(true);
+
+      if (!mounted) return;
+      setState(() {
+        _isBiometricAvailable = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fingerprint login enabled successfully'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      await _triggerAutoBiometricLogin();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to enable fingerprint: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBiometricLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loginWithBiometrics({bool showErrorSnackBar = true}) async {
+    if (_isLoading || _isBiometricLoading) return;
+
+    setState(() {
+      _isBiometricLoading = true;
+    });
+
+    try {
+      final authenticated = await _localAuthentication.authenticate(
+        localizedReason: 'Authenticate to sign in',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+
+      if (!authenticated) return;
+
+      final savedMobile = await _secureStorage.read(key: _biometricMobileKey);
+      final savedPassword = await _secureStorage.read(key: _biometricPasswordKey);
+      final savedCompanyId = await _secureStorage.read(key: _biometricCompanyIdKey);
+
+      final parsedCompanyId = int.tryParse(savedCompanyId ?? '');
+      if (savedMobile == null ||
+          savedMobile.isEmpty ||
+          savedPassword == null ||
+          savedPassword.isEmpty) {
+        throw Exception('No saved login details found for biometric sign in');
+      }
+
+      await _performLogin(
+        mobileNumber: savedMobile,
+        password: savedPassword,
+        companyId: parsedCompanyId,
+        saveBiometricCredentials: false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      if (showErrorSnackBar) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Biometric sign in failed: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBiometricLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _performLogin({
+    required String mobileNumber,
+    required String password,
+    int? companyId,
+    required bool saveBiometricCredentials,
+  }) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      Map<String, dynamic> result;
+
+      if (companyId != null) {
+        print('🏢 Company selected - Using login with company API');
+        result = await ApiService.loginUserWithCompany(
+          companyId: companyId,
+          mobileNumber: mobileNumber,
+          password: password,
+        );
+        print('🔍 Using loginUserWithCompany API');
+      } else {
+        print('📱 No company selected - Using direct login API');
+        result = await ApiService.loginUser(
+          mobileNumber: mobileNumber,
+          password: password,
+        );
+        print('🔍 Using loginUser API (no companies)');
+      }
+
+      print('🔍 Login API Response: $result');
+
+      if (result['success'] == true) {
+        String? token = result['token'];
+        if (token == null && result['data'] != null && result['data'] is Map) {
+          final data = result['data'] as Map;
+          token = data['token']?.toString() ??
+              data['access_token']?.toString() ??
+              data['auth_token']?.toString();
+        }
+
+        if (token == null || token.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login successful but no token received. Please try again.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+
+        await AuthUtils.setToken(token);
+        print('✅ Token stored in secure storage');
+
+        String? role = AuthUtils.getRoleFromToken(token);
+        if (role == null || role.isEmpty) {
+          try {
+            final data = result['data'];
+            if (data is Map) {
+              final inner = data['data'];
+              if (inner is Map && inner['employee'] is Map) {
+                role = (inner['employee'] as Map)['userType']?.toString();
+              }
+              role ??= data['userType']?.toString();
+            }
+          } catch (_) {}
+          role ??= 'employee';
+        }
+        await AuthUtils.setUserType(role);
+        print('👤 Role stored: $role');
+
+        if (saveBiometricCredentials) {
+          await _storeBiometricCredentials(
+            mobileNumber: mobileNumber,
+            password: password,
+            companyId: companyId,
+          );
+          if (mounted) {
+            setState(() {
+              _isBiometricAvailable = true;
+            });
+          }
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          try {
+            await _updateFcmToken();
+          } catch (e) {
+            debugPrint('⚠️ FCM token update failed: $e');
+          }
+
+          if (role.toLowerCase() == 'employee') {
+            Navigator.of(context).pushReplacementNamed('/employee-home');
+          } else {
+            Navigator.of(context).pushReplacementNamed('/home');
+          }
+        }
+      } else {
+        throw Exception(result['message'] ?? 'Login failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -148,118 +539,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       return;
     }*/
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      Map<String, dynamic> result;
-      
-      // Use different login methods based on whether companies are available
-      if (_companies.isNotEmpty) {
-        print('🏢 Companies found - Using login with company API');
-        result = await ApiService.loginUserWithCompany(
-          companyId: _selectedCompanyId!,
-          mobileNumber: _mobileNumberController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        print('🔍 Using loginUserWithCompany API');
-      } else {
-        print('📱 No companies found - Using direct login API');
-        // No companies found - use general login (for employees)
-        result = await ApiService.loginUser(
-          mobileNumber: _mobileNumberController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        print('🔍 Using loginUser API (no companies)');
-      }
- 
-       print('🔍 Login API Response: $result');
-
-      if (result['success'] == true) {
-        // Get token from response
-        String? token = result['token'];
-        if (token == null && result['data'] != null && result['data'] is Map) {
-          final data = result['data'] as Map;
-          token = data['token']?.toString() ?? data['access_token']?.toString() ?? data['auth_token']?.toString();
-        }
-
-        if (token == null || token.isEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login successful but no token received. Please try again.'),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
-          return;
-        }
-
-        // Store token in secure storage
-        await AuthUtils.setToken(token);
-        print('✅ Token stored in secure storage');
-
-        // Get role from JWT token (single source of truth), fallback to response
-        String? role = AuthUtils.getRoleFromToken(token);
-        if (role == null || role.isEmpty) {
-          try {
-            final data = result['data'];
-            if (data is Map) {
-              final inner = data['data'];
-              if (inner is Map && inner['employee'] is Map) {
-                role = (inner['employee'] as Map)['userType']?.toString();
-              }
-              role ??= data['userType']?.toString();
-            }
-          } catch (_) {}
-          role ??= 'employee';
-        }
-        await AuthUtils.setUserType(role);
-        print('👤 Role stored: $role');
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-
-          try {
-            await _updateFcmToken();
-          } catch (e) {
-            debugPrint('⚠️ FCM token update failed: $e');
-          }
-
-          // Navigate by role (same logic as splash screen)
-          if (role.toLowerCase() == 'employee') {
-            Navigator.of(context).pushReplacementNamed('/employee-home');
-          } else {
-            Navigator.of(context).pushReplacementNamed('/home');
-          }
-        }
-      } else {
-        throw Exception(result['message'] ?? 'Login failed');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Login failed: ${e.toString().replaceAll('Exception: ', '')}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    await _performLogin(
+      mobileNumber: _mobileNumberController.text.trim(),
+      password: _passwordController.text.trim(),
+      companyId: _selectedCompanyId,
+      saveBiometricCredentials: _isBiometricAvailable,
+    );
   }
 
   Future<void> _updateFcmToken() async {
@@ -691,6 +976,74 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
 
+                        if (_isBiometricSupported && !_isBiometricAvailable)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: OutlinedButton.icon(
+                              onPressed: (_isLoading || _isBiometricLoading)
+                                  ? null
+                                  : _enableBiometrics,
+                              icon: _isBiometricLoading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.fingerprint),
+                              label: Text(
+                                _isBiometricLoading
+                                    ? 'Enabling...'
+                                    : 'Enable Fingerprint Login',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF667EEA),
+                                side: const BorderSide(color: Color(0xFF667EEA)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (_isBiometricSupported && _isBiometricAvailable)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: OutlinedButton.icon(
+                              onPressed: (_isLoading || _isBiometricLoading)
+                                  ? null
+                                  : _disableBiometrics,
+                              icon: _isBiometricLoading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.fingerprint_outlined),
+                              label: Text(
+                                _isBiometricLoading
+                                    ? 'Disabling...'
+                                    : 'Disable Fingerprint Login',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.redAccent,
+                                side: const BorderSide(color: Colors.redAccent),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (_isBiometricSupported) const SizedBox(height: 12),
+
 
                         // Login Button
                         SizedBox(
@@ -754,7 +1107,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                           ),
                         ),
-
                       ],
                     ),
                   ),
