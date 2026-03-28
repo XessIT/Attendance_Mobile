@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/employee_provider.dart';
 import '../providers/attendance_provider.dart';
 import '../utils/auth_utils.dart';
+import '../utils/biometric_auth_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/premium_app_bar.dart';
 import 'dashboard_screen.dart';
@@ -41,6 +42,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _initAnimations();
     // Start animation immediately so the first screen is visible
     _animationController.forward(from: 0.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          showEnableFingerprintOfferIfNeeded(context);
+        }
+      });
+    });
+  }
+
+  Future<void> _openFingerprintOptions() async {
+    await showFingerprintLoginOptionsDialog(context);
   }
 
   void _initAnimations() {
@@ -155,6 +167,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.fingerprint),
+            onPressed: _openFingerprintOptions,
+            tooltip: 'Fingerprint login',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/auth_utils.dart';
+import '../utils/biometric_auth_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/premium_app_bar.dart';
 import 'employee_dashboard_screen.dart';
@@ -34,6 +35,18 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
     _currentIndex = 0;
     _initAnimations();
     _animationController.forward(from: 0.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Short delay so the route is fully active (dialog was not showing for some devices).
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          showEnableFingerprintOfferIfNeeded(context);
+        }
+      });
+    });
+  }
+
+  Future<void> _openFingerprintOptions() async {
+    await showFingerprintLoginOptionsDialog(context);
   }
 
   void _initAnimations() {
@@ -123,6 +136,11 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.fingerprint),
+            onPressed: _openFingerprintOptions,
+            tooltip: 'Fingerprint login',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,

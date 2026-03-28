@@ -298,7 +298,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(DateFormat('yyyy-MM-dd').format(_selectedDate),
+                        Text(DateFormat('dd-MM-yyyy').format(_selectedDate),
                             style: GoogleFonts.poppins(fontSize: 14)),
                         const Icon(Icons.calendar_today, size: 20, color: Color(0xFF2196F3)),
                       ],

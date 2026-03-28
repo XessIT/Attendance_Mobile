@@ -6,10 +6,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/link.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
+import '../utils/biometric_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,18 +28,11 @@ class _LoginScreenState extends State<LoginScreen> {
   List<Map<String, dynamic>> _companies = [];
   int? _selectedCompanyId;
   Timer? _debounceTimer;
-  final LocalAuthentication _localAuthentication = LocalAuthentication();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  final BiometricAuthService _biometric = BiometricAuthService();
   bool _isBiometricAvailable = false;
   bool _isBiometricSupported = false;
   bool _isBiometricLoading = false;
   bool _hasAttemptedAutoBiometric = false;
-  static const String _biometricMobileKey = 'biometric_mobile_number';
-  static const String _biometricPasswordKey = 'biometric_password';
-  static const String _biometricCompanyIdKey = 'biometric_company_id';
-  static const String _biometricEnabledKey = 'biometric_enabled';
 
   @override
   void initState() {
@@ -133,23 +126,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _initializeBiometricAuth() async {
     try {
-      final canCheckBiometrics = await _localAuthentication.canCheckBiometrics;
-      final isDeviceSupported = await _localAuthentication.isDeviceSupported();
-      final prefs = await SharedPreferences.getInstance();
-      final isBiometricEnabled = prefs.getBool(_biometricEnabledKey) ?? false;
-      final storedMobile = await _secureStorage.read(key: _biometricMobileKey);
-      final storedPassword = await _secureStorage.read(key: _biometricPasswordKey);
-      final hasStoredCredentials = storedMobile != null &&
-          storedMobile.isNotEmpty &&
-          storedPassword != null &&
-          storedPassword.isNotEmpty;
+      final supported = await _biometric.isSupported();
+      final enabled = await _biometric.isEnabled();
+      final hasCreds = await _biometric.hasStoredCredentials();
       if (!mounted) return;
       setState(() {
-        _isBiometricSupported = canCheckBiometrics && isDeviceSupported;
-        _isBiometricAvailable = canCheckBiometrics &&
-            isDeviceSupported &&
-            isBiometricEnabled &&
-            hasStoredCredentials;
+        _isBiometricSupported = supported;
+        _isBiometricAvailable = supported && enabled && hasCreds;
         _hasAttemptedAutoBiometric = false;
       });
       if (_isBiometricAvailable) {
@@ -168,74 +151,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _storeBiometricCredentials({
-    required String mobileNumber,
-    required String password,
-    int? companyId,
-  }) async {
-    await _secureStorage.write(key: _biometricMobileKey, value: mobileNumber);
-    await _secureStorage.write(key: _biometricPasswordKey, value: password);
-    if (companyId != null) {
-      await _secureStorage.write(
-        key: _biometricCompanyIdKey,
-        value: companyId.toString(),
-      );
-    } else {
-      await _secureStorage.delete(key: _biometricCompanyIdKey);
-    }
-  }
-
-  Future<void> _setBiometricEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricEnabledKey, enabled);
-  }
-
-  Future<void> _disableBiometrics() async {
-    if (_isLoading || _isBiometricLoading) return;
-
-    setState(() {
-      _isBiometricLoading = true;
-    });
-
-    try {
-      await _setBiometricEnabled(false);
-      await _secureStorage.delete(key: _biometricMobileKey);
-      await _secureStorage.delete(key: _biometricPasswordKey);
-      await _secureStorage.delete(key: _biometricCompanyIdKey);
-
-      if (!mounted) return;
-      setState(() {
-        _isBiometricAvailable = false;
-        _hasAttemptedAutoBiometric = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fingerprint login disabled'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to disable fingerprint: ${e.toString().replaceAll('Exception: ', '')}',
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isBiometricLoading = false;
-        });
-      }
-    }
-  }
-
   Future<void> _triggerAutoBiometricLogin() async {
     if (_hasAttemptedAutoBiometric ||
         !_isBiometricAvailable ||
@@ -247,79 +162,6 @@ class _LoginScreenState extends State<LoginScreen> {
     await _loginWithBiometrics(showErrorSnackBar: false);
   }
 
-  Future<void> _enableBiometrics() async {
-    if (_isLoading || _isBiometricLoading) return;
-    if (!_formKey.currentState!.validate()) return;
-
-    // Validate company selection if companies are available
-    if (_companies.isNotEmpty && _selectedCompanyId == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a company'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() {
-      _isBiometricLoading = true;
-    });
-
-    try {
-      final authenticated = await _localAuthentication.authenticate(
-        localizedReason: 'Authenticate to enable fingerprint sign in',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
-
-      if (!authenticated) return;
-
-      await _storeBiometricCredentials(
-        mobileNumber: _mobileNumberController.text.trim(),
-        password: _passwordController.text.trim(),
-        companyId: _selectedCompanyId,
-      );
-      await _setBiometricEnabled(true);
-
-      if (!mounted) return;
-      setState(() {
-        _isBiometricAvailable = true;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fingerprint login enabled successfully'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
-      await _triggerAutoBiometricLogin();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Unable to enable fingerprint: ${e.toString().replaceAll('Exception: ', '')}',
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isBiometricLoading = false;
-        });
-      }
-    }
-  }
-
   Future<void> _loginWithBiometrics({bool showErrorSnackBar = true}) async {
     if (_isLoading || _isBiometricLoading) return;
 
@@ -328,32 +170,21 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final authenticated = await _localAuthentication.authenticate(
-        localizedReason: 'Authenticate to sign in',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+      final authenticated = await _biometric.authenticate(
+        reason: 'Authenticate to sign in',
       );
 
       if (!authenticated) return;
 
-      final savedMobile = await _secureStorage.read(key: _biometricMobileKey);
-      final savedPassword = await _secureStorage.read(key: _biometricPasswordKey);
-      final savedCompanyId = await _secureStorage.read(key: _biometricCompanyIdKey);
-
-      final parsedCompanyId = int.tryParse(savedCompanyId ?? '');
-      if (savedMobile == null ||
-          savedMobile.isEmpty ||
-          savedPassword == null ||
-          savedPassword.isEmpty) {
+      final creds = await _biometric.readCredentials();
+      if (creds.mobile.isEmpty || creds.password.isEmpty) {
         throw Exception('No saved login details found for biometric sign in');
       }
 
       await _performLogin(
-        mobileNumber: savedMobile,
-        password: savedPassword,
-        companyId: parsedCompanyId,
+        mobileNumber: creds.mobile,
+        password: creds.password,
+        companyId: creds.companyId,
         saveBiometricCredentials: false,
       );
     } catch (e) {
@@ -453,16 +284,11 @@ class _LoginScreenState extends State<LoginScreen> {
         print('👤 Role stored: $role');
 
         if (saveBiometricCredentials) {
-          await _storeBiometricCredentials(
+          await _biometric.storeCredentials(
             mobileNumber: mobileNumber,
             password: password,
             companyId: companyId,
           );
-          if (mounted) {
-            setState(() {
-              _isBiometricAvailable = true;
-            });
-          }
         }
 
         if (mounted) {
@@ -543,7 +369,9 @@ class _LoginScreenState extends State<LoginScreen> {
       mobileNumber: _mobileNumberController.text.trim(),
       password: _passwordController.text.trim(),
       companyId: _selectedCompanyId,
-      saveBiometricCredentials: _isBiometricAvailable,
+      // Always store last successful credentials securely.
+      // Biometric login can be enabled later from Home via dialog.
+      saveBiometricCredentials: true,
     );
   }
 
@@ -976,74 +804,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        if (_isBiometricSupported && !_isBiometricAvailable)
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: OutlinedButton.icon(
-                              onPressed: (_isLoading || _isBiometricLoading)
-                                  ? null
-                                  : _enableBiometrics,
-                              icon: _isBiometricLoading
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.fingerprint),
-                              label: Text(
-                                _isBiometricLoading
-                                    ? 'Enabling...'
-                                    : 'Enable Fingerprint Login',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF667EEA),
-                                side: const BorderSide(color: Color(0xFF667EEA)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (_isBiometricSupported && _isBiometricAvailable)
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: OutlinedButton.icon(
-                              onPressed: (_isLoading || _isBiometricLoading)
-                                  ? null
-                                  : _disableBiometrics,
-                              icon: _isBiometricLoading
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.fingerprint_outlined),
-                              label: Text(
-                                _isBiometricLoading
-                                    ? 'Disabling...'
-                                    : 'Disable Fingerprint Login',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.redAccent,
-                                side: const BorderSide(color: Colors.redAccent),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (_isBiometricSupported) const SizedBox(height: 12),
-
 
                         // Login Button
                         SizedBox(
@@ -1133,7 +893,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         vertical: 4,
                                       ),
                                       child: Text(
-                                        'Powered by xesstechlink.com',
+                                        'Powered by xesstechlink.in',
                                         style: GoogleFonts.poppins(
                                           color:  Colors.black,
                                           fontWeight: FontWeight.w600,
