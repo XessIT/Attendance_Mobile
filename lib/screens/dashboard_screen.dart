@@ -27,22 +27,92 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   AttendanceSummary? _attendanceSummary;
   List<dynamic>? _attendanceData;
+  bool _isLoading = true;
+  String? _error;
+  bool _hasData = false;
+
   @override
   void initState() {
     super.initState();
-    _refreshData();
-    _checkForAppUpdates();
+    debugPrint(' [DASHBOARD] initState called');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint(' [DASHBOARD] PostFrame callback executing');
+      _refreshData();
+      _checkForAppUpdates();
+    });
   }
 
   Future<void> _refreshData() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
+
     try {
-      await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
-      await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
-      await _loadAttendanceSummary();
-    } catch (e) {
+      debugPrint(' [DASHBOARD] Starting data refresh...');
+      
+      // Load employees first with timeout and error handling
+      debugPrint(' [DASHBOARD] Loading employees...');
+      try {
+        await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees()
+            .timeout(const Duration(seconds: 30));
+        debugPrint(' [DASHBOARD] Employees loaded successfully');
+      } catch (e) {
+        debugPrint(' [DASHBOARD] Error loading employees: $e');
+        // Continue even if employees fail to load
+      }
+
+      // Load attendance with timeout and error handling
+      debugPrint(' [DASHBOARD] Loading attendance...');
+      try {
+        await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance()
+            .timeout(const Duration(seconds: 30));
+        debugPrint(' [DASHBOARD] Attendance loaded successfully');
+      } catch (e) {
+        debugPrint(' [DASHBOARD] Error loading attendance: $e');
+        // Continue even if attendance fails to load
+      }
+
+      // Load attendance summary with timeout and error handling
+      debugPrint(' [DASHBOARD] Loading attendance summary...');
+      try {
+        await _loadAttendanceSummary().timeout(const Duration(seconds: 30));
+        debugPrint(' [DASHBOARD] Attendance summary loaded');
+      } catch (e) {
+        debugPrint(' [DASHBOARD] Error loading attendance summary: $e');
+        // Continue even if summary fails to load
+      }
+
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasData = true;
+          _error = null;
+        });
+        debugPrint(' [DASHBOARD] Dashboard data refresh completed successfully');
+      }
+    } catch (e) {
+      debugPrint(' [DASHBOARD] Data refresh error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+          _hasData = false;
+        });
+
+        // Show error in snackbar but don't block UI
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error refreshing data: $e')),
+          SnackBar(
+            content: Text('Error loading data: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _refreshData,
+            ),
+          ),
         );
       }
     }
@@ -50,16 +120,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadAttendanceSummary() async {
     try {
+      debugPrint(' [DASHBOARD] Fetching attendance summary...');
       final now = DateTime.now();
       final startDate = DateFormat('yyyy-MM-dd').format(now);
       final endDate = startDate;
       final data = await ApiService.fetchAttendanceSummary(startDate: startDate, endDate: endDate);
-      setState(() {
-        _attendanceSummary = AttendanceSummary.fromJson(data);
-        _attendanceData = data['data'] as List<dynamic>?;
-      });
+
+      if (mounted && data != null) {
+        setState(() {
+          _attendanceSummary = AttendanceSummary.fromJson(data);
+          _attendanceData = data['data'] as List<dynamic>?;
+        });
+        debugPrint(' [DASHBOARD] Attendance summary loaded successfully');
+      } else {
+        debugPrint(' [DASHBOARD] Attendance summary data is null');
+      }
     } catch (e) {
-      // Silently ignore in UI if summary fetch fails; keep existing UI functional
+      debugPrint(' [DASHBOARD] Error loading attendance summary: $e');
+      // Don't set state on error, just log it
+      // The dashboard should still work even without summary data
     }
   }
 
@@ -67,7 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _checkForAppUpdates() async {
     try {
       final updateInfo = await AppUpdateService.checkForUpdate(context: context);
-      
+
       if (updateInfo != null && updateInfo['updateAvailable'] == true) {
         if (mounted) {
           await AppUpdateService.showUpdateDialog(
@@ -147,7 +226,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           if (mounted) {
             Navigator.of(context).pop(); // Close loading dialog
-            
+
             if (result['success'] == true) {
               final String message = result['message'] ?? 'Attendance marked successfully';
               ScaffoldMessenger.of(context).showSnackBar(
@@ -186,44 +265,161 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _navigateToManualAttendance() async {
-    final result = await Navigator.push<bool>(
+  Future<void> _navigateToManualAttendanceScreen() async {
+    final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const ManualAttendanceScreen()),
+      MaterialPageRoute(
+        builder: (context) => const ManualAttendanceScreen(),
+      ),
     );
-
     if (result == true) {
-      _refreshData(); // Refresh list after successful entry
+      _refreshData();
     }
+  }
+
+  Future<void> _navigateToFaceAttendanceScreen() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FaceAttendanceScreen(shouldLoop: true),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+    debugPrint('🏠 [DASHBOARD] Build method called');
+    debugPrint('🏠 [DASHBOARD] _isLoading: $_isLoading, _hasData: $_hasData, _error: $_error');
+    
+    // Show loading indicator while data is being fetched
+    if (_isLoading && !_hasData) {
+      debugPrint('🏠 [DASHBOARD] Showing loading state');
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Center(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Welcome Section
-              _buildWelcomeSection(),
-              const SizedBox(height: 24),
-
-              // Quick Actions
-              _buildQuickActions(),
-              const SizedBox(height: 24),
-
-              // Statistics Cards (source counts from attendance summary API)
-              _buildStatisticsCards(),
-              const SizedBox(height: 24),
-
-              // Today's Attendance
-              _buildTodayAttendance(),
+              const CircularProgressIndicator(
+                color: Color(0xFF2196F3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading Dashboard...',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
             ],
           ),
+        ),
+      );
+    }
+
+    // Show error state if there's an error and no data
+    if (_error != null && !_hasData) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Unable to load dashboard',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _refreshData,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  ),
+                  child: Text(
+                    'Retry',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _error = null;
+                      _hasData = true; // Force show dashboard with limited data
+                    });
+                  },
+                  child: Text(
+                    'Show Dashboard Anyway',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF2196F3),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Show main dashboard content
+    debugPrint('🏠 [DASHBOARD] Showing main dashboard content');
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        color: const Color(0xFF2196F3),
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Welcome Section
+                  _buildWelcomeSection(),
+                  const SizedBox(height: 24),
+
+                  // Quick Actions
+                  _buildQuickActions(),
+                  const SizedBox(height: 24),
+
+                  // Statistics Cards
+                  _buildStatisticsCards(),
+                  const SizedBox(height: 24),
+
+                  // Today's Attendance
+                  _buildTodayAttendance(),
+                  const SizedBox(height: 20),
+                ]),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -231,39 +427,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildWelcomeSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF667EEA),
+            const Color(0xFF764BA2),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: const Color(0xFF667EEA).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Welcome Back!',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.waving_hand,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome Back!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
-            'Manage your employee attendance with face recognition',
+            'Manage your employee attendance with advanced face recognition technology',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 14,
               color: Colors.white.withOpacity(0.9),
+              height: 1.4,
             ),
           ),
         ],
@@ -278,7 +510,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           'Quick Actions',
           style: GoogleFonts.poppins(
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -287,14 +519,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Expanded(
               child: _buildActionCard(
-                icon: Icons.face,
-                title: 'Mark Attendance',
-                subtitle: 'Face Recognition',
+                icon: Icons.edit_calendar,
+                title: 'Manual Attendance',
+                subtitle: 'Add Manually',
                 color: Colors.green,
-                onTap: _handleMarkAttendance,
+                onTap: _navigateToManualAttendanceScreen,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
                 icon: Icons.person_add,
@@ -313,26 +545,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.timelapse,
-                title: 'Compensatory Off',
-                subtitle: 'Request Credit/Leave',
-                color: Colors.purple,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CompOffScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
             Expanded(
               child: _buildActionCard(
                 icon: Icons.check_circle_outline,
@@ -349,22 +564,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.timelapse,
+                title: 'Compensatory Off',
+                subtitle: 'Request Credit/Leave',
+                color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CompOffScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: _buildActionCard(
-                icon: Icons.edit_calendar,
-                title: 'Manual Attendance',
-                subtitle: 'Manual Entry',
+                icon: Icons.face,
+                title: 'Face Attendance',
+                subtitle: 'Face Recognition',
                 color: Colors.orange.shade700,
-                onTap: _navigateToManualAttendance,
+                onTap: _navigateToFaceAttendanceScreen,
               ),
             ),
-            const SizedBox(width: 16),
-            const Spacer(), // Placeholder to keep the grid layout consistent
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()), // Placeholder for empty slot
           ],
         ),
       ],
@@ -381,49 +613,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: [
+                    color.withOpacity(0.1),
+                    color.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
                 color: color,
-                size: 32,
+                size: 24,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.grey,
+                fontSize: 10,
+                color: const Color(0xFF64748B),
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
           ],
         ),
@@ -434,93 +684,133 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatisticsCards() {
     return Consumer2<EmployeeProvider, AttendanceProvider>(
       builder: (context, employeeProvider, attendanceProvider, child) {
-        // Use the provided employeeProvider
-        final totalEmployeesFromList = employeeProvider.employees.length;
-         final int summaryTotalEmployees = _attendanceSummary?.totalEmployees ?? totalEmployeesFromList;
-         final int summaryLate = _attendanceSummary?.totalLate ?? 0;
-         final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
-         final int summaryHalfDay = _attendanceSummary?.totalHalfDay ?? 0;
-         // Add late check-ins to present count
-         final int summaryPresent = (_attendanceSummary?.totalPresent ?? attendanceProvider.todayAttendance.length) + summaryLate;
+        debugPrint('🏠 [DASHBOARD] Building statistics cards');
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Statistics',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+        try {
+          // Use the provided employeeProvider with null safety
+          final totalEmployeesFromList = employeeProvider?.employees?.length ?? 0;
+          final int summaryTotalEmployees = _attendanceSummary?.totalEmployees ?? totalEmployeesFromList;
+          final int summaryLate = _attendanceSummary?.totalLate ?? 0;
+          final int summaryAbsent = _attendanceSummary?.totalAbsent ?? 0;
+          final int summaryHalfDay = _attendanceSummary?.totalHalfDay ?? 0;
+
+          // Add late check-ins to present count with null safety
+          final todayAttendanceLength = attendanceProvider?.todayAttendance?.length ?? 0;
+          final int summaryPresent = (_attendanceSummary?.totalPresent ?? todayAttendanceLength) + summaryLate;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Statistics',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Total Employees',
-                    value: summaryTotalEmployees.toString(),
-                    icon: Icons.people,
-                    color: Colors.blue,
-                  ),
+              const SizedBox(height: 12),
+              // New Statistics UI - Horizontal Scroll Cards
+              SizedBox(
+                height: 130,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildModernStatCard(
+                      title: 'Total Employees',
+                      value: summaryTotalEmployees.toString(),
+                      icon: Icons.people,
+                      color: Colors.blue,
+                      percentage: null,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildModernStatCard(
+                      title: 'Present Today',
+                      value: summaryPresent.toString(),
+                      icon: Icons.check_circle,
+                      color: Colors.green,
+                      percentage: summaryTotalEmployees > 0 ? (summaryPresent / summaryTotalEmployees * 100).round() : null,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildModernStatCard(
+                      title: 'Absent',
+                      value: summaryAbsent.toString(),
+                      icon: Icons.trending_up,
+                      color: Colors.orange,
+                      percentage: summaryTotalEmployees > 0 ? (summaryAbsent / summaryTotalEmployees * 100).round() : null,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildModernStatCard(
+                      title: 'Late Check In',
+                      value: summaryLate.toString(),
+                      icon: Icons.access_time,
+                      color: Colors.purple,
+                      percentage: summaryTotalEmployees > 0 ? (summaryLate / summaryTotalEmployees * 100).round() : null,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Present Today',
-                    value: summaryPresent.toString(),
-                    icon: Icons.check_circle,
-                    color: Colors.green,
-                  ),
+              ),
+            ],
+          );
+        } catch (e) {
+          debugPrint('🏠 [DASHBOARD] Error in statistics cards: $e');
+          // Return a fallback UI if there's an error
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Statistics',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Absent',
-                    value: summaryAbsent.toString(),
-                    icon: Icons.trending_up,
-                    color: Colors.orange,
-                  ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 130,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    title: 'Late Check In',
-                    value: summaryLate.toString(),
-                    icon: Icons.access_time,
-                    color: Colors.purple,
-                  ),
+                child: const Center(
+                  child: Text('Unable to load statistics'),
                 ),
-              ],
-            ),
-          ],
-        );
+              ),
+            ],
+          );
+        }
       },
     ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
   }
 
-  // Attendance summary UI removed to rely solely on API-driven statistics
-
-  Widget _buildStatCard({
+  Widget _buildModernStatCard({
     required String title,
     required String value,
     required IconData icon,
     required Color color,
+    int? percentage,
   }) {
     return Container(
+      width: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: color.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -529,24 +819,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 24),
-              const Spacer(),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
                   color: color,
+                  size: 20,
                 ),
               ),
+              const Spacer(),
+              if (percentage != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$percentage%',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 3),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey,
+              fontSize: 10,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -556,14 +875,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTodayAttendance() {
     final attendanceList = _attendanceData ?? [];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Today\'s Attendance',
           style: GoogleFonts.poppins(
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -571,14 +890,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.1),
+              width: 1,
+            ),
           ),
           child: attendanceList.isEmpty
               ? Padding(
@@ -587,8 +910,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Text(
                       'No attendance records for today',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey,
+                        fontSize: 10,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ),
@@ -631,11 +954,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     }
                     
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey.withOpacity(0.1),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,14 +986,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       name,
                                       style: GoogleFonts.poppins(
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 16,
+                                        fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       '$employeeId • $department',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 12,
+                                        fontSize: 10,
                                         color: Colors.grey[600],
                                       ),
                                     ),
@@ -677,12 +1004,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: statusColor,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: statusColor.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Text(
                                   status.toUpperCase(),
                                   style: GoogleFonts.poppins(
-                                    fontSize: 11,
+                                    fontSize: 8,
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -690,7 +1024,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Expanded(
@@ -730,10 +1064,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }) {
     final hasTime = time != '-' && time.isNotEmpty;
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -746,7 +1091,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    fontSize: 11,
+                    fontSize: 10,
                     color: Colors.grey[600],
                   ),
                 ),
@@ -754,7 +1099,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   hasTime ? _formatTime(time) : '-',
                   style: GoogleFonts.poppins(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: hasTime ? color : Colors.grey,
                   ),

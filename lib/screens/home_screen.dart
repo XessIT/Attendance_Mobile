@@ -4,7 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/employee_provider.dart';
 import '../providers/attendance_provider.dart';
 import '../utils/auth_utils.dart';
+import '../utils/biometric_auth_service.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
+import '../widgets/premium_app_bar.dart';
 import 'dashboard_screen.dart';
+import 'test_dashboard_screen.dart';
 import 'employee_list_screen.dart';
 import 'attendance_screen.dart';
 import 'salary_screen.dart';
@@ -17,11 +21,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   final List<Widget> _screens = [
-    const DashboardScreen(),
+    const DashboardScreen(), // Back to original dashboard with fixes
     const EmployeeListScreen(),
     const AttendanceScreen(),
     const SalaryScreen(),
@@ -32,13 +39,70 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _initAnimations();
+    // Start animation immediately so the first screen is visible
+    _animationController.forward(from: 0.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          showEnableFingerprintOfferIfNeeded(context);
+        }
+      });
+    });
+  }
+
+  Future<void> _openFingerprintOptions() async {
+    await showFingerprintLoginOptionsDialog(context);
+  }
+
+  void _initAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 350),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _navigateToPage(int index) {
+    if (_currentIndex != index) {
+      setState(() {
+        _currentIndex = index;
+      });
+      _animationController.forward(from: 0.0);
+    }
   }
 
   Future<void> _loadData() async {
     try {
+      debugPrint('🏠 [HOME SCREEN] Loading initial data...');
       await Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+      debugPrint('✅ [HOME SCREEN] Employees loaded');
       await Provider.of<AttendanceProvider>(context, listen: false).loadAttendance();
+      debugPrint('✅ [HOME SCREEN] Attendance loaded');
+      debugPrint('✅ [HOME SCREEN] Initial data loading completed');
     } catch (e) {
+      debugPrint('❌ [HOME SCREEN] Error loading initial data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -84,9 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        title: Row(
+      appBar: PremiumAppBar(
+        title: 'InstaMarQ',
+        titleWidget: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             ClipRRect(
@@ -102,9 +166,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('InstaMarQ'),
           ],
         ),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.fingerprint),
+            onPressed: _openFingerprintOptions,
+            tooltip: 'Fingerprint login',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
@@ -112,42 +179,102 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            ),
+          );
         },
-        selectedItemColor: const Color(0xFF2196F3),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w400),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+        child: _screens[_currentIndex],
+      ),
+      bottomNavigationBar: CustomAnimatedBottomBar(
+        containerHeight: 80,
+        backgroundColor: Colors.white,
+        selectedIndex: _currentIndex,
+        showElevation: true,
+        itemCornerRadius: 24,
+        curve: Curves.easeInOut,
+        containerPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        onItemSelected: _navigateToPage,
+        items: <BottomNavyBarItem>[
+          BottomNavyBarItem(
+            icon: Icons.dashboard,
+            title: Text(
+              'Dashboard',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            activeColor: const Color(0xFF1565C0),
+            inactiveColor: Colors.grey,
+            textAlign: TextAlign.center,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Employees',
+          BottomNavyBarItem(
+            icon: Icons.people,
+            title: Text(
+              'Employees',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            activeColor: const Color(0xFF1565C0),
+            inactiveColor:  Colors.grey,
+            textAlign: TextAlign.center,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.access_time),
-            label: 'Attendance',
+          BottomNavyBarItem(
+            icon: Icons.access_time,
+            title: Text(
+              'Attendance',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            activeColor: const Color(0xFF1565C0),
+            inactiveColor: Colors.grey,
+            textAlign: TextAlign.center,
           ),
-          /*BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Salary',
-          ),*/
-          /*BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),*/
+          BottomNavyBarItem(
+            icon: Icons.work_outline,
+            title: Text(
+              'Salary',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            activeColor: const Color(0xFF1565C0),
+            inactiveColor: Colors.grey,
+            textAlign: TextAlign.center,
+          ),
+          BottomNavyBarItem(
+            icon: Icons.settings,
+            title: Text(
+              'Shift',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            activeColor: const Color(0xFF1565C0),
+            inactiveColor: Colors.grey,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
-} 
+}

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/employee.dart';
 import '../providers/employee_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/premium_app_bar.dart';
 
 class ManualAttendanceScreen extends StatefulWidget {
   final Employee? employee;
@@ -234,13 +235,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Manual Attendance',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
+      appBar: const PremiumAppBar(
+        title: 'Manual Attendance',
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -302,7 +298,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(DateFormat('yyyy-MM-dd').format(_selectedDate),
+                        Text(DateFormat('dd-MM-yyyy').format(_selectedDate),
                             style: GoogleFonts.poppins(fontSize: 14)),
                         const Icon(Icons.calendar_today, size: 20, color: Color(0xFF2196F3)),
                       ],

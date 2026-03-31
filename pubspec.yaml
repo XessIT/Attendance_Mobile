@@ -2,7 +2,7 @@ name: face_recognization
 description: "Employee Face Recognition Attendance System"
 publish_to: 'none'
 
-version: 1.0.7+8
+version: 1.0.8
 
 environment:
   sdk: ^3.5.4
@@ -45,6 +45,7 @@ dependencies:
   geolocator: ^14.0.2
   url_launcher: ^6.2.2
   package_info_plus: ^8.0.0
+  google_mlkit_face_detection: ^0.10.0
 
   # Charts
   fl_chart: ^0.66.0
@@ -52,6 +53,7 @@ dependencies:
   firebase_core: ^4.4.0
   firebase_messaging: ^16.1.1
   flutter_local_notifications: ^20.0.0
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:

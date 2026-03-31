@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import '../models/employee.dart';
 import '../models/shift.dart';
 import '../providers/employee_provider.dart';
 import '../providers/shift_provider.dart';
+import '../widgets/premium_app_bar.dart';
 
 class EmployeeEditScreen extends StatefulWidget {
   final Employee employee;
@@ -47,22 +49,36 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
     _checkCompanyMismatch();
     
     // Load shifts when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ShiftProvider>().loadShifts();
-      
-      // Set selected shift if employee has one
-      if (widget.employee.shiftName != null) {
-        final shifts = context.read<ShiftProvider>().shifts;
-        try {
-          _selectedShift = shifts.firstWhere(
-            (shift) => shift.name == widget.employee.shiftName,
-          );
-          setState(() {});
-        } catch (e) {
-          // Shift not found, leave as null
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<ShiftProvider>().loadShifts();
+            if (mounted) {
+          final shifts = context.read<ShiftProvider>().shifts;
+          debugPrint('🔍 [EDIT SCREEN] Loaded ${shifts.length} shifts');
+          debugPrint('🔍 [EDIT SCREEN] Employee Shift: ID=${widget.employee.shiftId}, Name="${widget.employee.shiftName}"');
+          
+          // Set selected shift if employee has one
+          if (widget.employee.shiftId != null || (widget.employee.shiftName != null && widget.employee.shiftName!.isNotEmpty)) {
+            try {
+              final foundShift = shifts.firstWhere(
+                (shift) => 
+                  (widget.employee.shiftId != null && shift.id == widget.employee.shiftId) ||
+                  (widget.employee.shiftName != null && shift.name.trim().toLowerCase() == widget.employee.shiftName!.trim().toLowerCase()),
+              );
+              
+              setState(() {
+                _selectedShift = foundShift;
+              });
+              debugPrint('✅ [EDIT SCREEN] Matched shift: ${foundShift.name} (ID: ${foundShift.id})');
+            } catch (e) {
+              debugPrint('❌ [EDIT SCREEN] Shift not found in list: $e');
+              // Log available shift names for comparison
+              debugPrint('🔍 [EDIT SCREEN] Available shifts: ${shifts.map((s) => '"${s.name}" (ID: ${s.id})').join(', ')}');
+            }
+          } else {
+            debugPrint('⚠️ [EDIT SCREEN] Employee has no shift assigned');
+          }
         }
-      }
-    });
+      });
   }
   
   Future<void> _checkCompanyMismatch() async {
@@ -197,17 +213,8 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-        title: Text(
-          'Edit Employee',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      appBar: const PremiumAppBar(
+        title: 'Edit Employee',
       ),
       body: SafeArea(
         child: Form(
@@ -256,15 +263,14 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
 
               _buildTextField(
                 controller: _emailController,
-                label: 'Email Address',
+                label: 'Email Address (Optional)',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter email address';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
+                  if (value != null && value.trim().isNotEmpty) {
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
                   }
                   return null;
                 },

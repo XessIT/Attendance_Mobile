@@ -74,6 +74,40 @@ class AuthUtils {
     }
   }
 
+  /// Decode JWT payload and return employee ID from token.
+  /// Returns null if token is invalid or claim is missing.
+  static int? getEmployeeIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      String payload = parts[1];
+      while (payload.length % 4 != 0) {
+        payload += '=';
+      }
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final map = json.decode(decoded) as Map<String, dynamic>;
+      
+      // Try multiple possible employee ID fields
+      final employeeId = map['employeeId'] ?? 
+                        map['employeeID'] ?? 
+                        map['id'] ?? 
+                        map['userId'] ?? 
+                        map['user_id'];
+      
+      if (employeeId != null) {
+        if (employeeId is int) {
+          return employeeId;
+        } else if (employeeId is String) {
+          return int.tryParse(employeeId);
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Get role for navigation: from storage first, then decode from token.
   static Future<String?> getRoleForNavigation() async {
     String? role = await getUserType();
@@ -83,6 +117,14 @@ class AuthUtils {
     role = getRoleFromToken(token);
     if (role != null) await setUserType(role);
     return role;
+  }
+
+  /// Get current employee ID from JWT token.
+  /// Returns null if token is invalid or employee ID is missing.
+  static Future<int?> getCurrentEmployeeId() async {
+    final token = await getToken();
+    if (token == null) return null;
+    return getEmployeeIdFromToken(token);
   }
 
   /// Clear authentication token and user data (logout)

@@ -94,7 +94,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -106,7 +106,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Error loading dashboard',
-                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
@@ -119,6 +119,14 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: _loadDashboardData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2196F3),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -151,15 +159,15 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                     ),
                   ),
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _handleMarkAttendance,
-        label: Text(
-          'Mark Attendance',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        icon: const Icon(Icons.camera_alt),
-        backgroundColor: const Color(0xFF2196F3),
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: _handleMarkAttendance,
+      //   label: Text(
+      //     'Mark Attendance',
+      //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      //   ),
+      //   icon: const Icon(Icons.camera_alt),
+      //   backgroundColor: const Color(0xFF2196F3),
+      // ),
     );
   }
 
@@ -266,33 +274,44 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   Widget _buildProfileCard() {
     final profile = _dashboardData?['profile'] ?? {};
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white, // Color(0xFF2196F3),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF2196F3).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 35,
-            backgroundColor: const Color(0xFFE3F2FD),
-            child: Text(
-              (profile['name'] ?? 'U').toString().substring(0, 1).toUpperCase(),
-              style: GoogleFonts.poppins(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF2196F3),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: CircleAvatar(
+              radius: 32,
+              backgroundColor: Colors.white.withOpacity(0.9),
+              child: Text(
+                (profile['name'] ?? 'U').toString().substring(0, 1).toUpperCase(),
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1976D2),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,32 +321,36 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   '${profile['department'] ?? 'Department'} • ${profile['employeeId'] ?? ''}',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
                 if (profile['shift'] != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE3F2FD),
-                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
                       ),
                       child: Text(
                         'Shift: ${profile['shift']}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: const Color(0xFF1565C0),
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -337,7 +360,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn().slideX();
+    ).animate().fadeIn().slideX().then(delay: 200.ms).shimmer(duration: 1500.ms);
   }
 
   Widget _buildTodayStatusCard() {
@@ -348,19 +371,25 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     final checkOut = today['checkOut'];
 
     Color statusColor = Colors.grey;
-    if (isPresent) statusColor = Colors.green;
-    else if (status.toString().toLowerCase() == 'absent') statusColor = Colors.red;
+    Color statusBgColor = Colors.grey.withOpacity(0.1);
+    if (isPresent) {
+      statusColor = Colors.green;
+      statusBgColor = Colors.green.withOpacity(0.1);
+    } else if (status.toString().toLowerCase() == 'absent') {
+      statusColor = Colors.red;
+      statusBgColor = Colors.red.withOpacity(0.1);
+    }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -370,56 +399,112 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Today\'s Status',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2196F3).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.today,
+                      color: Color(0xFF2196F3),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Today\'s Status',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status.toString().toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: statusColor.withOpacity(0.3),
+                    width: 1,
                   ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      status.toString().toUpperCase(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTimeInfo(
-                  'Check In',
-                  checkIn,
-                  Icons.login,
-                  const Color(0xFF4CAF50),
-                ),
-              ),
-              Container(
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.grey.withOpacity(0.1),
                 width: 1,
-                height: 40,
-                color: Colors.grey[300],
               ),
-              Expanded(
-                child: _buildTimeInfo(
-                  'Check Out',
-                  checkOut,
-                  Icons.logout,
-                  const Color(0xFFF44336),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildTimeInfo(
+                    'Check In',
+                    checkIn,
+                    Icons.login,
+                    const Color(0xFF4CAF50),
+                  ),
                 ),
-              ),
-            ],
+                Container(
+                  width: 1,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.grey.withOpacity(0.3),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: _buildTimeInfo(
+                    'Check Out',
+                    checkOut,
+                    Icons.logout,
+                    const Color(0xFFF44336),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -439,21 +524,29 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(height: 12),
         Text(
           label,
           style: GoogleFonts.poppins(
             fontSize: 12,
             color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           formattedTime,
           style: GoogleFonts.poppins(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             color: Colors.black87,
           ),
         ),
@@ -467,15 +560,32 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'This Month',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2196F3).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.calendar_month,
+                color: Color(0xFF2196F3),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'This Month',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -525,17 +635,21 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
+        border: Border.all(
+          color: color.withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,35 +658,42 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 22),
               ),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             label,
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+              fontSize: 13,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(delay: 50.ms).scale(begin: const Offset(0.95, 0.95));
   }
 
   Widget _buildHolidayCard() {
@@ -581,19 +702,23 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7B1FA2), Color(0xFF9C27B0)],
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF7B1FA2),
+            const Color(0xFF9C27B0),
+            const Color(0xFFBA68C8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF9C27B0).withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF9C27B0).withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -602,49 +727,68 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.celebration, color: Colors.white, size: 24),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.celebration, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 12),
               Text(
                 'Upcoming Holiday',
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             holiday['name'] ?? 'Holiday',
             style: GoogleFonts.poppins(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                holiday['date'] ?? '',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.9),
-                ),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    holiday['date'] ?? '',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.95),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   holiday['type'] ?? 'Holiday',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -652,44 +796,72 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1).then(delay: 100.ms).shimmer(duration: 2000.ms);
   }
 
   Widget _buildLeaveStatsCard() {
     final leaves = _dashboardData?['leaveTakenYearly'] ?? {};
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Leaves Taken (Yearly)',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildLeaveItem('Casual', leaves['casual']?.toString() ?? '0', Colors.blue),
-              _buildLeaveItem('Medical', leaves['medical']?.toString() ?? '0', Colors.pink),
-              _buildLeaveItem('Other', leaves['other']?.toString() ?? '0', Colors.orange),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2196F3).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.beach_access,
+                  color: Color(0xFF2196F3),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Leaves Taken (Yearly)',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.grey.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildLeaveItem('Casual', leaves['casual']?.toString() ?? '0', Colors.blue),
+                _buildLeaveItem('Medical', leaves['medical']?.toString() ?? '0', Colors.pink),
+                _buildLeaveItem('Other', leaves['other']?.toString() ?? '0', Colors.orange),
+              ],
+            ),
           ),
         ],
       ),
@@ -700,11 +872,18 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.3), width: 2),
-            color: color.withOpacity(0.05),
+            border: Border.all(color: color.withOpacity(0.4), width: 2),
+            color: color.withOpacity(0.08),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Text(
             count,
@@ -715,12 +894,13 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Text(
           label,
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -736,48 +916,79 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       },
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
-             BoxShadow(
-              color: Colors.black.withOpacity(0.05), 
-              blurRadius: 10, 
-              offset: const Offset(0, 4),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
+          border: Border.all(
+            color: Colors.purple.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.purple.withOpacity(0.1),
+                    Colors.purple.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(Icons.timelapse, color: Colors.purple, size: 28),
+              child: const Icon(Icons.timelapse, color: Colors.purple, size: 32),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Compensatory Off',
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                    style: GoogleFonts.poppins(
+                      fontSize: 16, 
+                      fontWeight: FontWeight.bold, 
+                      color: Colors.black87,
+                    ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     'Request credit or apply for leave',
-                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12, 
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_ios, 
+                size: 16, 
+                color: Colors.purple,
+              ),
+            ),
           ],
         ),
-      ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
+      ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1).then(delay: 100.ms).scale(begin: const Offset(0.98, 0.98)),
     );
   }
 }
