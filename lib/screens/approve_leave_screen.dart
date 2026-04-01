@@ -754,40 +754,8 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Enhanced Status Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                statusColor.withOpacity(0.8),
-                                statusColor,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: statusColor.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            status.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
+                        // Enhanced Status Badge with Level Support
+                        _buildStatusIndicator(leave, status, statusColor),
                       ],
                     ),
                   ],
@@ -1774,6 +1742,74 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator(Map<String, dynamic> leave, String status, Color statusColor) {
+    bool isPending = status.toLowerCase() == 'pending';
+    int currentLevel = int.tryParse(leave['current_level']?.toString() ?? '1') ?? 1;
+    
+    if (isPending) {
+        // Special orange badge for specific levels
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.orange[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange[200]!),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Waiting for L$currentLevel',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.orange[800],
+                ),
+              ),
+              Text(
+                'Level $currentLevel',
+                style: GoogleFonts.poppins(
+                  fontSize: 7,
+                  color: Colors.orange[600],
+                ),
+              ),
+            ],
+          ),
+        );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            statusColor.withOpacity(0.8),
+            statusColor,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: GoogleFonts.poppins(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
