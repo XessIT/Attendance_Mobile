@@ -206,7 +206,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                         child: DropdownButton<String>(
                           value: _leaveType,
                           isExpanded: true,
-                          items: ['Casual', 'Medical', 'Other'].map((String value) {
+                          items: ['Casual', 'Medical', 'Permission', 'Other'].map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
                               child: Text(value),
