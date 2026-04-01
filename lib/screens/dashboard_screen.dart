@@ -608,7 +608,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const PermissionRequestScreen(),
+                      builder: (context) => const Scaffold(
+                        body: EmployeeLeaveScreen(initialTab: 1),
+                      ),
                     ),
                   );
                 },
@@ -629,9 +631,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: const Text('My Requests')),
-                        body: EmployeeLeaveScreen(),
+                      builder: (context) => const Scaffold(
+                        body: EmployeeLeaveScreen(initialTab: 2),
                       ),
                     ),
                   );
