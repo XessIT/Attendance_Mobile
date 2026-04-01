@@ -10,7 +10,8 @@ import '../models/leave_balance.dart';
 import 'leave_balance_detail_screen.dart';
 
 class EmployeeLeaveScreen extends StatefulWidget {
-  const EmployeeLeaveScreen({super.key});
+  final int initialTab;
+  const EmployeeLeaveScreen({super.key, this.initialTab = 0});
 
   @override
   State<EmployeeLeaveScreen> createState() => _EmployeeLeaveScreenState();
@@ -21,34 +22,50 @@ class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
   Widget build(BuildContext context) {
     final bool isSmallDevice = MediaQuery.of(context).size.width < 380;
 
-    return DefaultTabController(
-      length: 3,
-      child: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              labelColor: const Color(0xFF2196F3),
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: const Color(0xFF2196F3),
-              labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: isSmallDevice ? 12 : 14),
-              tabs: [
-                Tab(text: isSmallDevice ? 'Apply' : 'Apply Leave'),
-                Tab(text: isSmallDevice ? 'Leaves' : 'My Leaves'),
-                Tab(text: isSmallDevice ? 'Balance' : 'Leave Balance'),
-              ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFF),
+      appBar: AppBar(
+        title: Text('Leave & Permission', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 18)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: DefaultTabController(
+        length: 4,
+        initialIndex: widget.initialTab,
+        child: Column(
+          children: [
+            Container(
+              color: Colors.white,
+              child: TabBar(
+                labelColor: const Color(0xFF2196F3),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: const Color(0xFF2196F3),
+                labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: isSmallDevice ? 12 : 14),
+                tabs: [
+                  const Tab(text: 'Apply Leave'),
+                  const Tab(text: 'Permission'),
+                  const Tab(text: 'My History'),
+                  const Tab(text: 'Balance'),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                const ApplyLeaveTab(),
-                const MyLeavesTab(),
-                const LeaveBalanceTab(),
-              ],
+            Expanded(
+              child: TabBarView(
+                children: [
+                  const ApplyLeaveTab(),
+                  const ApplyPermissionTab(),
+                  const MyLeavesTab(),
+                  const LeaveBalanceTab(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -206,7 +223,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                         child: DropdownButton<String>(
                           value: _leaveType,
                           isExpanded: true,
-                          items: ['Casual', 'Medical', 'Other'].map((String value) {
+                          items: ['Casual', 'Medical', 'Permission', 'Other'].map((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
                               child: Text(value),
@@ -2061,6 +2078,154 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class ApplyPermissionTab extends StatefulWidget {
+  const ApplyPermissionTab({super.key});
+
+  @override
+  State<ApplyPermissionTab> createState() => _ApplyPermissionTabState();
+}
+
+class _ApplyPermissionTabState extends State<ApplyPermissionTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _reasonController = TextEditingController();
+  
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
+  TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
+  bool _isLoading = false;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context, bool isStart) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStart ? _startTime : _endTime,
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = picked;
+          final endHour = (_startTime.hour + 2) % 24;
+          _endTime = TimeOfDay(hour: endHour, minute: _startTime.minute);
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  double _calculateDuration() {
+    final start = _startTime.hour + (_startTime.minute / 60);
+    final end = _endTime.hour + (_endTime.minute / 60);
+    double duration = end - start;
+    if (duration < 0) duration += 24;
+    return duration;
+  }
+
+  Future<void> _submitRequest() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final startTimeStr = '${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}:00';
+      final endTimeStr = '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}:00';
+      
+      final leaveData = {
+        'leaveType': 'Permission',
+        'startDate': dateStr,
+        'endDate': dateStr,
+        'startTime': startTimeStr,
+        'endTime': endTimeStr,
+        'durationHours': _calculateDuration(),
+        'reason': _reasonController.text.trim(),
+      };
+
+      await ApiService.applyLeave(leaveData);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permission submitted successfully'), backgroundColor: Colors.green));
+        _reasonController.clear();
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Apply Permission', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1565C0))),
+            const SizedBox(height: 24),
+            _buildTile(label: 'Date', value: DateFormat('dd MMM yyyy').format(_selectedDate), icon: Icons.calendar_today, onTap: () => _selectDate(context)),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildTile(label: 'Start Time', value: _startTime.format(context), icon: Icons.access_time, onTap: () => _selectTime(context, true))),
+                const SizedBox(width: 16),
+                Expanded(child: _buildTile(label: 'End Time', value: _endTime.format(context), icon: Icons.access_time_filled, onTap: () => _selectTime(context, false))),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _reasonController,
+              maxLines: 3,
+              decoration: InputDecoration(hintText: 'Enter reason...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _submitRequest,
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2196F3), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text('Submit Request', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTile({required String label, required String value, required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Icon(icon, size: 16, color: Colors.grey[600]), const SizedBox(width: 8), Text(label, style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey[600]))]),
+            const SizedBox(height: 4),
+            Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
     );
   }
 }

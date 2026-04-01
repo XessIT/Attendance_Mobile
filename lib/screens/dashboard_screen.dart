@@ -14,8 +14,9 @@ import '../services/location_service.dart';
 import '../services/app_update_service.dart';
 import '../models/attendance_summary.dart';
 import 'face_attendance_screen_new.dart';
-import 'approve_leave_screen.dart';
+import 'level_approval_screen.dart';
 import 'manual_attendance_screen.dart';
+import 'employee_leave_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -558,7 +559,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ApproveLeaveScreen(),
+                      builder: (context) => const LevelApprovalScreen(),
                     ),
                   );
                 },
@@ -596,7 +597,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(child: SizedBox()), // Placeholder for empty slot
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.timer_outlined,
+                title: 'Permission Request',
+                subtitle: 'Short Leave',
+                color: Colors.blueAccent,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EmployeeLeaveScreen(initialTab: 1),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                icon: Icons.history_outlined,
+                title: 'My Request',
+                subtitle: 'Check Status',
+                color: Colors.deepOrangeAccent,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EmployeeLeaveScreen(initialTab: 2),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ],
