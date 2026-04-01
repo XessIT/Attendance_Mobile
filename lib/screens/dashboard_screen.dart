@@ -630,7 +630,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     MaterialPageRoute(
                       builder: (context) => Scaffold(
                         appBar: AppBar(title: const Text('My Requests')),
-                        body: const EmployeeLeaveScreen(),
+                        body: EmployeeLeaveScreen(),
                       ),
                     ),
                   );
