@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import '../models/employee.dart';
+import '../utils/auth_utils.dart';
 
 class PermissionRequestScreen extends StatefulWidget {
   const PermissionRequestScreen({super.key});
@@ -18,6 +20,44 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
   bool _isLoading = false;
+  
+  // Selection Logic
+  List<Employee> _employees = [];
+  Employee? _selectedEmployee;
+  bool _isLoadingEmployees = false;
+  String? _currentUserType;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final type = await AuthUtils.getUserType();
+    if (mounted) setState(() => _currentUserType = type);
+    
+    // If Admin/Staff, load employees so they can "Give Permission"
+    if (type != 'employee') {
+      _loadEmployees();
+    }
+  }
+
+  Future<void> _loadEmployees() async {
+    if (mounted) setState(() => _isLoadingEmployees = true);
+    try {
+      final result = await ApiService.getEmployees(limit: 100);
+      if (mounted) {
+        setState(() {
+          _employees = result['employees'];
+        });
+      }
+    } catch (e) {
+      print('Error loading employees: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingEmployees = false);
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -62,6 +102,14 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
 
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // If manager is giving permission, they must select an employee
+    if (_currentUserType != 'employee' && _selectedEmployee == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an employee')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -78,6 +126,7 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
         'endTime': endTimeStr,
         'durationHours': _calculateDuration(),
         'reason': _reasonController.text.trim(),
+        if (_selectedEmployee != null) 'employeeId': _selectedEmployee!.id,
       };
 
       await ApiService.applyLeave(leaveData);
@@ -107,9 +156,11 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isStaff = _currentUserType != 'employee';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Request Permission'),
+        title: Text(isStaff ? 'Give Permission' : 'Request Permission'),
         backgroundColor: const Color(0xFF2196F3),
         foregroundColor: Colors.white,
       ),
@@ -121,7 +172,7 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Permission Detail',
+                isStaff ? 'Entry Form' : 'Permission Detail',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -129,11 +180,48 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Select date and time for short-term leave',
-                style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 24),
+              if (isStaff) ...[
+                 Text(
+                   'Select employee to grant short leave',
+                   style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
+                 ),
+                 const SizedBox(height: 16),
+                 _isLoadingEmployees 
+                   ? const LinearProgressIndicator() 
+                   : Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 16),
+                       decoration: BoxDecoration(
+                         border: Border.all(color: Colors.grey[300]!),
+                         borderRadius: BorderRadius.circular(12),
+                         color: Colors.white,
+                       ),
+                       child: DropdownButtonHideUnderline(
+                         child: DropdownButton<Employee>(
+                           value: _selectedEmployee,
+                           isExpanded: true,
+                           hint: Text('Choose Employee', style: GoogleFonts.poppins(fontSize: 14)),
+                           items: _employees.map((emp) {
+                             return DropdownMenuItem<Employee>(
+                               value: emp,
+                               child: Text(emp.name, style: GoogleFonts.poppins(fontSize: 14)),
+                             );
+                           }).toList(),
+                           onChanged: (newValue) {
+                             setState(() {
+                               _selectedEmployee = newValue;
+                             });
+                           },
+                         ),
+                       ),
+                     ),
+                 const SizedBox(height: 24),
+              ] else ...[
+                Text(
+                  'Select date and time for short-term leave',
+                  style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // Date Picker
               _buildPickerTile(
@@ -234,7 +322,7 @@ class _PermissionRequestScreenState extends State<PermissionRequestScreen> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
-                          'Submit Permission Request',
+                          isStaff ? 'Grant Permission' : 'Submit Request',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
