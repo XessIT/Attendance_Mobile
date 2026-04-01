@@ -17,6 +17,7 @@ import 'face_attendance_screen_new.dart';
 import 'approve_leave_screen.dart';
 import 'manual_attendance_screen.dart';
 import 'permission_request_screen.dart';
+import 'employee_leave_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
