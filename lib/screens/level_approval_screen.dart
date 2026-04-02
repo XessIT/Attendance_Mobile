@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import '../utils/auth_utils.dart';
 import 'leave_balance_detail_screen.dart';
 
 class LevelApprovalScreen extends StatefulWidget {
@@ -15,11 +16,23 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
   List<Map<String, dynamic>> _leaveRequests = [];
   bool _isLoading = true;
   String _selectedStatus = 'Pending';
+  int? _currentStaffId;
+  String? _currentUserRole;
 
   @override
   void initState() {
     super.initState();
+    _initUser();
     _loadRequests();
+  }
+
+  Future<void> _initUser() async {
+    final id = await AuthUtils.getCurrentEmployeeId();
+    final role = await AuthUtils.getUserRole();
+    setState(() {
+      _currentStaffId = id;
+      _currentUserRole = role?.toLowerCase();
+    });
   }
 
   Future<void> _loadRequests() async {
@@ -103,7 +116,7 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text(status),
+              label: Text(isSelected && status == 'Pending' ? 'To Approve' : status),
               selected: isSelected,
               onSelected: (val) {
                 if (val) {
@@ -138,8 +151,19 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
   Widget _buildRequestRow(Map<String, dynamic> request, int sNo) {
     final employee = request['employee'] ?? {};
     final status = request['status']?.toString() ?? 'Pending';
-    final isPending = status.toLowerCase() == 'pending';
-    final currentLevel = int.tryParse(request['current_level']?.toString() ?? '1') ?? 1;
+    final currentLevel = int.tryParse(request['currentLevel']?.toString() ?? '1') ?? 1;
+    
+    // Status Logic for Hierarchical Levels
+    final isFinalized = ['Approved', 'Rejected', 'Cancelled'].contains(status);
+    final isPending = !isFinalized; // Includes Pending, L1_Approved, L2_Approved
+    
+    // Permission Logic (Type-safe comparison)
+    final requiredId = request['requiredApproverId']?.toString();
+    final myId = _currentStaffId?.toString();
+    final isAdmin = _currentUserRole?.contains('admin') ?? false;
+    
+    // It's my turn if (My ID matches Required ID) OR (I am an Admin)
+    final isMyTurn = (requiredId != null && requiredId == myId) || isAdmin;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -157,7 +181,7 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
             Container(
               width: 5,
               decoration: BoxDecoration(
-                color: isPending ? Colors.orange : (status == 'Approved' ? Colors.green : Colors.red),
+                color: !isFinalized ? Colors.orange : (status == 'Approved' ? Colors.green : Colors.red),
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
               ),
             ),
@@ -194,7 +218,7 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
                           ),
                         ),
                         // Level Badge
-                        if (isPending) _buildLevelBadge(currentLevel),
+                        if (!isFinalized) _buildLevelBadge(currentLevel, status),
                       ],
                     ),
                     const Divider(height: 24),
@@ -206,7 +230,7 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
                         _buildInfoColumn('Days', '${request['totalDays'] ?? '1.0'}'),
                       ],
                     ),
-                    if (isPending) ...[
+                    if (!isFinalized && isMyTurn) ...[
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -229,6 +253,20 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
                           ),
                         ],
                       ),
+                    ] else if (!isFinalized) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(8)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.info_outline, size: 12, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Text('Waiting for designated level approver', style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey[600], fontStyle: FontStyle.italic)),
+                          ],
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -240,7 +278,12 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
     );
   }
 
-  Widget _buildLevelBadge(int level) {
+  Widget _buildLevelBadge(int level, String status) {
+    String displayStatus = 'Waiting for L$level';
+    if (status == 'Pending' && level == 1) displayStatus = 'Waiting for L1';
+    if (status == 'L1_Approved') displayStatus = 'Waiting for L2';
+    if (status == 'L2_Approved') displayStatus = 'Waiting for HR/L3';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -250,8 +293,8 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
       ),
       child: Column(
         children: [
-          Text('Waiting for L$level', style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.orange[800])),
-          Text('Level $level', style: GoogleFonts.poppins(fontSize: 7, color: Colors.orange[600])),
+          Text(displayStatus, style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.orange[800])),
+          Text('Stage: $level', style: GoogleFonts.poppins(fontSize: 7, color: Colors.orange[600])),
         ],
       ),
     );
@@ -298,7 +341,7 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
         children: [
           Icon(Icons.assignment_turned_in_outlined, size: 64, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          Text('No requests found', style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+          const Text('No requests found', style: TextStyle(fontSize: 16, color: Colors.grey)),
         ],
       ),
     );
