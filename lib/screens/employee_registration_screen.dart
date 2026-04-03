@@ -234,6 +234,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         faceData: '', // Will be set after face registration
         createdAt: DateTime.now(),
         shiftId: _selectedShift?.id,
+        departmentId: _selectedDepartment?.id,
       );
 
       // Generate password from date of joining (YYYYMMDD format)
@@ -261,6 +262,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         imageFile: _faceImage!,
         shiftName: _selectedShift?.name,
         departmentName: _selectedDepartment?.name,
+        departmentId: _selectedDepartment?.id,
         password: password,
       );
 

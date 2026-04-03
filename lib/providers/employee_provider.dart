@@ -133,11 +133,11 @@ class EmployeeProvider with ChangeNotifier {
   }
 
   // Create new employee
-  Future<bool> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, String? password}) async {
+  Future<bool> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, int? departmentId, String? password}) async {
     _setLoading(true);
     try {
       print('📦 [EMPLOYEE PROVIDER] Creating employee via API...');
-      final newEmployee = await ApiService.createEmployee(employee, imageFile: imageFile, shiftName: shiftName, departmentName: departmentName, password: password);
+      final newEmployee = await ApiService.createEmployee(employee, imageFile: imageFile, shiftName: shiftName, departmentName: departmentName, departmentId: departmentId, password: password);
       
       print('📦 [EMPLOYEE PROVIDER] Employee received from API:');
       print('   ID: ${newEmployee.id}');

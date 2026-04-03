@@ -47,6 +47,9 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     // Load all employees for the dropdown
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+      if (_selectedEmployeeId != null) {
+        _fetchTodayAttendance(_selectedEmployeeId!);
+      }
     });
   }
 
@@ -73,7 +76,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   Future<void> _selectTime(bool isCheckIn) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: isCheckIn 
+      initialTime: isCheckIn
           ? (_checkInTime ?? const TimeOfDay(hour: 9, minute: 0))
           : (_checkOutTime ?? const TimeOfDay(hour: 18, minute: 0)),
     );
@@ -93,6 +96,52 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
     return DateFormat('HH:mm').format(dt);
+  }
+
+  TimeOfDay? _parseTimeString(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty || timeStr == '-') return null;
+    try {
+      if (timeStr.contains('T')) {
+        final dt = DateTime.parse(timeStr);
+        return TimeOfDay(hour: dt.hour, minute: dt.minute);
+      }
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return TimeOfDay(
+            hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _fetchTodayAttendance(int employeeId) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.getOrCreateAttendance(employeeId);
+      final data = response['data'] ?? response;
+
+      String? checkInStr =
+          data['checkIn'] ?? data['check_in'] ?? data['checkInTime'];
+      String? checkOutStr =
+          data['checkOut'] ?? data['check_out'] ?? data['checkOutTime'];
+
+      if (mounted) {
+        setState(() {
+          _checkInTime = _parseTimeString(checkInStr);
+          _checkOutTime = _parseTimeString(checkOutStr);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to load attendance: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -127,7 +176,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
         if (result['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'Attendance updated successfully'),
+              content:
+                  Text(result['message'] ?? 'Attendance updated successfully'),
               backgroundColor: Colors.green,
             ),
           );
@@ -140,7 +190,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+            content:
+                Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -153,7 +204,13 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   String _getSelectedEmployeeName(List<Employee> employees) {
     final emp = employees.firstWhere(
       (e) => e.id == _selectedEmployeeId,
-      orElse: () => Employee(name: 'Unknown', phone: '', position: '', salary: 0, faceData: '', createdAt: DateTime.now()),
+      orElse: () => Employee(
+          name: 'Unknown',
+          phone: '',
+          position: '',
+          salary: 0,
+          faceData: '',
+          createdAt: DateTime.now()),
     );
     return '${emp.id} - ${emp.name}';
   }
@@ -169,11 +226,13 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
               if (searchText.isEmpty) return true;
               final query = searchText.toLowerCase();
               return e.name.toLowerCase().contains(query) ||
-                     (e.id?.toString() ?? '').contains(query);
+                  (e.id?.toString() ?? '').contains(query);
             }).toList();
 
             return AlertDialog(
-              title: Text('Select Employee', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
+              title: Text('Select Employee',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold, fontSize: 18)),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 400,
@@ -184,16 +243,22 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                       decoration: InputDecoration(
                         hintText: 'Search by ID or Name...',
                         prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
                       style: GoogleFonts.poppins(fontSize: 14),
-                      onChanged: (val) => setDialogState(() => searchText = val),
+                      onChanged: (val) =>
+                          setDialogState(() => searchText = val),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
                       child: filtered.isEmpty
-                          ? Center(child: Text('No employees found', style: GoogleFonts.poppins(color: Colors.grey)))
+                          ? Center(
+                              child: Text('No employees found',
+                                  style:
+                                      GoogleFonts.poppins(color: Colors.grey)))
                           : ListView.builder(
                               itemCount: filtered.length,
                               itemBuilder: (ctx, i) {
@@ -202,15 +267,26 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                                   leading: CircleAvatar(
                                     backgroundColor: const Color(0xFF2196F3),
                                     child: Text(
-                                      emp.name.isNotEmpty ? emp.name[0].toUpperCase() : '?',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      emp.name.isNotEmpty
+                                          ? emp.name[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                  title: Text(emp.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
-                                  subtitle: Text('ID: ${emp.id}', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                                  title: Text(emp.name,
+                                      style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14)),
+                                  subtitle: Text('ID: ${emp.id}',
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 12, color: Colors.grey)),
                                   onTap: () {
-                                    setState(() => _selectedEmployeeId = emp.id);
+                                    setState(
+                                        () => _selectedEmployeeId = emp.id);
                                     Navigator.of(ctx).pop();
+                                    _fetchTodayAttendance(emp.id!);
                                   },
                                 );
                               },
@@ -249,27 +325,37 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                 // Employee Selection
                 Text(
                   'Employee',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 Consumer<EmployeeProvider>(
                   builder: (context, provider, child) {
-                    final employees = provider.employees.where((e) => e.isActive).toList();
+                    final employees =
+                        provider.employees.where((e) => e.isActive).toList();
                     return GestureDetector(
-                      onTap: widget.employee != null ? null : () => _showEmployeeSearchDialog(employees),
+                      onTap: widget.employee != null
+                          ? null
+                          : () => _showEmployeeSearchDialog(employees),
                       child: AbsorbPointer(
                         child: TextFormField(
                           decoration: InputDecoration(
                             hintText: _selectedEmployeeId != null
                                 ? _getSelectedEmployeeName(employees)
                                 : 'Search by ID or Name',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            prefixIcon: const Icon(Icons.person_search, color: Color(0xFF2196F3)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                            prefixIcon: const Icon(Icons.person_search,
+                                color: Color(0xFF2196F3)),
                             suffixIcon: _selectedEmployeeId != null
                                 ? IconButton(
                                     icon: const Icon(Icons.clear, size: 20),
-                                    onPressed: widget.employee != null ? null : () => setState(() => _selectedEmployeeId = null),
+                                    onPressed: widget.employee != null
+                                        ? null
+                                        : () => setState(
+                                            () => _selectedEmployeeId = null),
                                   )
                                 : const Icon(Icons.arrow_drop_down),
                           ),
@@ -284,13 +370,15 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                 // Date Selection
                 Text(
                   'Date',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: _selectDate,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey),
                       borderRadius: BorderRadius.circular(8),
@@ -300,7 +388,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                       children: [
                         Text(DateFormat('dd-MM-yyyy').format(_selectedDate),
                             style: GoogleFonts.poppins(fontSize: 14)),
-                        const Icon(Icons.calendar_today, size: 20, color: Color(0xFF2196F3)),
+                        const Icon(Icons.calendar_today,
+                            size: 20, color: Color(0xFF2196F3)),
                       ],
                     ),
                   ),
@@ -310,145 +399,187 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                 // Status Selection
                 Text(
                   'Status',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _selectedStatus,
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
-                  items: _statusValues.map((s) => DropdownMenuItem(
-                    value: s,
-                    child: Text(s, style: GoogleFonts.poppins(fontSize: 14)),
-                  )).toList(),
-                  onChanged: (val) => setState(() => _selectedStatus = val!),
+                  items: _statusValues
+                      .map((s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(s,
+                                style: GoogleFonts.poppins(fontSize: 14)),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val == null) return;
+                    setState(() {
+                      _selectedStatus = val;
+                      if ([
+                        'Holiday',
+                        'Leave',
+                        'Casual Leave',
+                        'Sick Leave',
+                        'Medical Leave'
+                      ].contains(val)) {
+                        _checkInTime = null;
+                        _checkOutTime = null;
+                      }
+                    });
+                  },
                 ),
-                const SizedBox(height: 16),
-
-                // Time Selection
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Check In',
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
+                if (![
+                  'Holiday',
+                  'Leave',
+                  'Casual Leave',
+                  'Sick Leave',
+                  'Medical Leave'
+                ].contains(_selectedStatus)) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Check In',
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600, fontSize: 14),
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () => _selectTime(true),
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      bottomLeft: Radius.circular(8),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.access_time, size: 18, color: Colors.blue),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _formatTimeOfDay(_checkInTime),
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 14,
-                                              color: _checkInTime == null ? Colors.grey : Colors.black87,
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: InkWell(
+                                      onTap: () => _selectTime(true),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        bottomLeft: Radius.circular(8),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 12),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.access_time,
+                                                size: 18, color: Colors.blue),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              _formatTimeOfDay(_checkInTime),
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                color: _checkInTime == null
+                                                    ? Colors.grey
+                                                    : Colors.black87,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                if (_checkInTime != null)
-                                  InkWell(
-                                    onTap: () => setState(() => _checkInTime = null),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Icon(Icons.close, size: 18, color: Colors.red),
+                                  if (_checkInTime != null)
+                                    InkWell(
+                                      onTap: () =>
+                                          setState(() => _checkInTime = null),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Icon(Icons.close,
+                                            size: 18, color: Colors.red),
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Check Out',
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Check Out',
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600, fontSize: 14),
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () => _selectTime(false),
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      bottomLeft: Radius.circular(8),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.access_time, size: 18, color: Colors.purple),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _formatTimeOfDay(_checkOutTime),
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 14,
-                                              color: _checkOutTime == null ? Colors.grey : Colors.black87,
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: InkWell(
+                                      onTap: () => _selectTime(false),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        bottomLeft: Radius.circular(8),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 12),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.access_time,
+                                                size: 18, color: Colors.purple),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              _formatTimeOfDay(_checkOutTime),
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                color: _checkOutTime == null
+                                                    ? Colors.grey
+                                                    : Colors.black87,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                if (_checkOutTime != null)
-                                  InkWell(
-                                    onTap: () => setState(() => _checkOutTime = null),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Icon(Icons.close, size: 18, color: Colors.red),
+                                  if (_checkOutTime != null)
+                                    InkWell(
+                                      onTap: () =>
+                                          setState(() => _checkOutTime = null),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Icon(Icons.close,
+                                            size: 18, color: Colors.red),
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // Notes
                 Text(
                   'Notes',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -456,7 +587,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText: 'Add notes or reason...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   style: GoogleFonts.poppins(fontSize: 14),
                 ),
@@ -472,11 +604,18 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                       backgroundColor: const Color(0xFF2196F3),
                       foregroundColor: Colors.white,
                       elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: _isLoading 
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                        : Text('Submit Attendance', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 3))
+                        : Text('Submit Attendance',
+                            style: GoogleFonts.poppins(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

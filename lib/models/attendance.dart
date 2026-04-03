@@ -20,14 +20,29 @@ class Attendance {
   });
 
   factory Attendance.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDateTime(dynamic value) {
+      if (value == null) return null;
+      final text = value.toString();
+      if (text.isEmpty || text == '-') return null;
+      try {
+        return DateTime.parse(text);
+      } catch (_) {
+        return null;
+      }
+    }
+
     return Attendance(
       id: json['id'],
       employeeId: json['employee_id'],
       date: DateTime.parse(json['date']),
-      checkIn: json['check_in'] != null ? DateTime.parse(json['check_in']) : null,
-      checkOut: json['check_out'] != null ? DateTime.parse(json['check_out']) : null,
+      checkIn: parseDateTime(
+          json['check_in'] ?? json['checkIn'] ?? json['checkInTime']),
+      checkOut: parseDateTime(
+          json['check_out'] ?? json['checkOut'] ?? json['checkOutTime']),
       status: json['status'],
-      workingHours: json['working_hours'] != null ? double.parse(json['working_hours'].toString()) : null,
+      workingHours: json['working_hours'] != null
+          ? double.parse(json['working_hours'].toString())
+          : null,
       notes: json['notes'],
     );
   }
@@ -50,7 +65,8 @@ class Attendance {
     return checkOut!.difference(checkIn!).inMinutes / 60.0;
   }
 
-  bool get isPresent => status == 'present' || status == 'late' || status == 'half-day';
+  bool get isPresent =>
+      status == 'present' || status == 'late' || status == 'half-day';
   bool get isLate => status == 'late';
   bool get isHalfDay => status == 'half-day';
 
@@ -75,4 +91,4 @@ class Attendance {
       notes: notes ?? this.notes,
     );
   }
-} 
+}

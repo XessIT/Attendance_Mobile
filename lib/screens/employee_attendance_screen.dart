@@ -8,7 +8,8 @@ class EmployeeAttendanceScreen extends StatefulWidget {
   const EmployeeAttendanceScreen({super.key});
 
   @override
-  State<EmployeeAttendanceScreen> createState() => _EmployeeAttendanceScreenState();
+  State<EmployeeAttendanceScreen> createState() =>
+      _EmployeeAttendanceScreenState();
 }
 
 class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
@@ -23,6 +24,18 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
   // Map to store attendance status for each day
   Map<DateTime, String> _attendanceMap = {};
   List<dynamic> _selectedDayRecords = [];
+
+  String _readRecordTime(Map<String, dynamic> record, List<String> keys) {
+    for (final key in keys) {
+      final value = record[key];
+      if (value != null &&
+          value.toString().isNotEmpty &&
+          value.toString() != '-') {
+        return value.toString();
+      }
+    }
+    return '-';
+  }
 
   @override
   void initState() {
@@ -47,7 +60,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
         endDate: endDate,
         status: 'All', // Fetch all statuses
       );
-      
+
       if (mounted) {
         setState(() {
           if (data['data'] != null) {
@@ -61,16 +74,16 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
           final List records = _reportData?['records'] ?? [];
           for (var record in records) {
             if (record['date'] != null) {
-              // Parse date string (assuming 'YYYY-MM-DD' or similar format that DateTime.parse handles, 
+              // Parse date string (assuming 'YYYY-MM-DD' or similar format that DateTime.parse handles,
               // or match format from API)
               // The API commonly returns formatted date strings, we might need to be careful.
-              // Let's assume the API returns 'DD-MM-YYYY' or similar based on previous context, 
+              // Let's assume the API returns 'DD-MM-YYYY' or similar based on previous context,
               // but DateTime.parse likes 'YYYY-MM-DD'.
               // We'll try to parse safely.
-              
+
               try {
                 // If the date is 'Fri, 10 Jan 2026', we need to parse it or use the raw ISO date if available.
-                // Assuming record has a standard date field or we parse 'date'. 
+                // Assuming record has a standard date field or we parse 'date'.
                 // Let's try to parse flexible.
                 DateTime? date;
                 // If the API returns a 'raw_date' or similar ISO string Use that.
@@ -78,33 +91,35 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 // For now, let's look for a parsable format.
                 // If ApiService logic formats it, ideally we want "YYYY-MM-DD".
                 // Let's try to parse the 'date' string if it looks like one, or rely on index.
-                 
-                // Simplest: Check if the record has an ISO date. 
+
+                // Simplest: Check if the record has an ISO date.
                 // If not, we might need to rely on the fact that records are for the requested range.
-                
+
                 // Let's assume standard ISO for parsing or a parsable string.
-                 // NOTE: The previous UI just displayed text.
-                 // We will try standard parsing first.
-                 String dateStr = record['raw_date'] ?? record['date']; // Expecting YYYY-MM-DD ideally
-                 // If format is "10-01-2026", convert to "2026-01-10"
-                 if (dateStr.contains('-')) {
-                    var parts = dateStr.split('-');
-                    if (parts[0].length == 2 && parts[2].length == 4) {
-                       dateStr = '${parts[2]}-${parts[1]}-${parts[0]}';
-                    }
-                 }
-                
+                // NOTE: The previous UI just displayed text.
+                // We will try standard parsing first.
+                String dateStr = record['raw_date'] ??
+                    record['date']; // Expecting YYYY-MM-DD ideally
+                // If format is "10-01-2026", convert to "2026-01-10"
+                if (dateStr.contains('-')) {
+                  var parts = dateStr.split('-');
+                  if (parts[0].length == 2 && parts[2].length == 4) {
+                    dateStr = '${parts[2]}-${parts[1]}-${parts[0]}';
+                  }
+                }
+
                 date = DateTime.parse(dateStr);
-                
+
                 // key needs to be normalized to UTC midnight for TableCalendar matches usually
                 final key = DateTime.utc(date.year, date.month, date.day);
-                _attendanceMap[key] = (record['status'] ?? '').toString().toLowerCase();
+                _attendanceMap[key] =
+                    (record['status'] ?? '').toString().toLowerCase();
               } catch (e) {
                 print('Error parsing date for record: $record');
               }
             }
           }
-          
+
           _updateSelectedDayRecords();
           _isLoading = false;
         });
@@ -130,11 +145,11 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
       try {
         String dateStr = record['raw_date'] ?? record['date'];
         if (dateStr.contains('-')) {
-            var parts = dateStr.split('-');
-            if (parts[0].length == 2 && parts[2].length == 4) {
-               dateStr = '${parts[2]}-${parts[1]}-${parts[0]}';
-            }
-         }
+          var parts = dateStr.split('-');
+          if (parts[0].length == 2 && parts[2].length == 4) {
+            dateStr = '${parts[2]}-${parts[1]}-${parts[0]}';
+          }
+        }
         final date = DateTime.parse(dateStr);
         return isSameDay(date, _selectedDay);
       } catch (e) {
@@ -167,7 +182,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
-              
+
               selectedDayPredicate: (day) {
                 return isSameDay(_selectedDay, day);
               },
@@ -191,7 +206,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 _focusedDay = focusedDay;
                 _loadReport(); // Reload data for the new month
               },
-              
+
               // Calendar Style
               headerStyle: HeaderStyle(
                 titleCentered: true,
@@ -205,7 +220,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 headerPadding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 formatButtonDecoration: BoxDecoration(
                   color: const Color(0xFF2196F3),
@@ -232,7 +248,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 defaultTextStyle: GoogleFonts.poppins(),
                 weekendTextStyle: GoogleFonts.poppins(color: Colors.red[300]),
               ),
-              
+
               // Custom Builders for enhanced highlighting
               calendarBuilders: CalendarBuilders(
                 headerTitleBuilder: (context, day) {
@@ -269,15 +285,15 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   // Normalize date to UTC for map lookup
                   final key = DateTime.utc(day.year, day.month, day.day);
                   final status = _attendanceMap[key];
-                  
+
                   if (status == null) {
                     return null;
                   }
-                  
+
                   Color backgroundColor;
                   Color textColor;
                   IconData? statusIcon;
-                  
+
                   if (status == 'present') {
                     backgroundColor = Colors.green.withOpacity(0.15);
                     textColor = Colors.green;
@@ -297,7 +313,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   } else {
                     return null;
                   }
-                  
+
                   return Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -333,17 +349,17 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                     ),
                   );
                 },
-                
+
                 todayBuilder: (context, day, focusedDay) {
                   // Normalize date to UTC for map lookup
                   final key = DateTime.utc(day.year, day.month, day.day);
                   final status = _attendanceMap[key];
-                  
+
                   Color backgroundColor = Colors.blue.withOpacity(0.3);
                   Color textColor = Colors.blue;
                   IconData? statusIcon;
                   FontWeight fontWeight = FontWeight.bold;
-                  
+
                   if (status == null) {
                     // Return default today styling if no status
                     return Container(
@@ -368,7 +384,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                       ),
                     );
                   }
-                  
+
                   if (status == 'present') {
                     backgroundColor = Colors.green.withOpacity(0.3);
                     textColor = Colors.green;
@@ -386,7 +402,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                     textColor = Colors.purple;
                     statusIcon = Icons.remove_circle;
                   }
-                  
+
                   return Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -423,16 +439,16 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                     ),
                   );
                 },
-                
+
                 selectedBuilder: (context, day, focusedDay) {
                   // Normalize date to UTC for map lookup
                   final key = DateTime.utc(day.year, day.month, day.day);
                   final status = _attendanceMap[key];
-                  
+
                   Color backgroundColor = const Color(0xFF2196F3);
                   Color textColor = Colors.white;
                   IconData? statusIcon;
-                  
+
                   if (status == null) {
                     // Return default selected styling if no status
                     return Container(
@@ -460,7 +476,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                       ),
                     );
                   }
-                  
+
                   if (status == 'present') {
                     backgroundColor = Colors.green;
                     statusIcon = Icons.check_circle;
@@ -474,7 +490,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                     backgroundColor = Colors.purple;
                     statusIcon = Icons.remove_circle;
                   }
-                  
+
                   return Container(
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -514,7 +530,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                     ),
                   );
                 },
-                
+
                 // Keep the marker builder as fallback for any days not handled above
                 markerBuilder: (context, date, events) {
                   // This is now handled by the builders above, so return null
@@ -530,13 +546,25 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Row(
                 children: [
-                  Expanded(child: _buildMiniSummaryCard('Present', _reportData!['summary']['present'] ?? 0, Colors.green)),
+                  Expanded(
+                      child: _buildMiniSummaryCard(
+                          'Present',
+                          _reportData!['summary']['present'] ?? 0,
+                          Colors.green)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildMiniSummaryCard('Absent', _reportData!['summary']['absent'] ?? 0, Colors.red)),
+                  Expanded(
+                      child: _buildMiniSummaryCard('Absent',
+                          _reportData!['summary']['absent'] ?? 0, Colors.red)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildMiniSummaryCard('Late', _reportData!['summary']['late'] ?? 0, Colors.orange)),
+                  Expanded(
+                      child: _buildMiniSummaryCard('Late',
+                          _reportData!['summary']['late'] ?? 0, Colors.orange)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildMiniSummaryCard('Half Day', _reportData!['summary']['halfDays'] ?? 0, Colors.purple)),
+                  Expanded(
+                      child: _buildMiniSummaryCard(
+                          'Half Day',
+                          _reportData!['summary']['halfDays'] ?? 0,
+                          Colors.purple)),
                 ],
               ),
             ),
@@ -552,7 +580,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 topRight: Radius.circular(30),
               ),
               boxShadow: [
-                 BoxShadow(
+                BoxShadow(
                   color: Colors.black12,
                   blurRadius: 10,
                   offset: Offset(0, -5),
@@ -566,7 +594,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _selectedDay != null 
+                      _selectedDay != null
                           ? DateFormat('EEEE, d MMMM').format(_selectedDay!)
                           : 'Select a Day',
                       style: GoogleFonts.poppins(
@@ -578,9 +606,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                
                 if (_isLoading)
-                   const Center(child: CircularProgressIndicator())
+                  const Center(child: CircularProgressIndicator())
                 else if (_selectedDayRecords.isEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 30),
@@ -588,7 +615,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.event_note, size: 48, color: Colors.grey[300]),
+                          Icon(Icons.event_note,
+                              size: 48, color: Colors.grey[300]),
                           const SizedBox(height: 16),
                           Text(
                             'No records for this day',
@@ -600,7 +628,9 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   )
                 else
                   Column(
-                    children: _selectedDayRecords.map((record) => _buildRecordItem(record)).toList(),
+                    children: _selectedDayRecords
+                        .map((record) => _buildRecordItem(record))
+                        .toList(),
                   ),
               ],
             ),
@@ -641,7 +671,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 _buildLegendItem('Present', Colors.green, Icons.check_circle),
                 _buildLegendItem('Absent', Colors.red, Icons.cancel),
                 _buildLegendItem('Late', Colors.orange, Icons.access_time),
-                _buildLegendItem('Half Day', Colors.purple, Icons.remove_circle),
+                _buildLegendItem(
+                    'Half Day', Colors.purple, Icons.remove_circle),
               ],
             ),
             const SizedBox(height: 16),
@@ -742,9 +773,12 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
   Widget _buildRecordItem(Map<String, dynamic> record) {
     final status = (record['status'] ?? '').toString().toLowerCase();
     Color statusColor = Colors.grey;
-    if (status == 'present') statusColor = Colors.green;
-    else if (status == 'absent') statusColor = Colors.red;
-    else if (status == 'late') statusColor = Colors.orange;
+    if (status == 'present')
+      statusColor = Colors.green;
+    else if (status == 'absent')
+      statusColor = Colors.red;
+    else if (status == 'late')
+      statusColor = Colors.orange;
     else if (status.contains('half')) statusColor = Colors.purple;
 
     return Container(
@@ -769,7 +803,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -788,16 +823,33 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
           const SizedBox(height: 12),
           const Divider(),
           const SizedBox(height: 12),
-           Row(
+          Row(
             children: [
               Expanded(
-                child: _buildTimeDetail('Check In', record['checkIn'], Icons.login, Colors.green),
+                child: _buildTimeDetail(
+                  'Check In',
+                  _readRecordTime(record,
+                      ['checkIn', 'check_in', 'checkInTime', 'check_in_time']),
+                  Icons.login,
+                  Colors.green,
+                ),
               ),
               Expanded(
-                 child: _buildTimeDetail('Check Out', record['checkOut'], Icons.logout, Colors.red),
+                child: _buildTimeDetail(
+                  'Check Out',
+                  _readRecordTime(record, [
+                    'checkOut',
+                    'check_out',
+                    'checkOutTime',
+                    'check_out_time'
+                  ]),
+                  Icons.logout,
+                  Colors.red,
+                ),
               ),
               Expanded(
-                 child: _buildTimeDetail('Hours', record['hours'], Icons.timer, Colors.blue),
+                child: _buildTimeDetail(
+                    'Hours', record['hours'], Icons.timer, Colors.blue),
               ),
             ],
           ),
@@ -806,34 +858,33 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
     );
   }
 
-  Widget _buildTimeDetail(String label, String? value, IconData icon, Color color) {
+  Widget _buildTimeDetail(
+      String label, String? value, IconData icon, Color color) {
     final displayValue = value ?? '-';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-           children: [
-               Icon(icon, size: 14, color: color),
-               const SizedBox(width: 4),
-               Text(
-                label,
-                style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                ),
-                ),
-           ]
-        ),
+        Row(children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.grey[600],
+            ),
+          ),
+        ]),
         const SizedBox(height: 4),
         Padding(
           padding: const EdgeInsets.only(left: 0), // Already aligned nicely
           child: Text(
             displayValue,
             style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
         ),

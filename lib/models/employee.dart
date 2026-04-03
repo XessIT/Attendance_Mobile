@@ -4,11 +4,13 @@ class Employee {
   final String? email; // Made optional
   final String phone;
   final String position;
+  final String? employeeId; // Added employeeId field from API
   final double salary;
   final String faceData;
   final DateTime createdAt;
   final bool isActive;
   final int? shiftId;
+  final int? departmentId; // Added department ID
   final String? shiftName; // Store shift name from API
   final int? companyId; // Company ID the employee belongs to
   final DateTime? dateOfJoining;
@@ -21,11 +23,13 @@ class Employee {
     this.email, // Made optional
     required this.phone,
     required this.position,
+    this.employeeId, // Added employeeId parameter
     required this.salary,
     required this.faceData,
     required this.createdAt,
     this.isActive = true,
     this.shiftId,
+    this.departmentId, // Added department ID
     this.shiftName,
     this.companyId,
     this.dateOfJoining,
@@ -73,6 +77,7 @@ class Employee {
           : DateTime.now(),
       isActive: json['is_active'] == 1 || json['is_active'] == true || json['is_active'] == null,
       shiftId: json['shift_id'] is int ? json['shift_id'] : int.tryParse(json['shift_id']?.toString() ?? ''),
+      departmentId: json['department_id'] is int ? json['department_id'] : int.tryParse(json['department_id']?.toString() ?? ''),
       shiftName: json['shift'] ?? json['shift_name'] ?? json['shiftName'], // API returns shift name
       companyId: json['company_id'],
       dateOfJoining: joiningDate,
@@ -82,29 +87,34 @@ class Employee {
   }
 
   Map<String, dynamic> toJson({bool forCreation = false, bool forUpdate = false}) {
-    final Map<String, dynamic> json = {
-      'name': name,
-      'phone': phone,
-    };
+    final Map<String, dynamic> json = {};
+    // Common fields
+    json['name'] = name;
+    json['phone'] = phone;
+    json['department'] = position;
+    json['salary'] = salary;
     
     // Only include email if it's not null
     if (email != null && email!.isNotEmpty) {
       json['email'] = email;
     }
     
-    // For API update, use 'department' instead of 'position'
     if (forUpdate) {
-      json['department'] = position;
-      json['salary'] = salary;
       json['is_active'] = isActive ? 1 : 0;
       if (shiftName != null) json['shift'] = shiftName!;
-      if (id != null) json['employee_id'] = 'EMP${id.toString().padLeft(3, '0')}';
-    } else {
-      json['position'] = position;
-      json['salary'] = salary;
+      if (id != null) json['id'] = id!;
+      json['department_id'] = departmentId;
       json['face_data'] = faceData;
       if (dateOfJoining != null) json['date_of_joining'] = dateOfJoining!.toIso8601String().split('T')[0];
       if (dateOfBirth != null) json['date_of_birth'] = dateOfBirth!.toIso8601String().split('T')[0];
+      if (companyId != null) json['company_id'] = companyId;
+      if (shiftId != null) json['shift_id'] = shiftId;
+    } else {
+      json['position'] = position;
+      json['face_data'] = faceData;
+      if (dateOfJoining != null) json['date_of_joining'] = dateOfJoining!.toIso8601String().split('T')[0];
+      if (dateOfBirth != null) json['date_of_birth'] = dateOfBirth!.toIso8601String().split('T')[0];
+      if (departmentId != null) json['department_id'] = departmentId;
       
       // Only include these fields if not creating a new employee
       if (!forCreation) {
@@ -128,6 +138,7 @@ class Employee {
     DateTime? createdAt,
     bool? isActive,
     int? shiftId,
+    int? departmentId,
     String? shiftName,
     int? companyId,
     DateTime? dateOfJoining,
@@ -145,6 +156,7 @@ class Employee {
       createdAt: createdAt ?? this.createdAt,
       isActive: isActive ?? this.isActive,
       shiftId: shiftId ?? this.shiftId,
+      departmentId: departmentId ?? this.departmentId,
       shiftName: shiftName ?? this.shiftName,
       companyId: companyId ?? this.companyId,
       dateOfJoining: dateOfJoining ?? this.dateOfJoining,

@@ -1461,39 +1461,65 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
   LeaveBalanceResponse? _leaveBalanceResponse;
   bool _isLoading = true;
   String? _error;
-  int? _employeeId;
+  int? _selectedEmployeeId;
   String? _employeeName;
+  List<dynamic> _employees = [];
+  bool _isLoadingEmployees = false;
 
   @override
   void initState() {
     super.initState();
-    _loadEmployeeInfo();
+    _loadEmployeesAndUserType();
   }
 
-  Future<void> _loadEmployeeInfo() async {
-    try {
-      final employeeId = await AuthUtils.getCurrentEmployeeId();
-      if (employeeId != null) {
-        setState(() {
-          _employeeId = employeeId;
-        });
-        _loadLeaveBalance();
+  Future<void> _loadEmployeesAndUserType() async {
+    // Check user type first
+    final token = await AuthUtils.getToken();
+    if (token != null) {
+      final userType = AuthUtils.getRoleFromToken(token);
+      print('User Type: $userType');
+      
+      if (userType != 'employee') {
+        // For staff/admin users, load employees list
+        _loadEmployees();
       } else {
+        // For employee users, load their own balance directly
+        _loadLeaveBalance();
+      }
+    } else {
+      setState(() {
+        _error = 'Authentication token not found';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadEmployees() async {
+    try {
+      setState(() {
+        _isLoadingEmployees = true;
+      });
+
+      // Load employees list
+      final response = await ApiService.getEmployees();
+      if (response['employees'] != null) {
         setState(() {
-          _error = 'Employee ID not found. Please login again.';
+          _employees = response['employees'];
+          _isLoadingEmployees = false;
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Failed to get employee information: ${e.toString()}';
+        _error = 'Failed to load employees: ${e.toString()}';
+        _isLoadingEmployees = false;
         _isLoading = false;
       });
     }
   }
 
   Future<void> _loadLeaveBalance() async {
-    if (_employeeId == null) return;
+    if (_selectedEmployeeId == null) return;
 
     try {
       setState(() {
@@ -1501,7 +1527,8 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
         _error = null;
       });
 
-      final response = await ApiService.getLeaveBalance(_employeeId!);
+      // Call getLeaveBalance with selected employee ID for staff users
+      final response = await ApiService.getLeaveBalance(_selectedEmployeeId);
       
       if (mounted) {
         setState(() {
@@ -1562,7 +1589,9 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Loading Leave Balance...',
+                  _isLoadingEmployees 
+                    ? 'Loading Employees...'
+                    : 'Loading Leave Balance...',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -1571,7 +1600,9 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fetching your leave information',
+                  _isLoadingEmployees 
+                    ? 'Fetching employee list'
+                    : 'Fetching your leave information',
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     color: Colors.grey[500],
@@ -1652,7 +1683,14 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: _loadLeaveBalance,
+                  onTap: () {
+                    // For staff users, reload employees list
+                    if (_employees.isNotEmpty) {
+                      _loadEmployees();
+                    } else {
+                      _loadLeaveBalance();
+                    }
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: const Center(
                     child: Row(
@@ -1686,14 +1724,19 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Employee Selector for Staff Users
+          if (_employees.isNotEmpty) _buildEmployeeSelector(),
+          if (_employees.isNotEmpty) const SizedBox(height: 20),
+          
           // Employee Info Card
           _buildEmployeeInfoCard(),
           const SizedBox(height: 20),
           
           // Leave Balance Cards
-          ..._leaveBalanceResponse!.data.leaveBalances.map((balance) {
-            return _buildLeaveBalanceCard(balance);
-          }).toList(),
+          if (_leaveBalanceResponse != null)
+            ..._leaveBalanceResponse!.data.leaveBalances.map((balance) {
+              return _buildLeaveBalanceCard(balance);
+            }).toList(),
           
           // View Details Button
           const SizedBox(height: 24),
@@ -1818,7 +1861,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                       ),
                     ),
                     Text(
-                      '${_leaveBalanceResponse!.data.period.monthName} ${_leaveBalanceResponse!.data.period.year}',
+                      'From: ${_getFirstDayOfMonth(_leaveBalanceResponse?.data.period?.year ?? DateTime.now().year, _leaveBalanceResponse?.data.period?.month ?? DateTime.now().month)} To: ${_getLastDayOfMonth(_leaveBalanceResponse?.data.period?.year ?? DateTime.now().year, _leaveBalanceResponse?.data.period?.month ?? DateTime.now().month)}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.grey[500],
@@ -1837,6 +1880,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
   Widget _buildLeaveBalanceCard(LeaveBalance balance) {
     final isPaid = balance.isPaid;
     final isUncapped = balance.isUncapped;
+    final isHoliday = balance.leaveType.toLowerCase().contains('holiday');
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1931,6 +1975,27 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                                 ),
                               ),
                             ),
+                          if (isHoliday)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange[50],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'HOLIDAY',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange[700],
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ],
@@ -1973,7 +2038,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                         Expanded(
                           child: _buildMiniStat(
                             'Used',
-                            balance.usedThisMonth.toString(),
+                            isHoliday ? balance.usedThisMonth.toString() : _formatValueForDisplay(balance.usedThisMonth.toString()),
                             Icons.remove_circle_rounded,
                             Colors.orange,
                           ),
@@ -2027,7 +2092,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                         Expanded(
                           child: _buildMiniStat(
                             'Used',
-                            balance.usedThisYear.toString(),
+                            isHoliday ? balance.usedThisYear.toString() : _formatValueForDisplay(balance.usedThisYear.toString()),
                             Icons.remove_circle_rounded,
                             Colors.orange,
                           ),
@@ -2053,6 +2118,13 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
   }
 
   Widget _buildMiniStat(String label, String value, IconData icon, Color color, {bool isHighlighted = false}) {
+    // Remove time display for holiday-related values
+    String displayValue = value;
+    if (label.toLowerCase().contains('used') && value.contains(':')) {
+      // If it's a "used" field and contains time format, remove time part
+      displayValue = value.split(' ')[0]; // Take only the date part
+    }
+    
     return Column(
       children: [
         Icon(
@@ -2062,7 +2134,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
         ),
         const SizedBox(height: 8),
         Text(
-          value,
+          displayValue,
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w700,
@@ -2079,6 +2151,148 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
         ),
       ],
     );
+  }
+
+  Widget _buildEmployeeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.people_outline_rounded, size: 20, color: Colors.blue[700]),
+              const SizedBox(width: 8),
+              Text(
+                'Select Employee',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: _selectedEmployeeId,
+                isExpanded: true,
+                hint: Text(
+                  'Choose an employee...',
+                  style: GoogleFonts.poppins(color: Colors.grey[600]),
+                ),
+                items: _employees.where((employee) => employee.id != null).map((employee) {
+                  return DropdownMenuItem<int>(
+                    value: employee.id!,
+                    child: Text(
+                      employee.name ?? 'Unknown',
+                      style: GoogleFonts.poppins(color: Colors.black87),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (employeeId) {
+                  print('🔥 Dropdown onChanged triggered! employeeId: $employeeId');
+                  if (employeeId != null) {
+                    print('🔥 Employee selected, calling auto-fill...');
+                    setState(() {
+                      _selectedEmployeeId = employeeId;
+                      _leaveBalanceResponse = null; // Reset balance when employee changes
+                      _error = null;
+                    });
+                    _loadLeaveBalance();
+                    _autoFillAttendance(employeeId); // Auto-fill attendance when employee is selected
+                  } else {
+                    print('🔥 EmployeeId is null, not calling auto-fill');
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Auto-fill attendance logic
+  Future<void> _autoFillAttendance(int employeeId) async {
+    print('🚀 _autoFillAttendance method called! employeeId: $employeeId');
+    try {
+      print('🕐 Auto-filling attendance for employee ID: $employeeId');
+      
+      final response = await ApiService.getOrCreateAttendance(employeeId);
+      
+      if (response['success'] == true && response['data'] != null) {
+        final attendance = response['data']['attendance'];
+        print('✅ Attendance auto-filled successfully');
+        print('Status: ${attendance['status']}');
+        print('Check In: ${attendance['checkInTime']}');
+        print('Check Out: ${attendance['checkOutTime']}');
+        
+        // You can show a snackbar or update UI to show attendance status
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Attendance ${attendance['status']} for selected employee'),
+              backgroundColor: attendance['status'] == 'Checked Out' ? Colors.green : Colors.blue,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error auto-filling attendance: $e');
+      // Don't show error to user, just log it since this is background operation
+    }
+  }
+
+  // Helper method to format dates
+  String _getFormattedDate(String dateString) {
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return dateString; // Return original if parsing fails
+    }
+  }
+
+  // Helper method to get first day of month
+  String _getFirstDayOfMonth(int year, int month) {
+    final DateTime firstDay = DateTime(year, month, 1);
+    return '${firstDay.day.toString().padLeft(2, '0')}/${firstDay.month.toString().padLeft(2, '0')}/${firstDay.year}';
+  }
+
+  // Helper method to get last day of month
+  String _getLastDayOfMonth(int year, int month) {
+    final DateTime lastDay = DateTime(year, month + 1, 0); // Last day of current month
+    return '${lastDay.day.toString().padLeft(2, '0')}/${lastDay.month.toString().padLeft(2, '0')}/${lastDay.year}';
+  }
+
+  // Helper method to format values for display (remove time info)
+  String _formatValueForDisplay(String value) {
+    // If value contains time format (HH:MM), remove it
+    if (value.contains(':')) {
+      return value.split(' ')[0]; // Take only the date/number part
+    }
+    return value;
   }
 }
 

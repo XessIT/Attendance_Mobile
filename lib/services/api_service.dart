@@ -111,7 +111,15 @@ class ApiService {
         print('========================================');
         
         return {
-          'employees': employeesList.map((json) => Employee.fromJson(json)).toList(),
+          'employees': employeesList.map((json) {
+            // Handle both direct employee objects and wrapped objects
+            if (json is Map<String, dynamic>) {
+              return Employee.fromJson(json);
+            } else {
+              // Fallback for unexpected format
+              return Employee.fromJson({});
+            }
+          }).toList(),
           'pagination': pagination,
         };
       }
@@ -152,7 +160,7 @@ class ApiService {
     }
   }
 
-  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, String? password}) async {
+  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, int? departmentId, String? password}) async {
     final fullUrl = '$baseUrl/register';
     
     // Generate employee_id (format: E001, E002, etc.)
@@ -196,6 +204,7 @@ class ApiService {
           'phone': employee.phone,
           'department': departmentName ?? employee.position, // Use departmentName if provided, fallback to position
           'salary': employee.salary.toString(),
+          if (departmentId != null) 'department_id': departmentId.toString(),
         };
         
         // Only include email if it's provided
@@ -429,6 +438,7 @@ class ApiService {
         'shift': employee.shiftName ?? 'Day Shift', // Default shift if not provided
         'company_id': companyId,
         'is_active': employee.isActive ? 1 : 0,
+        'department_id': employee.departmentId,
       };
       
       print('Request Data: $requestData');
@@ -2103,6 +2113,23 @@ class ApiService {
         queryParams['endDate'] = DateFormat('yyyy-MM-dd').format(endDate);
       }
 
+      // Add employeeId for non-employee users (staff/admin)
+      final token = await AuthUtils.getToken();
+      if (token != null) {
+        final userType = AuthUtils.getRoleFromToken(token);
+        print('User Type from token: $userType');
+        
+        if (userType != null && userType != 'employee') {
+          final employeeId = AuthUtils.getEmployeeIdFromToken(token);
+          if (employeeId != null) {
+            queryParams['employeeId'] = employeeId.toString();
+            print('Added employeeId to query params: $employeeId');
+          } else {
+            print('Warning: Could not extract employeeId from token for non-employee user');
+          }
+        }
+      }
+
       print('Query Params: $queryParams');
 
       final headers = await _getAuthHeaders();
@@ -2415,14 +2442,46 @@ class ApiService {
   }
 
   // Get Employee Leave Balance
-  static Future<LeaveBalanceResponse> getLeaveBalance(int employeeId) async {
+  static Future<LeaveBalanceResponse> getLeaveBalance([int? employeeId]) async {
     try {
       print('========================================');
       print('GET LEAVE BALANCE API CALL');
       print('========================================');
-      print('URL: $userBaseUrl/leave/balance?employeeId=$employeeId');
+      print('URL: $userBaseUrl/leave/balance');
+
+      final Map<String, dynamic> queryParams = {};
+      
+      // If employeeId is provided, use it. Otherwise, extract from token for non-employee users.
+      if (employeeId != null) {
+        queryParams['employeeId'] = employeeId;
+        print('Using provided employeeId: $employeeId');
+      } else {
+        // Extract employeeId from token for non-employee users
+        final token = await AuthUtils.getToken();
+        if (token != null) {
+          final userType = AuthUtils.getRoleFromToken(token);
+          print('User Type from token: $userType');
+          
+          if (userType != null && userType != 'employee') {
+            final extractedEmployeeId = AuthUtils.getEmployeeIdFromToken(token);
+            if (extractedEmployeeId != null) {
+              queryParams['employeeId'] = extractedEmployeeId.toString();
+              print('Extracted employeeId from token: $extractedEmployeeId');
+            } else {
+              print('Warning: Could not extract employeeId from token for non-employee user');
+              throw Exception('Employee ID not found in token for non-employee user');
+            }
+          } else {
+            print('User is employee type, no employeeId parameter needed');
+          }
+        } else {
+          print('Warning: No auth token found');
+          throw Exception('Authentication token not found');
+        }
+      }
+
+      print('Query Params: $queryParams');
       print('Method: GET');
-      print('Employee ID: $employeeId');
 
       final headers = await _getAuthHeaders();
       headers['Content-Type'] = 'application/json';
@@ -2430,7 +2489,7 @@ class ApiService {
 
       final response = await _userDio.get(
         '/leave/balance',
-        queryParameters: {'employeeId': employeeId},
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
         options: Options(headers: headers),
       );
 
@@ -2740,6 +2799,129 @@ class ApiService {
       throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('Error: $e');
+    }
+  }
+
+  // Get or create attendance record for today (with auto-fill logic)
+  static Future<Map<String, dynamic>> getOrCreateAttendance(int employeeId) async {
+    try {
+      print('========================================');
+      print('GET OR CREATE ATTENDANCE API CALL');
+      print('========================================');
+      print('Employee ID: $employeeId');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.get(
+        '/attendance/today',
+        queryParameters: {'employeeId': employeeId},
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Attendance record loaded/created successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to get attendance: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - GET OR CREATE ATTENDANCE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to get attendance';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - GET OR CREATE ATTENDANCE');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error getting attendance: $e');
+    }
+  }
+
+  // Update attendance (manual check-in/check-out)
+  static Future<Map<String, dynamic>> updateAttendanceAutoFill({
+    required int employeeId,
+    String? checkInTime,
+    String? checkOutTime,
+  }) async {
+    try {
+      print('========================================');
+      print('UPDATE ATTENDANCE API CALL');
+      print('========================================');
+      print('Employee ID: $employeeId');
+      if (checkInTime != null) print('Check In Time: $checkInTime');
+      if (checkOutTime != null) print('Check Out Time: $checkOutTime');
+
+      final headers = await _getAuthHeaders();
+      final Map<String, dynamic> requestData = {
+        'employeeId': employeeId,
+      };
+
+      if (checkInTime != null) requestData['checkInTime'] = checkInTime;
+      if (checkOutTime != null) requestData['checkOutTime'] = checkOutTime;
+
+      final response = await _userDio.post(
+        '/attendance/update',
+        data: requestData,
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Attendance updated successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to update attendance: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('========================================');
+      print('❌ DIO EXCEPTION OCCURRED - UPDATE ATTENDANCE');
+      print('========================================');
+
+      if (e.response != null) {
+        print('Response Status Code: ${e.response?.statusCode}');
+        print('Response Data: ${e.response?.data}');
+
+        final errorMessage = e.response?.data?['message'] ??
+                           e.response?.data?['error'] ??
+                           'Failed to update attendance';
+
+        print('Error Message: $errorMessage');
+        print('========================================');
+        throw Exception(errorMessage);
+      } else {
+        print('No response received from server');
+        print('========================================');
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      print('========================================');
+      print('❌ GENERAL EXCEPTION OCCURRED - UPDATE ATTENDANCE');
+      print('Error: $e');
+      print('========================================');
+      throw Exception('Error updating attendance: $e');
     }
   }
 }

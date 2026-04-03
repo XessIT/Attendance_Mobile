@@ -32,6 +32,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   String _searchQuery = '';
   String _selectedStatus = 'All';
 
+  String _readAttendanceTime(Map<String, dynamic> detail, List<String> keys) {
+    for (final key in keys) {
+      final value = detail[key];
+      if (value != null &&
+          value.toString().isNotEmpty &&
+          value.toString() != '-') {
+        return value.toString();
+      }
+    }
+    return '-';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -74,12 +86,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   Future<void> _loadFullReport() async {
     // Try to load from cache first
-    final cachedReport = await LocalStorageService.getCachedAttendanceReport(_selectedDate);
+    final cachedReport =
+        await LocalStorageService.getCachedAttendanceReport(_selectedDate);
     if (cachedReport != null) {
       if (mounted) {
         setState(() {
           _reportData = cachedReport;
-          _lastReportDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+          _lastReportDate = DateTime(
+              _selectedDate.year, _selectedDate.month, _selectedDate.day);
         });
       }
       print('✅ Loaded attendance report from local cache');
@@ -97,14 +111,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         startDate: startDate,
         endDate: endDate,
       );
-      
+
       // Cache the fetched data
       await LocalStorageService.cacheAttendanceReport(_selectedDate, data);
-      
+
       if (mounted) {
         setState(() {
           _reportData = data;
-          _lastReportDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+          _lastReportDate = DateTime(
+              _selectedDate.year, _selectedDate.month, _selectedDate.day);
         });
       }
       print('✅ Loaded and cached attendance report from API');
@@ -128,7 +143,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     // 1. Check Location Permission
     bool hasPermission = await LocationService.hasLocationPermission();
     if (!hasPermission) {
-      bool permissionGranted = await LocationService.requestLocationPermission();
+      bool permissionGranted =
+          await LocationService.requestLocationPermission();
       if (!permissionGranted) {
         if (mounted) {
           showDialog(
@@ -176,7 +192,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
 
         try {
@@ -185,9 +202,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
           if (mounted) {
             Navigator.of(context).pop(); // Close loading dialog
-            
+
             if (result['success'] == true) {
-              final String message = result['message'] ?? 'Attendance marked successfully';
+              final String message =
+                  result['message'] ?? 'Attendance marked successfully';
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(message),
@@ -195,7 +213,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
               );
               // Refresh only report data, not full reload
-              await LocalStorageService.clearAttendanceReportCache(_selectedDate);
+              await LocalStorageService.clearAttendanceReportCache(
+                  _selectedDate);
               await _loadFullReport();
             } else {
               throw Exception(result['message'] ?? 'Failed to mark attendance');
@@ -206,7 +225,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             Navigator.of(context).pop(); // Close loading dialog
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+                content: Text(
+                    'Error: ${e.toString().replaceAll('Exception: ', '')}'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -242,7 +262,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _showEmployeeFilterDialog() async {
-    final employees = Provider.of<EmployeeProvider>(context, listen: false).employees;
+    final employees =
+        Provider.of<EmployeeProvider>(context, listen: false).employees;
 
     showDialog(
       context: context,
@@ -299,10 +320,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[300]!,
+                  color: _selectedEmployeeId == null
+                      ? const Color(0xFF2196F3)
+                      : Colors.grey[300]!,
                   width: _selectedEmployeeId == null ? 2 : 1,
                 ),
-                color: _selectedEmployeeId == null ? const Color(0xFF2196F3).withOpacity(0.1) : Colors.white,
+                color: _selectedEmployeeId == null
+                    ? const Color(0xFF2196F3).withOpacity(0.1)
+                    : Colors.white,
               ),
               child: Material(
                 color: Colors.transparent,
@@ -326,9 +351,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           height: 20,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.transparent,
+                            color: _selectedEmployeeId == null
+                                ? const Color(0xFF2196F3)
+                                : Colors.transparent,
                             border: Border.all(
-                              color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[400]!,
+                              color: _selectedEmployeeId == null
+                                  ? const Color(0xFF2196F3)
+                                  : Colors.grey[400]!,
                               width: 2,
                             ),
                           ),
@@ -346,8 +375,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             'All Employees',
                             style: GoogleFonts.poppins(
                               fontSize: 13,
-                              fontWeight: _selectedEmployeeId == null ? FontWeight.w600 : FontWeight.w500,
-                              color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[700],
+                              fontWeight: _selectedEmployeeId == null
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: _selectedEmployeeId == null
+                                  ? const Color(0xFF2196F3)
+                                  : Colors.grey[700],
                             ),
                           ),
                         ),
@@ -359,16 +392,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
             ...employees.map((employee) {
               final isSelected = _selectedEmployeeId == employee.id;
-              
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF2196F3) : Colors.grey[300]!,
+                    color: isSelected
+                        ? const Color(0xFF2196F3)
+                        : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
-                  color: isSelected ? const Color(0xFF2196F3).withOpacity(0.1) : Colors.white,
+                  color: isSelected
+                      ? const Color(0xFF2196F3).withOpacity(0.1)
+                      : Colors.white,
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -392,9 +429,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             height: 20,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isSelected ? const Color(0xFF2196F3) : Colors.transparent,
+                              color: isSelected
+                                  ? const Color(0xFF2196F3)
+                                  : Colors.transparent,
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[400]!,
+                                color: isSelected
+                                    ? const Color(0xFF2196F3)
+                                    : Colors.grey[400]!,
                                 width: 2,
                               ),
                             ),
@@ -412,8 +453,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               employee.name,
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[700],
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? const Color(0xFF2196F3)
+                                    : Colors.grey[700],
                               ),
                             ),
                           ),
@@ -494,11 +539,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                      Icon(Icons.error_outline,
+                          size: 64, color: Colors.red.shade300),
                       const SizedBox(height: 16),
                       Text(
                         'Error loading data',
-                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 8),
                       Padding(
@@ -522,10 +569,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   children: [
                     // Quick actions and filters
                     _buildHeaderSection(),
-                    
+
                     // Statistics
                     _buildStatisticsSection(),
-                    
+
                     // Attendance list
                     Expanded(
                       child: _buildAttendanceList(),
@@ -537,7 +584,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const FaceAttendanceScreen(shouldLoop: true),
+              builder: (context) =>
+                  const FaceAttendanceScreen(shouldLoop: true),
             ),
           );
         },
@@ -599,8 +647,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              DateFormat('EEEE, MMMM d, y').format(_selectedDate),
-                              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[800]),
+                              DateFormat('EEEE, MMMM d, y')
+                                  .format(_selectedDate),
+                              style: GoogleFonts.poppins(
+                                  fontSize: 14, color: Colors.grey[800]),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -611,7 +661,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
-                              icon: const Icon(Icons.today, color: Color(0xFF2196F3), size: 20),
+                              icon: const Icon(Icons.today,
+                                  color: Color(0xFF2196F3), size: 20),
                               onPressed: () async {
                                 setState(() {
                                   _selectedDate = DateTime.now();
@@ -629,7 +680,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Search and Filter Bar
             Consumer<EmployeeProvider>(
               builder: (context, employeeProvider, child) {
@@ -666,7 +717,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           Container(
                             margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
-                              color: _selectedEmployeeId != null 
+                              color: _selectedEmployeeId != null
                                   ? Colors.orange.withOpacity(0.1)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
@@ -674,7 +725,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             child: IconButton(
                               icon: Icon(
                                 Icons.filter_list_rounded,
-                                color: _selectedEmployeeId != null 
+                                color: _selectedEmployeeId != null
                                     ? Colors.orange[700]
                                     : Colors.grey[600],
                                 size: 20,
@@ -708,7 +759,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, 
+                        horizontal: 16,
                         vertical: 14,
                       ),
                     ),
@@ -725,7 +776,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 );
               },
             ),
-            
+
             // Filter Chips
             if (_selectedEmployeeId != null || _searchQuery.isNotEmpty)
               Container(
@@ -735,7 +786,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     if (_selectedEmployeeId != null)
                       Consumer<EmployeeProvider>(
                         builder: (context, employeeProvider, child) {
-                          final employee = employeeProvider.employees.firstWhere(
+                          final employee =
+                              employeeProvider.employees.firstWhere(
                             (emp) => emp.id == _selectedEmployeeId,
                             orElse: () => employeeProvider.employees.first,
                           );
@@ -806,7 +858,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _searchQuery.length > 15 
+                              _searchQuery.length > 15
                                   ? '${_searchQuery.substring(0, 15)}...'
                                   : _searchQuery,
                               style: GoogleFonts.poppins(
@@ -851,31 +903,36 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
     }
 
-    final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
-    
+    final dayWiseDetails =
+        _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
+
     // Filter by employee if selected and by search query
     var filteredDetails = dayWiseDetails.where((detail) {
       // Employee filter
       final employeeMatch = _selectedEmployeeId == null ||
           detail['employeeId']?.toString() == _selectedEmployeeId.toString();
-      
+
       // Search filter
       final searchMatch = _searchQuery.isEmpty ||
-          detail['employeeName']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) == true;
-      
+          detail['employeeName']
+                  ?.toString()
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ==
+              true;
+
       return employeeMatch && searchMatch;
     }).toList();
-    
+
     // Calculate counts from dayWiseDetails for accurate statistics
     int present = 0;
     int absent = 0;
     int late = 0;
     int halfDay = 0;
-    
+
     for (var detail in filteredDetails) {
       final status = (detail['status'] as String? ?? '').toLowerCase();
       final isHalfDayFlag = detail['isHalfDay'] as bool? ?? false;
-      
+
       if (status == 'present') {
         present++;
       } else if (status == 'absent') {
@@ -883,12 +940,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       } else if (status == 'late') {
         late++;
       }
-      
+
       if (isHalfDayFlag) {
         halfDay++;
       }
     }
-    
+
     // Include late in present count (late employees are also present)
     final int totalPresent = present + late;
 
@@ -982,18 +1039,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
     }
 
-    final dayWiseDetails = _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
-    
+    final dayWiseDetails =
+        _reportData?['dayWiseDetails'] as List<dynamic>? ?? [];
+
     // Filter by employee if selected and by search query
     var filteredDetails = dayWiseDetails.where((detail) {
       // Employee filter
       final employeeMatch = _selectedEmployeeId == null ||
           detail['employeeId']?.toString() == _selectedEmployeeId.toString();
-      
+
       // Search filter
       final searchMatch = _searchQuery.isEmpty ||
-          detail['employeeName']?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) == true;
-      
+          detail['employeeName']
+                  ?.toString()
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ==
+              true;
+
       return employeeMatch && searchMatch;
     }).toList();
 
@@ -1049,8 +1111,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final employeeId = detail['employeeId'] ?? '';
     final department = detail['department'] ?? '';
     final status = detail['status']?.toString().toLowerCase() ?? 'absent';
-    final checkIn = detail['checkIn']?.toString() ?? '-';
-    final checkOut = detail['checkOut']?.toString() ?? '-';
+    final checkIn = _readAttendanceTime(
+        detail, ['checkIn', 'check_in', 'checkInTime', 'check_in_time']);
+    final checkOut = _readAttendanceTime(
+        detail, ['checkOut', 'check_out', 'checkOutTime', 'check_out_time']);
     final workHours = detail['workHours'] ?? 0;
     final otHours = detail['otHours'] ?? 0;
     final lateMinutes = detail['lateMinutes'] ?? 0;
@@ -1112,7 +1176,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.badge, size: 12, color: Colors.grey.shade600),
+                            Icon(Icons.badge,
+                                size: 12, color: Colors.grey.shade600),
                             const SizedBox(width: 4),
                             Text(
                               employeeId,
@@ -1122,7 +1187,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Icon(Icons.business, size: 12, color: Colors.grey.shade600),
+                            Icon(Icons.business,
+                                size: 12, color: Colors.grey.shade600),
                             const SizedBox(width: 4),
                             Text(
                               department,
@@ -1137,7 +1203,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: statusColor,
                       borderRadius: BorderRadius.circular(20),
@@ -1154,7 +1221,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Check-in and Check-out times
               Row(
                 children: [
@@ -1178,7 +1245,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Additional info row
               Row(
                 children: [
@@ -1212,7 +1279,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                 ],
               ),
-              
+
               // Holiday or Half Day indicator
               if (isHoliday && holidayName != null) ...[
                 const SizedBox(height: 8),
@@ -1225,7 +1292,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.celebration, size: 14, color: Colors.amber.shade700),
+                      Icon(Icons.celebration,
+                          size: 14, color: Colors.amber.shade700),
                       const SizedBox(width: 8),
                       Text(
                         'Holiday: $holidayName',
@@ -1249,7 +1317,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.schedule, size: 14, color: Colors.blue.shade700),
+                      Icon(Icons.schedule,
+                          size: 14, color: Colors.blue.shade700),
                       const SizedBox(width: 8),
                       Text(
                         'Half Day',
@@ -1267,7 +1336,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
         ),
       ),
-    ).animate().fadeIn(delay: Duration(milliseconds: index * 100)).slideX(begin: 0.3, duration: 600.ms);
+    )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: index * 100))
+        .slideX(begin: 0.3, duration: 600.ms);
   }
 
   Widget _buildTimeCard({
@@ -1405,8 +1477,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final date = detail['date'] ?? '';
     final dayOfWeek = detail['dayOfWeek'] ?? '';
     final status = detail['status'] ?? '';
-    final checkIn = detail['checkIn'] ?? '-';
-    final checkOut = detail['checkOut'] ?? '-';
+    final checkIn = _readAttendanceTime(
+        detail, ['checkIn', 'check_in', 'checkInTime', 'check_in_time']);
+    final checkOut = _readAttendanceTime(
+        detail, ['checkOut', 'check_out', 'checkOutTime', 'check_out_time']);
     final workHours = detail['workHours'] ?? 0;
     final otHours = detail['otHours'] ?? 0;
     final lateMinutes = detail['lateMinutes'] ?? 0;
@@ -1436,10 +1510,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     children: [
                       CircleAvatar(
                         radius: 26,
-                        backgroundColor: _getStatusColor(status.toString().toLowerCase()).withOpacity(0.1),
+                        backgroundColor:
+                            _getStatusColor(status.toString().toLowerCase())
+                                .withOpacity(0.1),
                         child: Icon(
                           _getStatusIcon(status.toString().toLowerCase()),
-                          color: _getStatusColor(status.toString().toLowerCase()),
+                          color:
+                              _getStatusColor(status.toString().toLowerCase()),
                           size: 26,
                         ),
                       ),
@@ -1472,13 +1549,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Date and Status
-                  _buildDetailRow('Date', '$dayOfWeek, ${DateFormat('MMMM d, y').format(DateTime.parse(date))}'),
+                  _buildDetailRow('Date',
+                      '$dayOfWeek, ${DateFormat('MMMM d, y').format(DateTime.parse(date))}'),
                   _buildDetailRow('Status', status.toString().toUpperCase()),
-                  
+
                   const Divider(height: 32),
-                  
+
                   // Timing Information
                   Text(
                     'Timing Information',
@@ -1488,17 +1566,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildDetailRow('Check In', checkIn != '-' ? _formatTime(checkIn) : 'Not available'),
-                  _buildDetailRow('Check Out', checkOut != '-' ? _formatTime(checkOut) : 'Not available'),
+                  _buildDetailRow('Check In',
+                      checkIn != '-' ? _formatTime(checkIn) : 'Not available'),
+                  _buildDetailRow(
+                      'Check Out',
+                      checkOut != '-'
+                          ? _formatTime(checkOut)
+                          : 'Not available'),
                   if (workHours > 0)
-                    _buildDetailRow('Work Hours', '${workHours.toStringAsFixed(1)} hours'),
+                    _buildDetailRow(
+                        'Work Hours', '${workHours.toStringAsFixed(1)} hours'),
                   if (otHours > 0)
-                    _buildDetailRow('OT Hours', '${otHours.toStringAsFixed(1)} hours'),
+                    _buildDetailRow(
+                        'OT Hours', '${otHours.toStringAsFixed(1)} hours'),
                   if (lateMinutes > 0)
                     _buildDetailRow('Late Minutes', '$lateMinutes minutes'),
-                  
+
                   const Divider(height: 32),
-                  
+
                   // Shift Information
                   if (shiftName.isNotEmpty) ...[
                     Text(
@@ -1511,12 +1596,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     const SizedBox(height: 12),
                     _buildDetailRow('Shift Name', shiftName),
                     if (shiftTimings != null) ...[
-                      _buildDetailRow('From Time', shiftTimings['fromTime'] ?? '-'),
+                      _buildDetailRow(
+                          'From Time', shiftTimings['fromTime'] ?? '-'),
                       _buildDetailRow('To Time', shiftTimings['toTime'] ?? '-'),
                     ],
                     const Divider(height: 32),
                   ],
-                  
+
                   // Additional Information
                   if (isHoliday || isHalfDay || leaveType != null) ...[
                     Text(
@@ -1529,16 +1615,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     const SizedBox(height: 12),
                     if (isHoliday && holidayName != null)
                       _buildDetailRow('Holiday', holidayName),
-                    if (isHalfDay)
-                      _buildDetailRow('Half Day', 'Yes'),
+                    if (isHalfDay) _buildDetailRow('Half Day', 'Yes'),
                     if (leaveType != null)
                       _buildDetailRow('Leave Type', leaveType),
                     if (leaveStatus != null)
                       _buildDetailRow('Leave Status', leaveStatus),
                   ],
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Close button
                   SizedBox(
                     width: double.infinity,
