@@ -233,21 +233,21 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
       }
     }
 
-    // Intermediate levels (L1/L2/L3): Flexible - anyone in chain can approve
-    // Last level (Decision Maker): Strict - only designated person can approve
-    bool isMyTurn;
-    if (isLastLevel) {
-      // Decision Maker level - ONLY the designated approver
-      isMyTurn = (myId != null && myId == requiredId) || isAdmin;
-    } else {
-      // Intermediate levels - anyone in the approval chain
-      final isChainMember = myId == l1Id || myId == l2Id || myId == l3Id;
-      isMyTurn =
-          (myId != null && (myId == requiredId || isChainMember)) || isAdmin;
+    // Hierarchical Approval Rule: ONLY the current level's designated approver sees the buttons.
+    // This enforces the "step-by-step" workflow.
+    bool isMyTurn = (myId != null && myId == requiredId) || isAdmin;
+
+    // For flexibility, allow department approvers to act if they are the current level
+    if (!isMyTurn && myId != null) {
+      final deptApprovers = employee['dept']?['approvers'] as List<dynamic>? ?? [];
+      if (deptApprovers.isNotEmpty && 
+          currentLevel - 1 < deptApprovers.length && 
+          deptApprovers[currentLevel - 1].toString() == myId) {
+        isMyTurn = true;
+      }
     }
 
-    // Hide buttons if user has already approved or cannot approve any remaining level
-    final shouldShowButtons = (isMyTurn || canApproveAnyLevel) && !hasAlreadyApproved && isPending;
+    final shouldShowButtons = isMyTurn && !hasAlreadyApproved && isPending;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
