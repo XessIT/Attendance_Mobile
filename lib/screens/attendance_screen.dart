@@ -13,6 +13,7 @@ import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/local_storage_service.dart';
 import 'face_attendance_screen_new.dart';
+import '../widgets/no_internet_widget.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -535,12 +536,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _reportData == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline,
-                          size: 64, color: Colors.red.shade300),
+              ? Builder(
+                  builder: (context) {
+                    final errorLower = _error!.toLowerCase();
+                    final isNetworkError = errorLower.contains('network') || 
+                                         errorLower.contains('connection') || 
+                                         errorLower.contains('xmlhttprequest');
+                    
+                    if (isNetworkError) {
+                      return NoInternetWidget(onRetry: _loadData);
+                    }
+
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline,
+                              size: 64, color: Colors.red.shade300),
                       const SizedBox(height: 16),
                       Text(
                         'Error loading data',
@@ -564,11 +576,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                     ],
                   ),
-                )
-              : Column(
-                  children: [
-                    // Quick actions and filters
-                    _buildHeaderSection(),
+                );
+              },
+            )
+          : Column(
+              children: [
+                // Quick actions and filters
+                _buildHeaderSection(),
 
                     // Statistics
                     _buildStatisticsSection(),

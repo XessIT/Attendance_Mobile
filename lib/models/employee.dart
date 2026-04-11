@@ -64,12 +64,29 @@ class Employee {
         ? double.parse(json['payloan'].toString())
         : null;
     
+    // Safely parse ID - check db_id first, then id
+    final dynamic rawId = json['db_id'] ?? json['id'];
+    int? intId;
+    if (rawId is int) {
+      intId = rawId;
+    } else if (rawId != null) {
+      intId = int.tryParse(rawId.toString());
+    }
+
+    // Safely parse employeeId string
+    String? employeeIdStr = json['employeeId']?.toString() ?? json['employee_id']?.toString();
+    // If id was a string (like "EMP-4"), and we don't have an explicit employeeId, use the id string
+    if (employeeIdStr == null && json['id'] is String) {
+      employeeIdStr = json['id'];
+    }
+
     return Employee(
-      id: json['id'],
+      id: intId,
       name: json['name'] ?? '',
       email: json['email'], // Can be null
       phone: json['phone'] ?? '',
       position: json['department'] ?? json['position'] ?? '', // API uses 'department'
+      employeeId: employeeIdStr,
       salary: json['salary'] != null ? double.parse(json['salary'].toString()) : 0.0,
       faceData: faceDataValue,
       createdAt: json['created_at'] != null 
@@ -79,7 +96,7 @@ class Employee {
       shiftId: json['shift_id'] is int ? json['shift_id'] : int.tryParse(json['shift_id']?.toString() ?? ''),
       departmentId: json['department_id'] is int ? json['department_id'] : int.tryParse(json['department_id']?.toString() ?? ''),
       shiftName: json['shift'] ?? json['shift_name'] ?? json['shiftName'], // API returns shift name
-      companyId: json['company_id'],
+      companyId: json['company_id'] is int ? json['company_id'] : int.tryParse(json['company_id']?.toString() ?? ''),
       dateOfJoining: joiningDate,
       dateOfBirth: birthDate,
       payloan: payloanValue, // Added payloan field

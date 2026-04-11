@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
 import '../utils/auth_utils.dart';
 import '../utils/biometric_auth_service.dart';
 
@@ -220,6 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // Clear any existing cache before starting a new session to prevent data overlap
+      await LocalStorageService.clearAllCache();
       Map<String, dynamic> result;
 
       if (companyId != null) {

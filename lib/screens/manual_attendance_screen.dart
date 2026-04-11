@@ -28,14 +28,9 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
 
   final List<String> _statusValues = [
     'Present',
-    'Absent',
     'Late',
     'Half Day',
-    'Holiday',
     'Leave',
-    'Casual Leave',
-    'Sick Leave',
-    'Medical Leave',
   ];
 
   @override
@@ -95,29 +90,73 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     if (time == null) return 'Select Time';
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    return DateFormat('HH:mm').format(dt);
+    return DateFormat('hh:mm a').format(dt);
   }
 
   TimeOfDay? _parseTimeString(String? timeStr) {
     if (timeStr == null || timeStr.isEmpty || timeStr == '-') return null;
     try {
-      if (timeStr.contains('T')) {
-        final dt = DateTime.parse(timeStr);
+      // 1. Try parsing formats like "09:45:00 am" or "09:45 am"
+      final upperTime = timeStr.trim().toUpperCase();
+      if (upperTime.contains('AM') || upperTime.contains('PM')) {
+        // Handle "09:45:00 AM" by converting to "09:45 AM"
+        String cleanStr = upperTime;
+        if (RegExp(r':\d{2}:\d{2}\s').hasMatch(upperTime)) {
+          // Format like "09:45:00 AM" -> "09:45 AM"
+          final parts = upperTime.split(':');
+          if (parts.length >= 3) {
+            final lastSpacePart = parts[2].split(' ');
+            if (lastSpacePart.length >= 2) {
+              cleanStr = "${parts[0]}:${parts[1]} ${lastSpacePart[1]}";
+            }
+          }
+        } else if (RegExp(r':\d{2}\s[AP]M').hasMatch(upperTime)) {
+          // Format like "09:45:00 AM" (where :00 is the second)
+          final parts = upperTime.split(':');
+          if (parts.length >= 2) {
+            final lastSpacePart = parts[parts.length-1].split(' ');
+            if (lastSpacePart.length >= 2) {
+               cleanStr = "${parts[0]}:${parts[1]} ${lastSpacePart[lastSpacePart.length-1]}";
+            }
+          }
+        }
+
+        try {
+          final dt = DateFormat('hh:mm a').parse(cleanStr);
+          return TimeOfDay(hour: dt.hour, minute: dt.minute);
+        } catch (_) {
+          // One more try with exactly the incoming string (uppercased)
+          try {
+            final dt = DateFormat('hh:mm:ss a').parse(upperTime);
+            return TimeOfDay(hour: dt.hour, minute: dt.minute);
+          } catch (_) {}
+        }
+      }
+
+      // 2. Try parsing as a full date-time string
+      final dt = DateTime.tryParse(timeStr);
+      if (dt != null) {
         return TimeOfDay(hour: dt.hour, minute: dt.minute);
       }
+      
+      // 3. Fallback for simple military HH:mm or HH:mm:ss format
       final parts = timeStr.split(':');
       if (parts.length >= 2) {
         return TimeOfDay(
-            hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+            hour: int.parse(parts[0].trim()), 
+            minute: int.parse(parts[1].trim())
+        );
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error parsing time string');
+    }
     return null;
   }
 
   Future<void> _fetchTodayAttendance(int employeeId) async {
     setState(() => _isLoading = true);
     try {
-      final response = await ApiService.getOrCreateAttendance(employeeId);
+      final response = await ApiService.getTodayCheckIn(employeeId);
       final data = response['data'] ?? response;
 
       String? checkInStr =
@@ -127,20 +166,13 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
 
       if (mounted) {
         setState(() {
-          _checkInTime = _parseTimeString(checkInStr);
-          _checkOutTime = _parseTimeString(checkOutStr);
+          if (checkInStr != null) _checkInTime = _parseTimeString(checkInStr);
+          if (checkOutStr != null) _checkOutTime = _parseTimeString(checkOutStr);
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to load attendance: $e'),
-              backgroundColor: Colors.red),
-        );
-      }
+    print(e);
     }
   }
 
@@ -183,15 +215,14 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
           );
           Navigator.of(context).pop(true);
         } else {
-          throw Exception(result['error'] ?? 'Failed to update attendance');
+          throw Exception('Failed to update attendance');
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+            content: Text('Error'),
             backgroundColor: Colors.red,
           ),
         );

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
+import '../widgets/no_internet_widget.dart';
 import 'leave_balance_detail_screen.dart';
 
 //leave disable screen btn .....add
@@ -19,6 +20,7 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
   String _selectedStatus = 'Pending';
   int? _currentStaffId;
   String? _currentUserRole;
+  String? _error;
 
   @override
   void initState() {
@@ -37,7 +39,10 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
   }
 
   Future<void> _loadRequests() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final response = await ApiService.getAllLeaveRequests(
         status: _selectedStatus == 'All' ? null : _selectedStatus,
@@ -56,10 +61,10 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
-      setState(() => _isLoading = false);
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
     }
   }
 
@@ -102,9 +107,11 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _leaveRequests.isEmpty
-                    ? _buildEmptyState()
-                    : _buildApprovalList(),
+                : _error != null
+                    ? _buildErrorUI()
+                    : _leaveRequests.isEmpty
+                        ? _buildEmptyState()
+                        : _buildApprovalList(),
           ),
         ],
       ),
@@ -115,30 +122,33 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       color: Colors.white,
-      child: Row(
-        children: ['Pending', 'Approved', 'Rejected', 'All'].map((status) {
-          final isSelected = _selectedStatus == status;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(
-                  isSelected && status == 'Pending' ? 'To Approve' : status),
-              selected: isSelected,
-              onSelected: (val) {
-                if (val) {
-                  setState(() => _selectedStatus = status);
-                  _loadRequests();
-                }
-              },
-              selectedColor: const Color(0xFF2196F3).withOpacity(0.1),
-              labelStyle: GoogleFonts.poppins(
-                fontSize: 12,
-                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[600],
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: ['Pending', 'Approved', 'Rejected', 'All'].map((status) {
+            final isSelected = _selectedStatus == status;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(
+                    isSelected && status == 'Pending' ? 'To Approve' : status),
+                selected: isSelected,
+                onSelected: (val) {
+                  if (val) {
+                    setState(() => _selectedStatus = status);
+                    _loadRequests();
+                  }
+                },
+                selectedColor: const Color(0xFF2196F3).withOpacity(0.1),
+                labelStyle: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isSelected ? const Color(0xFF2196F3) : Colors.grey[600],
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -333,6 +343,8 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
                             '${_formatDate(request['startDate'])} - ${_formatDate(request['endDate'])}'),
                         _buildInfoColumn(
                             'Days', '${request['totalDays'] ?? '1.0'}'),
+                        _buildInfoColumn(
+                            'Applied at', _formatAppliedDateTime(request['created_at'] ?? request['createdAt'])),
                       ],
                     ),
                     if (!isFinalized) ...[
@@ -514,5 +526,47 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
     } catch (_) {
       return date.toString();
     }
+  }
+
+  String _formatAppliedDateTime(dynamic date) {
+    if (date == null) return '-';
+    try {
+      final dt = DateTime.parse(date.toString()).toLocal();
+      return DateFormat('dd MMM, hh:mm a').format(dt);
+    } catch (_) {
+      return date.toString();
+    }
+  }
+
+  Widget _buildErrorUI() {
+    final isNetworkError = _error!.toLowerCase().contains('network') ||
+        _error!.toLowerCase().contains('connection') ||
+        _error!.toLowerCase().contains('xmlhttprequest');
+
+    if (isNetworkError) {
+      return Center(
+        child: NoInternetWidget(onRetry: _loadRequests),
+      );
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Error: $_error',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(color: Colors.red[600]),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _loadRequests,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 }

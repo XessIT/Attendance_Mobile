@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/shift_provider.dart';
 import '../models/shift.dart';
+import '../widgets/no_internet_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -86,6 +87,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
 
                 if (shiftProvider.error != null) {
+                  final errorLower = shiftProvider.error!.toLowerCase();
+                  final isNetworkError = errorLower.contains('network') || 
+                                        errorLower.contains('connection') || 
+                                        errorLower.contains('xmlhttprequest');
+                  
+                  if (isNetworkError) {
+                    return NoInternetWidget(onRetry: () => shiftProvider.loadShifts());
+                  }
+
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),

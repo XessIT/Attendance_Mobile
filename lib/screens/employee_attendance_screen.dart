@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../services/api_service.dart';
+import '../widgets/no_internet_widget.dart';
 
 class EmployeeAttendanceScreen extends StatefulWidget {
   const EmployeeAttendanceScreen({super.key});
@@ -608,6 +609,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                 const SizedBox(height: 8),
                 if (_isLoading)
                   const Center(child: CircularProgressIndicator())
+                else if (_error != null)
+                  _buildErrorUI()
                 else if (_selectedDayRecords.isEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 30),
@@ -889,6 +892,41 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildErrorUI() {
+    final isNetworkError = _error!.toLowerCase().contains('network') ||
+        _error!.toLowerCase().contains('connection') ||
+        _error!.toLowerCase().contains('xmlhttprequest');
+
+    if (isNetworkError) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: NoInternetWidget(onRetry: _loadReport),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 30),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Error: $_error',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(color: Colors.red[600]),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loadReport,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

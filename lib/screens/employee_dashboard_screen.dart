@@ -7,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/app_update_service.dart';
+import '../services/connectivity_service.dart';
 import '../utils/auth_utils.dart';
+import '../widgets/no_internet_widget.dart';
 import 'comp_off_screen.dart';
 
 class EmployeeDashboardScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _dashboardData;
   String? _error;
+  bool _isNoInternet = false;
 
   @override
   void initState() {
@@ -42,7 +45,20 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _isNoInternet = false;
     });
+
+    // Check internet connection
+    final hasInternet = await ConnectivityService.hasInternet();
+    if (!hasInternet) {
+      if (mounted) {
+        setState(() {
+          _isNoInternet = true;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
 
     try {
       final data = await ApiService.getEmployeeDashboardStats();
@@ -97,41 +113,43 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 60, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading dashboard',
-                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-                        child: Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(color: Colors.grey[600]),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _loadDashboardData,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2196F3),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+          : _isNoInternet
+              ? _buildNoInternetUI()
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 60, color: Colors.red[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading dashboard',
+                            style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
-                        ),
-                        child: const Text('Retry'),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                            child: Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(color: Colors.grey[600]),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _loadDashboardData,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
+                    )
               : RefreshIndicator(
                   onRefresh: _loadDashboardData,
                   child: SingleChildScrollView(
@@ -991,4 +1009,9 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1).then(delay: 100.ms).scale(begin: const Offset(0.98, 0.98)),
     );
   }
+
+  Widget _buildNoInternetUI() {
+    return NoInternetWidget(onRetry: _loadDashboardData);
+  }
 }
+

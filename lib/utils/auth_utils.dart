@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../services/local_storage_service.dart';
 
 /// Authentication utility class for managing tokens and user type.
 /// Token and user type are stored in Flutter Secure Storage.
@@ -131,6 +132,8 @@ class AuthUtils {
   static Future<bool> clearAuthData() async {
     await _storage.delete(key: _userTypeKey);
     await _storage.delete(key: _tokenKey);
+    // Clear all local caches on logout to prevent cross-company data visibility
+    await LocalStorageService.clearAllCache();
     return true;
   }
 

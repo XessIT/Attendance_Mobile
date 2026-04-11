@@ -288,18 +288,25 @@ class ApiService {
           if (response.data['success'] == true) {
             print('✅ Employee created successfully!');
             
-            // The API returns: {"employee_id":1,"message":"...","success":true}
-            // Extract employee_id from response (could be 'employee_id' or 'id')
-            final returnedId = response.data['employee_id'] ?? 
-                              response.data['id'] ?? 
-                              null;
+            // Extract IDs from response with safe type handling
+            // response.data example: {"employee_id":"EMP-3","id":268,"message":"...","success":true}
+            final dynamic rawId = response.data['id'] ?? response.data['employee_id'];
+            int? id;
+            if (rawId is int) {
+              id = rawId;
+            } else if (rawId != null) {
+              id = int.tryParse(rawId.toString());
+            }
+            
+            final String? empId = response.data['employee_id']?.toString();
             
             // If API returns full employee data in 'data' field, use it
             Map<String, dynamic>? employeeData = response.data['data'];
             
             // Create Employee object - use API response data if available, otherwise use original employee data
             final createdEmployee = Employee(
-              id: returnedId ?? employeeData?['id'] ?? employeeData?['employee_id'],
+              id: id ?? (employeeData?['id'] is int ? employeeData!['id'] : int.tryParse(employeeData?['id']?.toString() ?? '')),
+              employeeId: empId ?? employeeData?['employee_id']?.toString(),
               name: employeeData?['name'] ?? employee.name,
               email: employeeData?['email'] ?? employee.email,
               phone: employeeData?['phone'] ?? employee.phone,
@@ -315,12 +322,15 @@ class ApiService {
               createdAt: employeeData?['created_at'] != null
                   ? DateTime.parse(employeeData!['created_at'])
                   : DateTime.now(),
-              isActive: employeeData?['is_active'] ?? 
-                       employeeData?['isActive'] ?? 
+              isActive: employeeData?['is_active'] == 1 || 
+                       employeeData?['is_active'] == true || 
+                       employeeData?['isActive'] == true || 
                        employee.isActive,
               payloan: employeeData?['payloan'] != null
                   ? double.parse(employeeData!['payloan'].toString())
                   : employee.payloan,
+              shiftId: employeeData?['shift_id'] is int ? employeeData!['shift_id'] : int.tryParse(employeeData?['shift_id']?.toString() ?? ''),
+              departmentId: employeeData?['department_id'] is int ? employeeData!['department_id'] : int.tryParse(employeeData?['department_id']?.toString() ?? ''),
             );
             
             print('📋 Created Employee Details:');
@@ -955,12 +965,17 @@ class ApiService {
   static Future<Map<String, dynamic>> fetchEmployeeFullReport({
     required String startDate,
     required String endDate,
+    int? employeeId,
   }) async {
     try {
       final headers = await _getAuthHeaders();
       final response = await _userDio.get(
         '/reports/employee-full-report',
-        queryParameters: {'startDate': startDate, 'endDate': endDate},
+        queryParameters: {
+          'startDate': startDate, 
+          'endDate': endDate,
+          if (employeeId != null) 'employeeId': employeeId,
+        },
         options: Options(headers: headers),
       );
       if (response.statusCode == 200) {
@@ -2795,6 +2810,41 @@ class ApiService {
     } on DioException catch (e) {
       if (e.response != null) {
         throw Exception(e.response?.data['error'] ?? e.response?.data['message'] ?? 'Failed to update attendance');
+      }
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  // Get or check current check-in for today
+  static Future<Map<String, dynamic>> getTodayCheckIn(int employeeId) async {
+    try {
+      print('========================================');
+      print('GET TODAY CHECK-IN API CALL');
+      print('========================================');
+      print('Employee ID: $employeeId');
+
+      final headers = await _getAuthHeaders();
+      final response = await _userDio.get(
+        '/attendance/today-checkin',
+        queryParameters: {'employeeId': employeeId},
+        options: Options(headers: headers),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        print('✅ Today check-in data loaded successfully');
+        print('========================================');
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception('Failed to get today check-in: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data?['message'] ?? e.response?.data?['error'] ?? 'Failed to get today check-in');
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {

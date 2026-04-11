@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'attendance_detail_report_screen.dart';
 
 // Indian currency formatter
 String formatIndianCurrency(double amount) {
@@ -16,11 +17,15 @@ String formatIndianCurrency(double amount) {
 class SalaryDetailsScreen extends StatelessWidget {
   final dynamic employeeData;
   final String employeeName;
+  final String? startDate;
+  final String? endDate;
 
   const SalaryDetailsScreen({
     super.key,
     required this.employeeData,
     required this.employeeName,
+    this.startDate,
+    this.endDate,
   });
 
   @override
@@ -144,7 +149,6 @@ class SalaryDetailsScreen extends StatelessWidget {
             
             const SizedBox(height: 16),
             
-            // Attendance Information Card
             _buildSectionCard(
               title: 'Attendance Information',
               icon: Icons.calendar_today_outlined,
@@ -164,6 +168,39 @@ class SalaryDetailsScreen extends StatelessWidget {
                 _buildDetailRow('Working Days', attendance['workingDays'].toString()),
                 _buildDetailRow('Attendance Rate', '${attendance['attendancePercentage']}%',
                     isBold: true, valueColor: const Color(0xFF2196F3)),
+                
+                const Divider(height: 32),
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (startDate != null && endDate != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AttendanceDetailReportScreen(
+                              employeeId: employee['id'],
+                              employeeName: employeeName,
+                              startDate: startDate!,
+                              endDate: endDate!,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.list_alt_rounded),
+                    label: const Text('View Full Details'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1565C0),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ).animate().fadeIn(delay: 300.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms),
             

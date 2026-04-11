@@ -9,6 +9,7 @@ import '../services/local_storage_service.dart';
 import 'employee_registration_screen.dart';
 import 'employee_edit_screen.dart';
 import 'manual_attendance_screen.dart';
+import '../widgets/no_internet_widget.dart';
 
 // Indian currency formatter
 String formatIndianCurrency(double amount) {
@@ -160,6 +161,15 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                 }
 
                 if (employeeProvider.error != null) {
+                  final errorLower = employeeProvider.error!.toLowerCase();
+                  final isNetworkError = errorLower.contains('network') || 
+                                        errorLower.contains('connection') || 
+                                        errorLower.contains('xmlhttprequest');
+                  
+                  if (isNetworkError) {
+                    return NoInternetWidget(onRetry: _loadEmployees);
+                  }
+
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

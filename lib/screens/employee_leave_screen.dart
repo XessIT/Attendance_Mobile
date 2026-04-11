@@ -7,6 +7,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../services/api_service.dart';
 import '../utils/auth_utils.dart';
 import '../models/leave_balance.dart';
+import '../widgets/no_internet_widget.dart';
 import 'leave_balance_detail_screen.dart';
 
 class EmployeeLeaveScreen extends StatefulWidget {
@@ -1118,7 +1119,7 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                 if (_isLoading)
                    const Center(child: CircularProgressIndicator())
                 else if (_error != null)
-                   Center(child: Text('Error: $_error'))
+                   _buildErrorUI()
                 else if (_selectedDayLeaves.isEmpty)
                   Expanded(
                     child: Center(
@@ -1445,6 +1446,38 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
       ),
     );
   }
+
+  Widget _buildErrorUI() {
+    final isNetworkError = _error!.toLowerCase().contains('network') ||
+        _error!.toLowerCase().contains('connection') ||
+        _error!.toLowerCase().contains('xmlhttprequest');
+
+    if (isNetworkError) {
+      return Center(
+        child: NoInternetWidget(onRetry: _loadLeaves),
+      );
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Error: $_error',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(color: Colors.red[600]),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _loadLeaves,
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1617,6 +1650,24 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
   }
 
   Widget _buildErrorState() {
+    final isNetworkError = _error!.toLowerCase().contains('network') ||
+        _error!.toLowerCase().contains('connection') ||
+        _error!.toLowerCase().contains('xmlhttprequest');
+
+    if (isNetworkError) {
+      return Center(
+        child: NoInternetWidget(
+          onRetry: () {
+            if (_employees.isNotEmpty) {
+              _loadEmployees();
+            } else {
+              _loadLeaveBalance();
+            }
+          },
+        ),
+      );
+    }
+
     return Center(
       child: Container(
         margin: const EdgeInsets.all(20),

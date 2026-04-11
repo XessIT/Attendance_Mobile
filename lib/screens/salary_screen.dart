@@ -10,6 +10,7 @@ import '../providers/attendance_provider.dart';
 import '../models/salary.dart';
 import '../models/employee.dart';
 import '../services/api_service.dart';
+import '../widgets/no_internet_widget.dart';
 import 'salary_details_screen.dart';
 
 // Indian currency formatter
@@ -36,6 +37,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
   Map<String, dynamic>? _salaryCalculationResult;
   bool _isLoading = false;
   String _searchQuery = '';
+  String? _error;
 
   @override
   void initState() {
@@ -89,6 +91,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
     
     setState(() {
       _isLoading = true;
+      _error = null;
     });
 
     try {
@@ -132,6 +135,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _error = e.toString();
         });
       }
       
@@ -890,6 +894,52 @@ class _SalaryScreenState extends State<SalaryScreen> {
   }
 
   Widget _buildSalaryList() {
+    if (_error != null && _salaryCalculationResult == null) {
+      final isNetworkError = _error!.toLowerCase().contains('network') ||
+          _error!.toLowerCase().contains('connection') ||
+          _error!.toLowerCase().contains('xmlhttprequest');
+
+      if (isNetworkError) {
+        return NoInternetWidget(
+          onRetry: () {
+            _loadData();
+            _loadSalaryData();
+          },
+        );
+      }
+
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading salary data',
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                _loadData();
+                _loadSalaryData();
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_salaryCalculationResult == null) {
       // Show loading state instead of local calculations
       return Center(
@@ -1281,11 +1331,16 @@ class _SalaryScreenState extends State<SalaryScreen> {
     final employee = employeeData['employee'];
     final employeeName = employee['name'] ?? 'Unknown';
     
+    final startDate = DateFormat('yyyy-MM-dd').format(DateTime(_selectedYear, _selectedMonth, 1));
+    final endDate = DateFormat('yyyy-MM-dd').format(DateTime(_selectedYear, _selectedMonth + 1, 0));
+    
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => SalaryDetailsScreen(
           employeeData: employeeData,
           employeeName: employeeName,
+          startDate: startDate,
+          endDate: endDate,
         ),
       ),
     );
@@ -1337,8 +1392,10 @@ class _SalaryScreenState extends State<SalaryScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 16),
-              Text('Calculating salaries...'),]
-        ),)
+              Text('Calculating salaries...'),
+            ],
+          ),
+        ),
       );
 
       try {

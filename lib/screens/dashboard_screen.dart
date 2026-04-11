@@ -12,11 +12,13 @@ import 'comp_off_screen.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/app_update_service.dart';
+import '../services/connectivity_service.dart';
 import '../models/attendance_summary.dart';
 import 'face_attendance_screen_new.dart';
 import 'level_approval_screen.dart';
 import 'manual_attendance_screen.dart';
 import 'employee_leave_screen.dart';
+import '../widgets/no_internet_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -31,6 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String? _error;
   bool _hasData = false;
+  bool _isNoInternet = false;
 
   @override
   void initState() {
@@ -48,7 +51,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _isLoading = true;
         _error = null;
+        _isNoInternet = false;
       });
+    }
+
+    // Check internet connection
+    final hasInternet = await ConnectivityService.hasInternet();
+    if (!hasInternet) {
+      if (mounted) {
+        setState(() {
+          _isNoInternet = true;
+          _isLoading = false;
+        });
+      }
+      return;
     }
 
     try {
@@ -318,8 +334,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
+    if (_isNoInternet) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: _buildNoInternetUI(),
+      );
+    }
+
     // Show error state if there's an error and no data
     if (_error != null && !_hasData) {
+      final isNetworkError = _error!.toLowerCase().contains('network') ||
+          _error!.toLowerCase().contains('connection') ||
+          _error!.toLowerCase().contains('xmlhttprequest');
+
+      if (isNetworkError) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          body: NoInternetWidget(onRetry: _refreshData),
+        );
+      }
+
       return Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         body: Center(
@@ -568,27 +602,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
-                icon: Icons.timelapse,
-                title: 'Compensatory Off',
-                subtitle: 'Request Credit/Leave',
-                color: Colors.purple,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CompOffScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
                 icon: Icons.face,
                 title: 'Face Attendance',
                 subtitle: 'Face Recognition',
@@ -596,46 +609,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onTap: _navigateToFaceAttendanceScreen,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.timer_outlined,
-                title: 'Permission Request',
-                subtitle: 'Short Leave',
-                color: Colors.blueAccent,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EmployeeLeaveScreen(initialTab: 1),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.history_outlined,
-                title: 'My Request',
-                subtitle: 'Check Status',
-                color: Colors.deepOrangeAccent,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EmployeeLeaveScreen(initialTab: 2),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(child: SizedBox()),
           ],
         ),
       ],
@@ -1171,7 +1144,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-
-
-
-} 
+  Widget _buildNoInternetUI() {
+    return NoInternetWidget(onRetry: _refreshData);
+  }
+}
+ 
