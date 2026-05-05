@@ -13,10 +13,10 @@ import 'location_service.dart';
 
 class ApiService {
   // Face recognition and attendance API base URL
-  static const String baseUrl = 'https://face.agniplay.com/api';
-
+  static const String baseUrl = 'https://face.agniplay.com/api/';
+  
   // User management and company registration API base URL
-  static const String userBaseUrl = 'https://nodeface.agniplay.com/api';
+  static const String userBaseUrl = 'https://nodeface.agniplay.com/api/';
 
   // Dio instance for face recognition and attendance APIs
   static final Dio _dio = Dio(BaseOptions(
@@ -1000,7 +1000,7 @@ class ApiService {
     File imageFile, {
     Map<String, double>? cachedLocation,
   }) async {
-    final fullUrl = '$baseUrl/mark_attendance';
+    final fullUrl = '${baseUrl}mark_attendance';
     
     print('========================================');
     print('MARK ATTENDANCE API CALL');
@@ -1071,7 +1071,7 @@ class ApiService {
         },
       );
       
-      final response = await _dio.post('/mark_attendance', data: formData, options: options);
+      final response = await _dio.post('mark_attendance', data: formData, options: options);
       
       print('Status Code: ${response.statusCode}');
       print('Response Headers: ${response.headers}');
@@ -1176,7 +1176,7 @@ class ApiService {
       print('📤 Sending request...');
 
       final response = await _dio.post(
-        '/mark_attendance',
+        'mark_attendance',
         data: formData,
         options: Options(
           headers: {
