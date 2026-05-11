@@ -87,13 +87,17 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         final location = await LocationService.getCurrentLocation();
         if (location != null) {
           _cachedLocation = location; // Cache location for later use
-          setState(() {
-            _locationStatus = 'Location: ${location['latitude']!.toStringAsFixed(4)}, ${location['longitude']!.toStringAsFixed(4)}';
-          });
+          if (mounted) {
+            setState(() {
+              _locationStatus = 'Location: ${location['latitude']!.toStringAsFixed(4)}, ${location['longitude']!.toStringAsFixed(4)}';
+            });
+          }
         } else {
-          setState(() {
-            _locationStatus = 'Location unavailable';
-          });
+          if (mounted) {
+            setState(() {
+              _locationStatus = 'Location unavailable';
+            });
+          }
         }
       } else {
         // Try to request permission
@@ -103,24 +107,32 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
           final location = await LocationService.getCurrentLocation();
           if (location != null) {
             _cachedLocation = location; // Cache location for later use
-            setState(() {
-              _locationStatus = 'Location: ${location['latitude']!.toStringAsFixed(4)}, ${location['longitude']!.toStringAsFixed(4)}';
-            });
+            if (mounted) {
+              setState(() {
+                _locationStatus = 'Location: ${location['latitude']!.toStringAsFixed(4)}, ${location['longitude']!.toStringAsFixed(4)}';
+              });
+            }
           } else {
-            setState(() {
-              _locationStatus = 'Location unavailable';
-            });
+            if (mounted) {
+              setState(() {
+                _locationStatus = 'Location unavailable';
+              });
+            }
           }
         } else {
-          setState(() {
-            _locationStatus = 'Location permission required';
-          });
+          if (mounted) {
+            setState(() {
+              _locationStatus = 'Location permission required';
+            });
+          }
         }
       }
     } catch (e) {
-      setState(() {
-        _locationStatus = 'Location error';
-      });
+      if (mounted) {
+        setState(() {
+          _locationStatus = 'Location error';
+        });
+      }
     }
   }
 
@@ -135,18 +147,24 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         // Permission granted, try to get location
         final location = await LocationService.getCurrentLocation();
         if (location != null) {
-          setState(() {
-            _locationStatus = 'Location: ${location['latitude']!.toStringAsFixed(4)}, ${location['longitude']!.toStringAsFixed(4)}';
-          });
+          if (mounted) {
+            setState(() {
+              _locationStatus = 'Location: ${location['latitude']!.toStringAsFixed(4)}, ${location['longitude']!.toStringAsFixed(4)}';
+            });
+          }
         } else {
-          setState(() {
-            _locationStatus = 'Location unavailable';
-          });
+          if (mounted) {
+            setState(() {
+              _locationStatus = 'Location unavailable';
+            });
+          }
         }
       } else {
-        setState(() {
-          _locationStatus = 'Location permission denied';
-        });
+        if (mounted) {
+          setState(() {
+            _locationStatus = 'Location permission denied';
+          });
+        }
         
         // Show dialog explaining why location is needed
         if (mounted) {
@@ -176,9 +194,11 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         }
       }
     } catch (e) {
-      setState(() {
-        _locationStatus = 'Location permission error';
-      });
+      if (mounted) {
+        setState(() {
+          _locationStatus = 'Location permission error';
+        });
+      }
     }
   }
 
@@ -191,10 +211,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         _cameras = await availableCameras();
       } catch (e) {
         print('Error getting cameras: $e');
-        setState(() {
-          _isProcessing = false;
-          _status = 'Camera not available';
-        });
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _status = 'Camera not available';
+          });
+        }
         return;
       }
     }
@@ -224,25 +246,33 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       
       if (result != null && result is File) {
         // Process the captured image
-        await _processCapturedImage(result);
+        if (mounted) {
+          await _processCapturedImage(result);
+        }
       } else {
         // User cancelled or error - reset silently
-        setState(() {
-          _isProcessing = false;
-          _status = 'Ready to capture face for attendance';
-        });
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _status = 'Ready to capture face for attendance';
+          });
+        }
       }
     } else {
-      setState(() {
-        _isProcessing = false;
-        _status = 'No camera available';
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _status = 'No camera available';
+        });
+      }
     }
   }
 
   bool _isActive = true;
 
   Future<void> _processCapturedImage(File imageFile) async {
+    if (!mounted) return;
+    
     setState(() {
       _isProcessing = true;
       _capturedImage = imageFile;
@@ -254,11 +284,13 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       final hasFace = await _detectFace(imageFile);
 
       if (!hasFace) {
-        setState(() {
-          _isProcessing = false;
-          _status = 'Face not detected, scanning...';
-          _capturedImage = null;
-        });
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _status = 'Face not detected, scanning...';
+            _capturedImage = null;
+          });
+        }
 
         // ❌ Don't call API, just continue scanning silently
         if (mounted && widget.shouldLoop) {
@@ -271,9 +303,11 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       }
 
       // ✅ STEP 2: Face detected → proceed
-      setState(() {
-        _status = 'Face detected. Processing attendance...';
-      });
+      if (mounted) {
+        setState(() {
+          _status = 'Face detected. Processing attendance...';
+        });
+      }
 
       final finalImageFile = await _compressImage(imageFile);
 
@@ -283,20 +317,22 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       // 🔁 Loop again
       if (mounted && widget.shouldLoop) {
         Future.delayed(const Duration(seconds: 1), () {
-          _captureAndRecognize();
+          if (mounted) _captureAndRecognize();
         });
       }
 
     } catch (e) {
-      setState(() {
-        _status = 'Error: ${e.toString()}';
-        _isProcessing = false;
-        _capturedImage = null;
-      });
+      if (mounted) {
+        setState(() {
+          _status = 'Error: ${e.toString()}';
+          _isProcessing = false;
+          _capturedImage = null;
+        });
+      }
 
       if (mounted && widget.shouldLoop) {
         Future.delayed(const Duration(seconds: 2), () {
-          _captureAndRecognize();
+          if (mounted) _captureAndRecognize();
         });
       }
     }
@@ -319,10 +355,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
 
       if (image == null) {
         // User cancelled - silently reset without error
-        setState(() {
-          _isProcessing = false;
-          _status = 'Ready to capture face for attendance';
-        });
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _status = 'Ready to capture face for attendance';
+          });
+        }
         return;
       }
 
@@ -331,11 +369,13 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       // Process the captured image with face detection
       await _processCapturedImage(imageFile);
     } catch (e) {
-      setState(() {
-        _status = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
-        _isProcessing = false;
-        _capturedImage = null; // Clear the captured image on error
-      });
+      if (mounted) {
+        setState(() {
+          _status = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _isProcessing = false;
+          _capturedImage = null; // Clear the captured image on error
+        });
+      }
       
       // Show error snackbar instead of dialog (auto-dismisses)
       if (mounted) {
@@ -353,10 +393,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
   Future<void> _pickImageAndRecognize() async {
     if (_isProcessing) return;
 
-    setState(() {
-      _isProcessing = true;
-      _status = 'Selecting image...';
-    });
+    if (mounted) {
+      setState(() {
+        _isProcessing = true;
+        _status = 'Selecting image...';
+      });
+    }
 
     try {
       // Pick image from gallery with lower quality for faster upload
@@ -368,10 +410,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
 
       if (image == null) {
         // User cancelled - silently reset without error
-        setState(() {
-          _isProcessing = false;
-          _status = 'Ready to capture face for attendance';
-        });
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _status = 'Ready to capture face for attendance';
+          });
+        }
         return;
       }
 
@@ -380,11 +424,13 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       // Process the selected image with face detection
       await _processCapturedImage(imageFile);
     } catch (e) {
-      setState(() {
-        _status = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
-        _isProcessing = false;
-        _capturedImage = null; // Clear the captured image on error
-      });
+      if (mounted) {
+        setState(() {
+          _status = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _isProcessing = false;
+          _capturedImage = null; // Clear the captured image on error
+        });
+      }
       
       // Show error snackbar instead of dialog (auto-dismisses)
       if (mounted) {
@@ -495,10 +541,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
         final String message = result['message'] ??
                               'Attendance successfully recorded for $employeeName';
 
-        setState(() {
-          _status = message;
-          _isProcessing = false;
-        });
+        if (mounted) {
+          setState(() {
+            _status = message;
+            _isProcessing = false;
+          });
+        }
 
         // Show success snackbar instead of dialog (auto-dismisses)
         if (mounted) {
@@ -524,9 +572,11 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
       }
     } catch (e) {
       print('🔍 Error in _markAttendanceWithImage: $e');
-      setState(() {
-        _status = 'Error marking attendance: ${e.toString().replaceAll('Exception: ', '')}';
-      });
+      if (mounted) {
+        setState(() {
+          _status = 'Error marking attendance: ${e.toString().replaceAll('Exception: ', '')}';
+        });
+      }
       
       // Show error snackbar here as well
       if (mounted) {

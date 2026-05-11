@@ -1135,98 +1135,131 @@ class ApiService {
     print('🖼 Image: ${imageFile.path}');
     print('================================================\n');
 
-    try {
-      final token = await AuthUtils.getToken();
-      print(token != null
-          ? '🔑 Token Found'
-          : '⚠️ Token NOT Found');
+    int retryCount = 0;
+    const maxRetries = 2;
 
-      // Location
-      Map<String, double>? location = cachedLocation;
-
-      if (location == null) {
-        try {
-          location = await LocationService.getCurrentLocation().timeout(
-            const Duration(seconds: 3),
-            onTimeout: () {
-              print('⚠️ Location timeout');
-              return null;
-            },
-          );
-        } catch (e) {
-          print('⚠️ Location error: $e');
+    while (retryCount <= maxRetries) {
+      try {
+        if (retryCount > 0) {
+          print('🔄 Retry attempt ${retryCount}/${maxRetries}...');
+          await Future.delayed(Duration(seconds: retryCount * 2));
         }
-      }
 
-      if (location != null) {
-        print('📍 Location: ${location['latitude']}, ${location['longitude']}');
-      } else {
-        print('⚠️ Location not available');
-      }
+        final token = await AuthUtils.getToken();
+        print(token != null
+            ? '🔑 Token Found'
+            : '⚠️ Token NOT Found');
 
-      final formData = FormData.fromMap({
-        'image': await MultipartFile.fromFile(
-          imageFile.path,
-          filename: imageFile.path.split('/').last,
-        ),
-        if (location != null) 'latitude': location['latitude'].toString(),
-        if (location != null) 'longitude': location['longitude'].toString(),
-      });
+        // Location
+        Map<String, double>? location = cachedLocation;
 
-      print('📤 Sending request...');
+        if (location == null) {
+          try {
+            location = await LocationService.getCurrentLocation().timeout(
+              const Duration(seconds: 3),
+              onTimeout: () {
+                print('⚠️ Location timeout');
+                return null;
+              },
+            );
+          } catch (e) {
+            print('⚠️ Location error: $e');
+          }
+        }
 
-      final response = await _dio.post(
-        'mark_attendance',
-        data: formData,
-        options: Options(
-          headers: {
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-        ),
-      );
+        if (location != null) {
+          print('📍 Location: ${location['latitude']}, ${location['longitude']}');
+        } else {
+          print('⚠️ Location not available');
+        }
 
-      print('📥 Status Code: ${response.statusCode}');
-      print('📥 Response: ${jsonEncode(response.data)}');
+        final formData = FormData.fromMap({
+          'image': await MultipartFile.fromFile(
+            imageFile.path,
+            filename: imageFile.path.split('/').last,
+          ),
+          if (location != null) 'latitude': location['latitude'].toString(),
+          if (location != null) 'longitude': location['longitude'].toString(),
+        });
 
-      if ((response.statusCode == 200 || response.statusCode == 201) &&
-          response.data['success'] == true) {
+        print('📤 Sending request...');
 
-        print('\n✅✅ ATTENDANCE SUCCESS ✅✅');
-        print('🟢 Message: ${response.data['message'] ?? 'Attendance marked'}');
+        final response = await _dio.post(
+          'mark_attendance',
+          data: formData,
+          options: Options(
+            headers: {
+              if (token != null) 'Authorization': 'Bearer $token',
+            },
+          ),
+        );
+
+        print('📥 Status Code: ${response.statusCode}');
+        print('📥 Response: ${jsonEncode(response.data)}');
+
+        if ((response.statusCode == 200 || response.statusCode == 201) &&
+            response.data['success'] == true) {
+
+          print('\n✅✅ ATTENDANCE SUCCESS ✅✅');
+          print('🟢 Message: ${response.data['message'] ?? 'Attendance marked'}');
+          print('===============================================\n');
+
+          return response.data;
+        } else {
+          final msg = response.data['message'] ?? 'Attendance failed';
+
+          print('\n❌❌ ATTENDANCE FAILED ❌❌');
+          print('🔴 Message: $msg');
+          print('===============================================\n');
+
+          throw Exception(msg);
+        }
+
+      } on DioException catch (e) {
+        final errorMsg =
+            e.response?.data?['message'] ??
+                e.response?.data?['error'] ??
+                e.message ??
+                'Network error';
+
+        print('\n❌❌ DIO ERROR ❌❌');
+        print('🔴 Status: ${e.response?.statusCode}');
+        print('🔴 Message: $errorMsg');
         print('===============================================\n');
 
-        return response.data;
-      } else {
-        final msg = response.data['message'] ?? 'Attendance failed';
+        // Check if this is a connection-related error that can be retried
+        final isConnectionError = e.type == DioExceptionType.connectionTimeout ||
+                                 e.type == DioExceptionType.sendTimeout ||
+                                 e.type == DioExceptionType.receiveTimeout ||
+                                 e.type == DioExceptionType.connectionError ||
+                                 e.message?.contains('Broken pipe') == true ||
+                                 e.message?.contains('Connection reset') == true ||
+                                 e.response == null; // No response usually means connection issue
 
-        print('\n❌❌ ATTENDANCE FAILED ❌❌');
-        print('🔴 Message: $msg');
+        if (isConnectionError && retryCount < maxRetries) {
+          retryCount++;
+          print('🔄 Connection error detected, retrying... (Attempt $retryCount/$maxRetries)');
+          continue;
+        }
+
+        throw Exception(errorMsg);
+
+      } catch (e) {
+        if (retryCount < maxRetries && (e.toString().contains('Broken pipe') || e.toString().contains('Connection reset'))) {
+          retryCount++;
+          print('🔄 Connection error detected, retrying... (Attempt $retryCount/$maxRetries)');
+          continue;
+        }
+        
+        print('\n❌❌ GENERAL ERROR ❌❌');
+        print('🔴 Error: $e');
         print('===============================================\n');
 
-        throw Exception(msg);
+        throw Exception('Attendance error: $e');
       }
-
-    } on DioException catch (e) {
-      final errorMsg =
-          e.response?.data?['message'] ??
-              e.response?.data?['error'] ??
-              e.message ??
-              'Network error';
-
-      print('\n❌❌ DIO ERROR ❌❌');
-      print('🔴 Status: ${e.response?.statusCode}');
-      print('🔴 Message: $errorMsg');
-      print('===============================================\n');
-
-      throw Exception(errorMsg);
-
-    } catch (e) {
-      print('\n❌❌ GENERAL ERROR ❌❌');
-      print('🔴 Error: $e');
-      print('===============================================\n');
-
-      throw Exception('Attendance error: $e');
     }
+    
+    throw Exception('Failed to mark attendance after $maxRetries attempts due to network errors');
   }
 
 
