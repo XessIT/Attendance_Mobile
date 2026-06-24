@@ -464,10 +464,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            const Color(0xFF667EEA),
-            const Color(0xFF764BA2),
+            Color(0xFF1565C0), // Darker InstaMarQ Blue
+            Color(0xFF2196F3), // InstaMarQ Blue
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -475,7 +475,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF667EEA).withOpacity(0.3),
+            color: const Color(0xFF2196F3).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

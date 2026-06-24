@@ -47,21 +47,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             // Add New Shift Button
-            SizedBox(
+            Container(
               width: double.infinity,
               height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2196F3),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2196F3).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: ElevatedButton.icon(
                 onPressed: () => _showShiftDialog(context),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add, color: Colors.white),
                 label: Text(
                   'Add New Shift',
-                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shadowColor: Colors.black.withValues(alpha: 0.2),
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

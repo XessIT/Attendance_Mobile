@@ -27,8 +27,8 @@ class PremiumAppBar extends StatelessWidget implements PreferredSizeWidget {
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [
-              Color(0xFF1565C0), // Dark Blue
-              Color(0xFF42A5F5), // Light Blue
+              Color(0xFF1565C0), // Darker InstaMarQ Blue
+              Color(0xFF2196F3), // InstaMarQ Blue
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
