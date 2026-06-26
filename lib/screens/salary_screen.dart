@@ -201,9 +201,12 @@ class _SalaryScreenState extends State<SalaryScreen> {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             const SizedBox(height: 8),
             Text(
               'Select employee to filter',
@@ -364,6 +367,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
             }).toList(),
           ],
         ),
+      ),
+    ),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16, bottom: 16, left: 16),
@@ -436,228 +441,292 @@ class _SalaryScreenState extends State<SalaryScreen> {
     );
   }
 
+  void _showMonthYearPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Period',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                        color: Colors.grey.shade600,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Year',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: 5,
+                      separatorBuilder: (context, index) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final year = DateTime.now().year - 2 + index;
+                        final isSelected = _selectedYear == year;
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedYear = year;
+                              _salaryCalculationResult = null;
+                            });
+                            setModalState(() {});
+                            _loadCachedSalaryData();
+                            _loadSalaryData();
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: Text(
+                              year.toString(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                color: isSelected ? Colors.white : Colors.grey.shade800,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Month',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 2.5,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: 12,
+                    itemBuilder: (context, index) {
+                      final monthNum = index + 1;
+                      final isSelected = _selectedMonth == monthNum;
+                      final monthName = DateFormat('MMM').format(DateTime(2024, monthNum));
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedMonth = monthNum;
+                            _salaryCalculationResult = null;
+                          });
+                          setModalState(() {});
+                          _loadCachedSalaryData();
+                          _loadSalaryData();
+                          Navigator.pop(context); // Close after selecting month
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade200,
+                            ),
+                          ),
+                          child: Text(
+                            monthName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              color: isSelected ? Colors.white : Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildFilterSection() {
     return Container(
-      // decoration: BoxDecoration(
-      //   gradient: LinearGradient(
-      //     begin: Alignment.topCenter,
-      //     end: Alignment.bottomCenter,
-      //     colors: [
-      //       const Color(0xFF2196F3),
-      //       const Color(0xFF1976D2),
-      //       Colors.white,
-      //     ],
-      //     stops: const [0.0, 0.3, 1.0],
-      //   ),
-      // ),
       child: Container(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             const SizedBox(height: 8),
             // Month and Year selector
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButtonFormField<int>(
-                      value: _selectedMonth,
-                      decoration: InputDecoration(
-                        hintText: 'Month',
-                        hintStyle: GoogleFonts.poppins(
-                          color: Colors.grey[500],
-                          fontSize: 14,
-                        ),
-                        prefixIcon: Container(
-                          padding: const EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.calendar_month,
-                            color: const Color(0xFF2196F3),
-                            size: 20,
-                          ),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, 
-                          vertical: 14,
+            InkWell(
+              onTap: _showMonthYearPicker,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2196F3), width: 1.2),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month, color: Color(0xFF2196F3), size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '${DateFormat('MMMM').format(DateTime(2024, _selectedMonth))} $_selectedYear',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
                         ),
                       ),
-                      items: List.generate(12, (index) => DropdownMenuItem(
-                        value: index + 1,
-                        child: Text(DateFormat('MMMM').format(DateTime(2024, index + 1))),
-                      )),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedMonth = value!;
-                          _salaryCalculationResult = null; // Clear previous data
-                        });
-                        _loadCachedSalaryData(); // Load cached data first
-                        _loadSalaryData(); // Then fetch fresh data
-                      },
                     ),
-                  ),
+                    Icon(Icons.edit_calendar, color: const Color(0xFF2196F3), size: 20),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButtonFormField<int>(
-                      value: _selectedYear,
-                      decoration: InputDecoration(
-                        hintText: 'Year',
-                        hintStyle: GoogleFonts.poppins(
-                          color: Colors.grey[500],
-                          fontSize: 14,
-                        ),
-                        prefixIcon: Container(
-                          padding: const EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.calendar_today,
-                            color: const Color(0xFF2196F3),
-                            size: 20,
-                          ),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, 
-                          vertical: 14,
-                        ),
-                      ),
-                      items: List.generate(5, (index) {
-                        final year = DateTime.now().year - 2 + index;
-                        return DropdownMenuItem(
-                          value: year,
-                          child: Text(year.toString()),
-                        );
-                      }),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedYear = value!;
-                          _salaryCalculationResult = null; // Clear previous data
-                        });
-                        _loadCachedSalaryData(); // Load cached data first
-                        _loadSalaryData(); // Then fetch fresh data
-                      },
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 16),
             
             // Search and Filter Bar
             Consumer<EmployeeProvider>(
               builder: (context, employeeProvider, child) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                return TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search by employee name...',
+                    hintStyle: GoogleFonts.poppins(
+                      color: Colors.grey[500],
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.search_rounded,
+                        color: Colors.grey[600],
+                        size: 20,
                       ),
-                    ],
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search by employee name...',
-                      hintStyle: GoogleFonts.poppins(
-                        color: Colors.grey[500],
-                        fontSize: 14,
-                      ),
-                      prefixIcon: Container(
-                        padding: const EdgeInsets.all(12),
-                        child: Icon(
-                          Icons.search_rounded,
-                          color: Colors.grey[600],
-                          size: 20,
+                    ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: _selectedEmployeeId != null 
+                                ? Colors.orange.withOpacity(0.1)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.filter_list_rounded,
+                              color: _selectedEmployeeId != null 
+                                  ? Colors.orange[700]
+                                  : Colors.grey[600],
+                              size: 20,
+                            ),
+                            onPressed: _showEmployeeFilterDialog,
+                            tooltip: 'Filter',
+                          ),
                         ),
-                      ),
-                      suffixIcon: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+                        if (_searchQuery.isNotEmpty)
                           Container(
                             margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
-                              color: _selectedEmployeeId != null 
-                                  ? Colors.orange.withOpacity(0.1)
-                                  : Colors.grey[100],
+                              color: Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
                               icon: Icon(
-                                Icons.filter_list_rounded,
-                                color: _selectedEmployeeId != null 
-                                    ? Colors.orange[700]
-                                    : Colors.grey[600],
+                                Icons.clear_rounded,
+                                color: Colors.grey[600],
                                 size: 20,
                               ),
-                              onPressed: _showEmployeeFilterDialog,
-                              tooltip: 'Filter',
+                              onPressed: () {
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                              tooltip: 'Clear search',
                             ),
                           ),
-                          if (_searchQuery.isNotEmpty)
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.clear_rounded,
-                                  color: Colors.grey[600],
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _searchQuery = '';
-                                  });
-                                },
-                                tooltip: 'Clear search',
-                              ),
-                            ),
-                        ],
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, 
-                        vertical: 14,
-                      ),
+                      ],
                     ),
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey[800],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2196F3), width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, 
+                      vertical: 14,
+                    ),
                   ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[800],
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
                 );
               },
             ),
@@ -862,31 +931,45 @@ class _SalaryScreenState extends State<SalaryScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 6),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 9,
+              fontWeight: FontWeight.w500,
               color: color,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1045,88 +1128,122 @@ class _SalaryScreenState extends State<SalaryScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
-          child: Text(
-            name.substring(0, 1).toUpperCase(),
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF2196F3),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 6,
+              child: Container(color: const Color(0xFF2196F3)),
+            ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(15),
+                onTap: () => _showApiSalaryDetails(employeeData),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 22, right: 16, top: 16, bottom: 16),
+                  child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
+                  child: Text(
+                    name.substring(0, 1).toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2196F3),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        department,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Base: ${formatIndianCurrency(monthlySalary)} | Present: $presentDays/$workingDays days',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: attendancePercentage / 100,
+                          minHeight: 3,
+                          backgroundColor: Colors.grey.shade100,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            attendancePercentage >= 90 ? const Color(0xFF4CAF50) : 
+                            attendancePercentage >= 75 ? const Color(0xFFFF9800) : const Color(0xFFF44336),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatIndianCurrency(netPayableSalary),
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF2196F3),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${attendancePercentage.toStringAsFixed(1)}%',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
-        title: Text(
-          name,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              department,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Base: ${formatIndianCurrency(monthlySalary)} | Present: $presentDays/$workingDays days',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.grey.shade500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            LinearProgressIndicator(
-              value: attendancePercentage / 100,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                attendancePercentage >= 90 ? Colors.green : 
-                attendancePercentage >= 75 ? Colors.orange : Colors.red,
-              ),
-            ),
+      ),
           ],
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              formatIndianCurrency(netPayableSalary),
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF2196F3),
-              ),
-            ),
-            Text(
-              '${attendancePercentage.toStringAsFixed(1)}%',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-        onTap: () => _showApiSalaryDetails(employeeData),
       ),
     ).animate().fadeIn(delay: Duration(milliseconds: index * 100)).slideX(begin: 0.3, duration: 600.ms);
   }
@@ -1140,88 +1257,122 @@ class _SalaryScreenState extends State<SalaryScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
-          child: Text(
-            employee.name.substring(0, 1).toUpperCase(),
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF2196F3),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 6,
+              child: Container(color: const Color(0xFF2196F3)),
+            ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(15),
+                onTap: () => _showSalaryDetails(employee, stats, calculatedSalary),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 22, right: 16, top: 16, bottom: 16),
+                  child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
+                  child: Text(
+                    employee.name.substring(0, 1).toUpperCase(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2196F3),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        employee.name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey.shade800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        employee.position,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Base: ${formatIndianCurrency(employee.salary)} | Present: $presentDays/$workingDays days',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: attendancePercentage / 100,
+                          minHeight: 3,
+                          backgroundColor: Colors.grey.shade100,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            attendancePercentage >= 90 ? const Color(0xFF4CAF50) : 
+                            attendancePercentage >= 75 ? const Color(0xFFFF9800) : const Color(0xFFF44336),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatIndianCurrency(calculatedSalary),
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF2196F3),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${attendancePercentage.toStringAsFixed(1)}%',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
-        title: Text(
-          employee.name,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              employee.position,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Base: ${formatIndianCurrency(employee.salary)} | Present: $presentDays/$workingDays days',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.grey.shade500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            LinearProgressIndicator(
-              value: attendancePercentage / 100,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                attendancePercentage >= 90 ? Colors.green : 
-                attendancePercentage >= 75 ? Colors.orange : Colors.red,
-              ),
-            ),
+      ),
           ],
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              formatIndianCurrency(calculatedSalary),
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF2196F3),
-              ),
-            ),
-            Text(
-              '${attendancePercentage.toStringAsFixed(1)}%',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-        onTap: () => _showSalaryDetails(employee, stats, calculatedSalary),
       ),
     ).animate().fadeIn(delay: Duration(milliseconds: index * 100)).slideX(begin: 0.3, duration: 600.ms);
   }

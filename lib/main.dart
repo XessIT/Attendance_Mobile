@@ -100,6 +100,21 @@ class MyApp extends StatelessWidget {
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
+          snackBarTheme: SnackBarThemeData(
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            backgroundColor: const Color(0xFF1E293B), // Premium dark slate background
+            contentTextStyle: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            elevation: 8,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            actionTextColor: const Color(0xFF64B5F6),
+          ),
         ),
         initialRoute: '/splash',
         routes: {

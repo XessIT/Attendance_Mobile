@@ -42,47 +42,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            // Shift Management Section
-            _buildSectionHeader('Shift Management'),
-            const SizedBox(height: 16),
-
-            // Add New Shift Button
-            Container(
-              width: double.infinity,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2196F3).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+            // Shift Management Section & Add New Shift Button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSectionHeader('Shift Management'),
+                ElevatedButton.icon(
+                  onPressed: () => _showShiftDialog(context),
+                  icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                  label: Text(
+                    'Add New',
+                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
                   ),
-                ],
-              ),
-              child: ElevatedButton.icon(
-                onPressed: () => _showShiftDialog(context),
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: Text(
-                  'Add New Shift',
-                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2196F3),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                    shadowColor: const Color(0xFF2196F3).withOpacity(0.5),
                   ),
                 ),
-              ),
+              ],
             ),
-
             const SizedBox(height: 24),
 
             // Existing Shifts List
-            _buildSectionHeader('Current Shifts'),
-            const SizedBox(height: 16),
+
 
             Consumer<ShiftProvider>(
               builder: (context, shiftProvider, child) {
@@ -194,126 +182,156 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildShiftCard(BuildContext context, Shift shift) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Colors.grey[50]!,
-            ],
+    final isNight = shift.name.toLowerCase().contains('night');
+    final primaryColor = isNight ? Colors.indigo : const Color(0xFF2196F3);
+    final lightColor = isNight ? Colors.indigo.shade50 : const Color(0xFFE3F2FD);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-        ),
-        child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  shift.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2196F3),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showShiftDialog(context, shift: shift);
-                    } else if (value == 'delete') {
-                      _showDeleteConfirmation(context, shift);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 20),
-                          SizedBox(width: 8),
-                          Text('Edit'),
+            // Left color accent bar
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 6,
+              child: Container(color: primaryColor),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: lightColor,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          isNight ? Icons.nights_stay_rounded : Icons.wb_sunny_rounded,
+                          color: primaryColor,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              shift.name,
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '${shift.formattedFromTime} - ${shift.formattedToTime}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton(
+                        icon: const Icon(Icons.more_vert, color: Colors.grey),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        color: Colors.white,
+                        offset: const Offset(0, 40),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            height: 48,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 22, color: Color(0xFF2196F3)),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showShiftDialog(context, shift: shift);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, size: 22, color: Color(0xFFF44336)),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _showDeleteConfirmation(context, shift);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
+                    ],
+                  ),
+                  
+                  if (shift.hasGracePeriod) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      margin: const EdgeInsets.only(left: 60), // Align with text
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.delete, color: Colors.red, size: 20),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          Icon(Icons.timer_outlined, size: 16, color: Colors.orange.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Grace: ${shift.formattedGraceFromTime} - ${shift.formattedGraceToTime}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.orange.shade800,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Shift Time
-            Row(
-              children: [
-                const Icon(Icons.access_time, size: 20, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(
-                  '${shift.formattedFromTime} - ${shift.formattedToTime}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-
-            // Grace Period
-            if (shift.hasGracePeriod) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.timer, size: 20, color: Colors.orange),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Grace: ${shift.formattedGraceFromTime} - ${shift.formattedGraceToTime}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.orange[700],
-                    ),
-                  ),
                 ],
               ),
-            ] else ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.timer_off, size: 20, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Text(
-                    'No grace period',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ],
         ),
-      ),
       ),
     );
   }
@@ -324,6 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => ShiftDialog(shift: shift),
     );
   }
+
 
   void _showDeleteConfirmation(BuildContext context, Shift shift) {
     showDialog(
@@ -338,34 +357,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop(); // Close dialog
-              
-              // Show loading indicator
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Row(
+              // Show modern loading dialog FIRST, don't pop confirmation dialog yet
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (loadingContext) => Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
+                        const SizedBox(
+                          width: 40,
+                          height: 40,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Text('Deleting shift...'),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Deleting shift...',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Please wait a moment',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                       ],
                     ),
-                    duration: Duration(seconds: 2),
                   ),
-                );
-              }
+                ),
+              );
               
               final success = await context.read<ShiftProvider>().deleteShift(shift.id!);
               
               if (mounted) {
+                Navigator.of(context).pop(); // Close loading dialog
+                Navigator.of(context).pop(); // Close confirmation dialog
                 ScaffoldMessenger.of(context).clearSnackBars();
                 
                 if (success) {
@@ -419,6 +463,50 @@ class _ShiftDialogState extends State<ShiftDialog> {
   TimeOfDay? _graceToTime;
   bool _hasGracePeriod = false;
 
+  TimeOfDay _addMinutesToTimeOfDay(TimeOfDay time, int minutes) {
+    int totalMinutes = time.hour * 60 + time.minute + minutes;
+    int newHour = (totalMinutes ~/ 60) % 24;
+    int newMinute = totalMinutes % 60;
+    return TimeOfDay(hour: newHour, minute: newMinute);
+  }
+
+  int _getDifferenceInMinutes(TimeOfDay shiftTime, TimeOfDay graceTime) {
+    int shiftMinutes = shiftTime.hour * 60 + shiftTime.minute;
+    int graceMinutes = graceTime.hour * 60 + graceTime.minute;
+    
+    if (graceMinutes < shiftMinutes) {
+      graceMinutes += 24 * 60; // Handle overnight wrap
+    }
+    return graceMinutes - shiftMinutes;
+  }
+
+  void _validateAndSetGraceTime(TimeOfDay? time, TimeOfDay? shiftTime, bool isFrom) {
+    if (time == null) return;
+    if (shiftTime == null) {
+      setState(() {
+        if (isFrom) _graceFromTime = time;
+        else _graceToTime = time;
+      });
+      return;
+    }
+
+    int diff = _getDifferenceInMinutes(shiftTime, time);
+    if (diff >= 5 && diff <= 30) {
+      setState(() {
+        if (isFrom) _graceFromTime = time;
+        else _graceToTime = time;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Grace Period must be between 5 and 30 minutes after the Shift time.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -448,147 +536,292 @@ class _ShiftDialogState extends State<ShiftDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
-      elevation: 8,
+      elevation: 10,
+      backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white,
-              Colors.grey[50]!,
-            ],
-          ),
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                widget.shift == null ? 'Add New Shift' : 'Edit Shift',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF2196F3),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Shift Name
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Shift Name',
-                  prefixIcon: const Icon(Icons.business_center),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2196F3).withOpacity(0.05),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter shift name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // From Time
-              _buildTimeField(
-                label: 'From Time',
-                value: _fromTime,
-                onChanged: (time) => setState(() => _fromTime = time),
-                icon: Icons.play_arrow,
-              ),
-              const SizedBox(height: 20),
-
-              // To Time
-              _buildTimeField(
-                label: 'To Time',
-                value: _toTime,
-                onChanged: (time) => setState(() => _toTime = time),
-                icon: Icons.stop,
-              ),
-              const SizedBox(height: 20),
-
-              // Grace Period Toggle
-              SwitchListTile(
-                title: Text(
-                  'Enable Grace Period',
-                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                subtitle: Text(
-                  'Allow late arrival within grace period',
-                  style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey),
-                ),
-                value: _hasGracePeriod,
-                onChanged: (value) => setState(() => _hasGracePeriod = value),
-                activeThumbColor: const Color(0xFF2196F3),
-              ),
-
-              // Grace Time Fields
-              if (_hasGracePeriod) ...[
-                const SizedBox(height: 20),
-                _buildTimeField(
-                  label: 'Grace From Time',
-                  value: _graceFromTime,
-                  onChanged: (time) => setState(() => _graceFromTime = time),
-                  icon: Icons.timer,
-                ),
-                const SizedBox(height: 20),
-                _buildTimeField(
-                  label: 'Grace To Time',
-                  value: _graceToTime,
-                  onChanged: (time) => setState(() => _graceToTime = time),
-                  icon: Icons.timer_off,
-                ),
-              ],
-
-              const SizedBox(height: 32),
-
-              // Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      'Cancel',
-                      style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.schedule, color: Color(0xFF2196F3), size: 20),
                     ),
+                    const SizedBox(width: 16),
+                    Text(
+                      widget.shift == null ? 'Add New Shift' : 'Edit Shift',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF2196F3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Form content
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shift Name
+                      Text(
+                        'Shift Name',
+                        style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _nameController,
+                        style: GoogleFonts.poppins(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. Morning Shift',
+                          hintStyle: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade400),
+                          prefixIcon: Icon(Icons.business_center, color: Colors.grey.shade500, size: 20),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter shift name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Time fields row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'From Time',
+                                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+                                ),
+                                const SizedBox(height: 8),
+                                _buildModernTimeField(
+                                  value: _fromTime,
+                                  onChanged: (time) => setState(() => _fromTime = time),
+                                  icon: Icons.play_circle_outline,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'To Time',
+                                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+                                ),
+                                const SizedBox(height: 8),
+                                _buildModernTimeField(
+                                  value: _toTime,
+                                  onChanged: (time) => setState(() => _toTime = time),
+                                  icon: Icons.stop_circle_outlined,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Grace Period Container
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _hasGracePeriod ? const Color(0xFF2196F3).withOpacity(0.03) : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _hasGracePeriod ? const Color(0xFF2196F3).withOpacity(0.2) : Colors.transparent,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Enable Grace Period',
+                                        style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                                      ),
+                                      Text(
+                                        'Allow late arrival without penalty',
+                                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: _hasGracePeriod,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _hasGracePeriod = value;
+                                      if (value) {
+                                        if (_graceFromTime == null && _fromTime != null) {
+                                          _graceFromTime = _addMinutesToTimeOfDay(_fromTime!, 5);
+                                        }
+                                        if (_graceToTime == null && _toTime != null) {
+                                          _graceToTime = _addMinutesToTimeOfDay(_toTime!, 5);
+                                        }
+                                      }
+                                    });
+                                  },
+                                  activeColor: const Color(0xFF2196F3),
+                                ),
+                              ],
+                            ),
+                            if (_hasGracePeriod) ...[
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Divider(height: 1),
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Grace From',
+                                          style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _buildModernTimeField(
+                                          value: _graceFromTime,
+                                          onChanged: (time) => _validateAndSetGraceTime(time, _fromTime, true),
+                                          icon: Icons.timer_outlined,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Grace To',
+                                          style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _buildModernTimeField(
+                                          value: _graceToTime,
+                                          onChanged: (time) => _validateAndSetGraceTime(time, _toTime, false),
+                                          icon: Icons.timer_off_outlined,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Action Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton(
+                              onPressed: _saveShift,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2196F3),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                widget.shift == null ? 'Create Shift' : 'Save Changes',
+                                style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _saveShift,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    child: Text(
-                      widget.shift == null ? 'Add Shift' : 'Update Shift',
-                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
         ),
-      ),
       ),
     );
   }
 
-  Widget _buildTimeField({
-    required String label,
+  Widget _buildModernTimeField({
     required TimeOfDay? value,
     required Function(TimeOfDay?) onChanged,
     required IconData icon,
@@ -603,24 +836,33 @@ class _ShiftDialogState extends State<ShiftDialog> {
           onChanged(time);
         }
       },
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(
-          value?.format(context) ?? 'Select time',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: value != null ? Colors.black : Colors.grey,
-          ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.grey.shade500, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value?.format(context) ?? 'Select time',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: value != null ? FontWeight.w500 : FontWeight.normal,
+                  color: value != null ? Colors.black87 : Colors.grey.shade500,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
 
   void _saveShift() async {
     if (!_formKey.currentState!.validate()) {
@@ -647,6 +889,20 @@ class _ShiftDialogState extends State<ShiftDialog> {
         ),
       );
       return;
+    } else if (_hasGracePeriod) {
+      int diffFrom = _getDifferenceInMinutes(_fromTime!, _graceFromTime!);
+      int diffTo = _getDifferenceInMinutes(_toTime!, _graceToTime!);
+      
+      if (diffFrom < 5 || diffFrom > 30 || diffTo < 5 || diffTo > 30) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Grace Period must be between 5 and 30 minutes after the Shift time.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
     }
 
     final shift = Shift(
@@ -660,30 +916,54 @@ class _ShiftDialogState extends State<ShiftDialog> {
     );
 
     final isUpdate = widget.shift != null;
-    Navigator.of(context).pop(); // Close dialog
-
-    // Show loading indicator
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
+    
+    // Show modern loading dialog FIRST, keep edit dialog open
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (loadingContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(
-                width: 20,
-                height: 20,
+                width: 40,
+                height: 40,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
                 ),
               ),
-              const SizedBox(width: 16),
-              Text(isUpdate ? 'Updating shift...' : 'Creating shift...'),
+              const SizedBox(height: 20),
+              Text(
+                isUpdate ? 'Updating shift...' : 'Creating shift...',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait a moment',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
+                ),
+              ),
             ],
           ),
-          duration: const Duration(seconds: 10),
         ),
-      );
-    }
+      ),
+    );
 
     bool success;
     if (isUpdate) {
@@ -695,6 +975,8 @@ class _ShiftDialogState extends State<ShiftDialog> {
     }
 
     if (mounted) {
+      Navigator.of(context).pop(); // Close loading dialog
+      Navigator.of(context).pop(); // Close edit dialog
       ScaffoldMessenger.of(context).clearSnackBars();
 
       if (success) {

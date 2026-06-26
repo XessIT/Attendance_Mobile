@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/employee.dart';
 import '../models/attendance.dart';
 import '../models/salary.dart';
@@ -160,7 +161,7 @@ class ApiService {
     }
   }
 
-  static Future<Employee> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, int? departmentId, String? password}) async {
+  static Future<Employee> createEmployee(Employee employee, {XFile? imageFile, String? shiftName, String? departmentName, int? departmentId, String? password}) async {
     final fullUrl = '$baseUrl/register';
     
     // Generate employee_id (format: E001, E002, etc.)
@@ -247,12 +248,12 @@ class ApiService {
         final formData = FormData.fromMap(formFields);
         
         // Add image file if provided
-        if (imageFile != null && await imageFile.exists()) {
+        if (imageFile != null) {
           formData.files.add(MapEntry(
             'image',
-            await MultipartFile.fromFile(
-              imageFile.path,
-              filename: imageFile.path.split('/').last,
+            MultipartFile.fromBytes(
+              await imageFile.readAsBytes(),
+              filename: imageFile.name,
             ),
           ));
           print('✅ Image file added to form data');

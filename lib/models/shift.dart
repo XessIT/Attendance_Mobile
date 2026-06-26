@@ -178,21 +178,47 @@ class Shift {
     );
   }
 
-  // Get formatted time strings for display (simple HH:MM format)
+  // Helper to convert 24-hour time to 12-hour AM/PM format
+  String _formatTo12Hour(String? timeStr) {
+    if (timeStr == null || timeStr.isEmpty) return '';
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length < 2) return timeStr;
+      
+      int hour = int.parse(parts[0]);
+      final int minute = int.parse(parts[1]);
+      
+      String period = 'AM';
+      if (hour >= 12) {
+        period = 'PM';
+        if (hour > 12) {
+          hour -= 12;
+        }
+      } else if (hour == 0) {
+        hour = 12;
+      }
+      
+      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+    } catch (e) {
+      return timeStr;
+    }
+  }
+
+  // Get formatted time strings for display (12-hour AM/PM format)
   String get formattedFromTime {
-    return fromTime;
+    return _formatTo12Hour(fromTime);
   }
 
   String get formattedToTime {
-    return toTime;
+    return _formatTo12Hour(toTime);
   }
 
   String? get formattedGraceFromTime {
-    return graceFromTime;
+    return _formatTo12Hour(graceFromTime);
   }
 
   String? get formattedGraceToTime {
-    return graceToTime;
+    return _formatTo12Hour(graceToTime);
   }
 
   // Override equality operator

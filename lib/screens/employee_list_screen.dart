@@ -353,32 +353,98 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
               const SizedBox(width: 8),
               // Filter dropdown
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
                 ),
-                child: DropdownButton<EmployeeFilter>(
-                  value: _selectedFilter,
-                  underline: const SizedBox(),
-                  icon: Icon(Icons.filter_list, size: 18, color: Colors.grey.shade600),
-                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87),
-                  items: const [
-                    DropdownMenuItem(
+                child: PopupMenuButton<EmployeeFilter>(
+                  initialValue: _selectedFilter,
+                  tooltip: 'Filter Employees',
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: Colors.white,
+                  offset: const Offset(0, 45),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _selectedFilter == EmployeeFilter.active
+                              ? 'Active'
+                              : _selectedFilter == EmployeeFilter.inactive
+                                  ? 'Inactive'
+                                  : 'All',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.keyboard_arrow_down, size: 20, color: Colors.grey.shade600),
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
                       value: EmployeeFilter.active,
-                      child: Text('Active'),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 18, color: const Color(0xFF4CAF50)),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Active',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.black87,
+                              fontWeight: _selectedFilter == EmployeeFilter.active ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    DropdownMenuItem(
+                    PopupMenuItem(
                       value: EmployeeFilter.inactive,
-                      child: Text('Inactive'),
+                      child: Row(
+                        children: [
+                          Icon(Icons.cancel_outlined, size: 18, color: const Color(0xFFF44336)),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Inactive',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.black87,
+                              fontWeight: _selectedFilter == EmployeeFilter.inactive ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    DropdownMenuItem(
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
                       value: EmployeeFilter.all,
-                      child: Text('All'),
+                      child: Row(
+                        children: [
+                          Icon(Icons.people_outline, size: 18, color: const Color(0xFF2196F3)),
+                          const SizedBox(width: 12),
+                          Text(
+                            'All',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.black87,
+                              fontWeight: _selectedFilter == EmployeeFilter.all ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
-                  onChanged: (EmployeeFilter? value) {
-                    if (value != null) {
+                  onSelected: (EmployeeFilter value) {
+                    if (value != _selectedFilter) {
                       setState(() {
                         _selectedFilter = value;
                       });
@@ -515,12 +581,27 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           width: 1,
         ),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _handleEmployeeAction('view', employee),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 6,
+              child: Container(
+                color: employee.isActive ? const Color(0xFF2196F3) : Colors.grey.shade400,
+              ),
+            ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(15),
+                onTap: () => _handleEmployeeAction('view', employee),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 12, top: 12, bottom: 12),
+                  child: Row(
             children: [
               // Avatar
               Hero(
@@ -597,14 +678,14 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                     Row(
                       children: [
                         Icon(
-                          Icons.email_outlined,
+                          Icons.phone_outlined,
                           size: 12,
                           color: Colors.grey.shade400,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            employee.email ?? 'No email',
+                            employee.phone.isNotEmpty ? employee.phone : (employee.email ?? 'No contact info'),
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.grey.shade500,
@@ -615,6 +696,30 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                         ),
                       ],
                     ),
+                    if (employee.email != null && employee.email!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.email_outlined,
+                            size: 12,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              employee.email!,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -650,10 +755,17 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
               PopupMenuButton<String>(
                 icon: Icon(
                   Icons.more_vert,
-                  size: 18,
+                  size: 20,
                   color: Colors.grey.shade600,
                 ),
                 padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                color: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                elevation: 4,
+                offset: const Offset(0, 40),
                 onSelected: (value) => _handleEmployeeAction(value, employee),
                 itemBuilder: (context) => [
                   PopupMenuItem(
@@ -722,6 +834,10 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           ),
         ),
       ),
+      ),
+          ],
+        ),
+      ),
     ).animate().fadeIn(delay: Duration(milliseconds: index * 50)).slideX(begin: 0.2, duration: 400.ms);
   }
 
@@ -770,54 +886,162 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   void _showEmployeeDetails(Employee employee) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(employee.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Email', employee.email ?? 'Not provided'),
-            _buildDetailRow('Phone', employee.phone),
-            _buildDetailRow('Position', employee.position),
-            _buildDetailRow('Salary', '${formatIndianCurrency(employee.salary)}/month'),
-            _buildDetailRow('Status', employee.isActive ? 'Active' : 'Inactive'),
-            _buildDetailRow('Joined', _formatDate(employee.createdAt)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with Avatar
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: employee.isActive 
+                        ? const Color(0xFF2196F3).withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.1),
+                    child: Text(
+                      employee.name.substring(0, 1).toUpperCase(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: employee.isActive 
+                            ? const Color(0xFF2196F3)
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          employee.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: employee.isActive 
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            employee.isActive ? 'Active' : 'Inactive',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: employee.isActive ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+              ),
+              // Details
+              _buildModernDetailRow(Icons.email_outlined, 'Email', employee.email ?? 'Not provided'),
+              const SizedBox(height: 16),
+              _buildModernDetailRow(Icons.phone_outlined, 'Phone', employee.phone),
+              const SizedBox(height: 16),
+              _buildModernDetailRow(Icons.work_outline, 'Position', employee.position),
+              const SizedBox(height: 16),
+              _buildModernDetailRow(Icons.payments_outlined, 'Salary', '${formatIndianCurrency(employee.salary)} / month', isHighlight: true),
+              const SizedBox(height: 16),
+              _buildModernDetailRow(Icons.calendar_today_outlined, 'Joined', _formatDate(employee.createdAt)),
+              
+              const SizedBox(height: 32),
+              // Action Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    foregroundColor: const Color(0xFF475569),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
+  Widget _buildModernDetailRow(IconData icon, String label, String value, {bool isHighlight = false}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isHighlight ? Colors.green.withOpacity(0.1) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isHighlight ? Colors.green.shade600 : const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w600,
+                  color: isHighlight ? Colors.green.shade700 : const Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

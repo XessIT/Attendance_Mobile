@@ -252,6 +252,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF2196F3), // Header background & selected day
+              onPrimary: Colors.white,    // Header text
+              onSurface: Colors.black87,  // Body text
+            ),
+            dialogBackgroundColor: Colors.white,
+            textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
+            datePickerTheme: DatePickerThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              headerBackgroundColor: const Color(0xFF2196F3),
+              headerForegroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              dayStyle: GoogleFonts.poppins(),
+              yearStyle: GoogleFonts.poppins(),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (newDate != null) {
@@ -304,9 +328,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
             const SizedBox(height: 8),
             Text(
               'Select employee to filter',
@@ -491,6 +518,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             }).toList(),
           ],
         ),
+      ),
+    ),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16, bottom: 16, left: 16),
@@ -593,24 +622,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  const FaceAttendanceScreen(shouldLoop: true),
-            ),
-          );
-        },
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.face),
-        label: Text(
-          'Mark Attendance',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-      ),
+
     );
   }
 
@@ -670,21 +682,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           const SizedBox(width: 8),
                           Container(
                             margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: IconButton(
-                              icon: const Icon(Icons.today,
-                                  color: Color(0xFF2196F3), size: 20),
-                              onPressed: () async {
-                                setState(() {
-                                  _selectedDate = DateTime.now();
-                                });
-                                await _loadFullReport();
-                              },
-                              tooltip: 'Today',
-                            ),
+                            child: const Icon(Icons.calendar_month,
+                                color: Color(0xFF2196F3), size: 20),
                           ),
                         ],
                       ),
@@ -1016,30 +1020,41 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: color,
+              height: 1.0,
             ),
           ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 9,
-              color: color,
-            ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: color,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(icon, color: color, size: 14),
+            ],
           ),
         ],
       ),
@@ -1387,7 +1402,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  hasTime ? _formatTime(time) : 'Not available',
+                  hasTime ? _formatTime(time) : '-',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -1437,7 +1452,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   String _formatTime(String timeString) {
     if (timeString == '-' || timeString.isEmpty) {
-      return 'Not available';
+      return '-';
     }
     try {
       final parts = timeString.split(':');
@@ -1474,13 +1489,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       case 'present':
         return Icons.check_circle;
       case 'absent':
-        return Icons.cancel;
+        return Icons.person;
       case 'late':
         return Icons.schedule;
       case 'half-day':
         return Icons.access_time;
       default:
-        return Icons.help;
+        return Icons.person;
     }
   }
 
@@ -1509,9 +1524,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -1523,7 +1545,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   Row(
                     children: [
                       CircleAvatar(
-                        radius: 26,
+                        radius: 32,
                         backgroundColor:
                             _getStatusColor(status.toString().toLowerCase())
                                 .withOpacity(0.1),
@@ -1531,7 +1553,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           _getStatusIcon(status.toString().toLowerCase()),
                           color:
                               _getStatusColor(status.toString().toLowerCase()),
-                          size: 26,
+                          size: 32,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -1542,14 +1564,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             Text(
                               employeeName,
                               style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1E293B),
                               ),
                             ),
+                            const SizedBox(height: 4),
                             Text(
-                              '$employeeId • $department',
+                              department.isNotEmpty ? '$employeeId • $department' : employeeId,
                               style: GoogleFonts.poppins(
-                                fontSize: 11,
+                                fontSize: 12,
                                 color: Colors.grey.shade600,
                               ),
                             ),
@@ -1558,85 +1582,110 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close, color: Colors.grey),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  ),
 
                   // Date and Status
-                  _buildDetailRow('Date',
-                      '$dayOfWeek, ${DateFormat('MMMM d, y').format(DateTime.parse(date))}'),
-                  _buildDetailRow('Status', status.toString().toUpperCase()),
+                  _buildModernDetailRow(Icons.calendar_today_outlined, 'Date',
+                      dayOfWeek.isNotEmpty ? '$dayOfWeek, ${DateFormat('MMMM d, y').format(DateTime.parse(date))}' : DateFormat('MMMM d, y').format(DateTime.parse(date))),
+                  const SizedBox(height: 16),
+                  _buildModernDetailRow(Icons.info_outline, 'Status', status.toString().toUpperCase(), isHighlight: true, highlightColor: _getStatusColor(status.toString().toLowerCase())),
 
-                  const Divider(height: 32),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  ),
 
                   // Timing Information
                   Text(
                     'Timing Information',
                     style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _buildDetailRow('Check In',
-                      checkIn != '-' ? _formatTime(checkIn) : 'Not available'),
-                  _buildDetailRow(
-                      'Check Out',
-                      checkOut != '-'
-                          ? _formatTime(checkOut)
-                          : 'Not available'),
-                  if (workHours > 0)
-                    _buildDetailRow(
-                        'Work Hours', '${workHours.toStringAsFixed(1)} hours'),
-                  if (otHours > 0)
-                    _buildDetailRow(
-                        'OT Hours', '${otHours.toStringAsFixed(1)} hours'),
-                  if (lateMinutes > 0)
-                    _buildDetailRow('Late Minutes', '$lateMinutes minutes'),
-
-                  const Divider(height: 32),
+                  const SizedBox(height: 16),
+                  _buildModernDetailRow(Icons.login_outlined, 'Check In',
+                      checkIn != '-' ? _formatTime(checkIn) : '-'),
+                  const SizedBox(height: 16),
+                  _buildModernDetailRow(Icons.logout_outlined, 'Check Out',
+                      checkOut != '-' ? _formatTime(checkOut) : '-'),
+                  if (workHours > 0) ...[
+                    const SizedBox(height: 16),
+                    _buildModernDetailRow(Icons.timer_outlined, 'Work Hours', '${workHours.toStringAsFixed(1)} hours')
+                  ],
+                  if (otHours > 0) ...[
+                    const SizedBox(height: 16),
+                    _buildModernDetailRow(Icons.more_time_outlined, 'OT Hours', '${otHours.toStringAsFixed(1)} hours')
+                  ],
+                  if (lateMinutes > 0) ...[
+                    const SizedBox(height: 16),
+                    _buildModernDetailRow(Icons.schedule_outlined, 'Late Minutes', '$lateMinutes minutes', isHighlight: true, highlightColor: Colors.orange)
+                  ],
 
                   // Shift Information
                   if (shiftName.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    ),
                     Text(
                       'Shift Information',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    _buildDetailRow('Shift Name', shiftName),
+                    const SizedBox(height: 16),
+                    _buildModernDetailRow(Icons.work_outline, 'Shift Name', shiftName),
                     if (shiftTimings != null) ...[
-                      _buildDetailRow(
-                          'From Time', shiftTimings['fromTime'] ?? '-'),
-                      _buildDetailRow('To Time', shiftTimings['toTime'] ?? '-'),
+                      const SizedBox(height: 16),
+                      _buildModernDetailRow(Icons.access_time, 'From Time', shiftTimings['fromTime'] ?? '-'),
+                      const SizedBox(height: 16),
+                      _buildModernDetailRow(Icons.access_time, 'To Time', shiftTimings['toTime'] ?? '-'),
                     ],
-                    const Divider(height: 32),
                   ],
 
                   // Additional Information
                   if (isHoliday || isHalfDay || leaveType != null) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    ),
                     Text(
                       'Additional Information',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    if (isHoliday && holidayName != null)
-                      _buildDetailRow('Holiday', holidayName),
-                    if (isHalfDay) _buildDetailRow('Half Day', 'Yes'),
-                    if (leaveType != null)
-                      _buildDetailRow('Leave Type', leaveType),
+                    const SizedBox(height: 16),
+                    if (isHoliday && holidayName != null) ...[
+                      _buildModernDetailRow(Icons.celebration_outlined, 'Holiday', holidayName),
+                      const SizedBox(height: 16),
+                    ],
+                    if (isHalfDay) ...[
+                      _buildModernDetailRow(Icons.brightness_medium_outlined, 'Half Day', 'Yes'),
+                      const SizedBox(height: 16),
+                    ],
+                    if (leaveType != null) ...[
+                      _buildModernDetailRow(Icons.beach_access_outlined, 'Leave Type', leaveType),
+                      const SizedBox(height: 16),
+                    ],
                     if (leaveStatus != null)
-                      _buildDetailRow('Leave Status', leaveStatus),
+                      _buildModernDetailRow(Icons.fact_check_outlined, 'Leave Status', leaveStatus),
                   ],
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
                   // Close button
                   SizedBox(
@@ -1644,8 +1693,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2196F3),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        foregroundColor: const Color(0xFF475569),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1653,8 +1704,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       child: Text(
                         'Close',
                         style: GoogleFonts.poppins(
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -1668,30 +1719,47 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
+  Widget _buildModernDetailRow(IconData icon, String label, String value, {bool isHighlight = false, Color highlightColor = Colors.green}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: isHighlight ? highlightColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isHighlight ? highlightColor : const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w600,
+                  color: isHighlight ? highlightColor : const Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

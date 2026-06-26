@@ -427,34 +427,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
     debugPrint('🏠 [DASHBOARD] Showing main dashboard content');
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        color: const Color(0xFF2196F3),
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmallScreen = constraints.maxHeight < 650;
+
+            final topSections = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome Section
+                _buildWelcomeSection(),
+                const SizedBox(height: 24),
+
+                // Statistics Cards
+                _buildStatisticsCards(),
+                const SizedBox(height: 24),
+
+                // Quick Actions
+                _buildQuickActions(),
+                const SizedBox(height: 24),
+              ],
+            );
+
+            return Padding(
               padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Welcome Section
-                  _buildWelcomeSection(),
-                  const SizedBox(height: 24),
-
-                  // Quick Actions
-                  _buildQuickActions(),
-                  const SizedBox(height: 24),
-
-                  // Statistics Cards
-                  _buildStatisticsCards(),
-                  const SizedBox(height: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isSmallScreen)
+                    Expanded(
+                      flex: 1,
+                      child: SingleChildScrollView(
+                        child: topSections,
+                      ),
+                    )
+                  else
+                    topSections,
 
                   // Today's Attendance
-                  _buildTodayAttendance(),
-                  const SizedBox(height: 20),
-                ]),
+                  Expanded(
+                    flex: isSmallScreen ? 1 : 1,
+                    child: _buildTodayAttendance(),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -524,15 +542,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Manage your employee attendance with advanced face recognition technology',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
-              height: 1.4,
-            ),
-          ),
         ],
       ),
     ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
@@ -550,66 +559,71 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.edit_calendar,
-                title: 'Manual Attendance',
-                subtitle: 'Add Manually',
-                color: Colors.green,
-                onTap: _navigateToManualAttendanceScreen,
+        SizedBox(
+          height: 140,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            children: [
+              SizedBox(
+                width: 150,
+                child: _buildActionCard(
+                  icon: Icons.edit_calendar,
+                  title: 'Manual Attendance',
+                  subtitle: 'Add Manually',
+                  color: Colors.green,
+                  onTap: _navigateToManualAttendanceScreen,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.person_add,
-                title: 'Add Employee',
-                subtitle: 'Register New',
-                color: Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EmployeeRegistrationScreen(),
-                    ),
-                  );
-                },
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 150,
+                child: _buildActionCard(
+                  icon: Icons.person_add,
+                  title: 'Add Employee',
+                  subtitle: 'Register New',
+                  color: Colors.orange,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EmployeeRegistrationScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.check_circle_outline,
-                title: 'Approve Leave',
-                subtitle: 'Review Requests',
-                color: Colors.teal,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LevelApprovalScreen(),
-                    ),
-                  );
-                },
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 150,
+                child: _buildActionCard(
+                  icon: Icons.check_circle_outline,
+                  title: 'Approve Leave',
+                  subtitle: 'Review Requests',
+                  color: Colors.teal,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LevelApprovalScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                icon: Icons.face,
-                title: 'Face Attendance',
-                subtitle: 'Face Recognition',
-                color: Colors.orange.shade700,
-                onTap: _navigateToFaceAttendanceScreen,
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 150,
+                child: _buildActionCard(
+                  icon: Icons.face,
+                  title: 'Face Attendance',
+                  subtitle: 'Face Recognition',
+                  color: Colors.orange.shade700,
+                  onTap: _navigateToFaceAttendanceScreen,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
@@ -828,6 +842,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             children: [
@@ -843,8 +858,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   size: 20,
                 ),
               ),
-              const Spacer(),
-              if (percentage != null)
+              const SizedBox(width: 12),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (percentage != null) ...[
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
@@ -860,25 +901,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
+              ],
             ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
           ),
         ],
       ),
@@ -899,40 +923,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+              border: Border.all(
+                color: Colors.grey.withOpacity(0.1),
+                width: 1,
               ),
-            ],
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.1),
-              width: 1,
             ),
-          ),
-          child: attendanceList.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: Text(
-                      'No attendance records for today',
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: attendanceList.length,
-                  itemBuilder: (context, index) {
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              color: const Color(0xFF2196F3),
+              child: attendanceList.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: Text(
+                              'No attendance records for today',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.only(bottom: 16, top: 8),
+                      itemCount: attendanceList.length,
+                      itemBuilder: (context, index) {
                     final employee = attendanceList[index] as Map<String, dynamic>;
                     final name = employee['name'] ?? 'Unknown';
                     final employeeId = employee['employeeId'] ?? '';
@@ -964,6 +997,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       statusColor = Colors.grey;
                       statusIcon = Icons.help_outline;
                     }
+
+                    // Extract profile image if available
+                    String? profileImageUrl;
+                    final dynamic rawImage = employee['profile_image'] ?? employee['image'] ?? employee['face_data'];
+                    if (rawImage != null && rawImage.toString().startsWith('http')) {
+                      profileImageUrl = rawImage.toString();
+                    } else if (employee['image_paths'] != null && employee['image_paths'] is List && employee['image_paths'].isNotEmpty) {
+                      final path = employee['image_paths'][0].toString();
+                      if (path.startsWith('http')) profileImageUrl = path;
+                    }
                     
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -981,14 +1024,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Row(
                             children: [
-                              CircleAvatar(
-                                backgroundColor: statusColor.withOpacity(0.1),
-                                child: Icon(
-                                  statusIcon,
-                                  color: statusColor,
-                                  size: 20,
+                              if (profileImageUrl != null)
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: statusColor.withOpacity(0.1),
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.network(
+                                      profileImageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Center(
+                                          child: Text(
+                                            name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: statusColor,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                )
+                              else
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: statusColor.withOpacity(0.1),
+                                  child: Text(
+                                    name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: statusColor,
+                                    ),
+                                  ),
                                 ),
-                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -1063,6 +1138,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   },
                 ),
+            ),
+          ),
         ),
       ],
     ).animate().fadeIn(delay: 600.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);

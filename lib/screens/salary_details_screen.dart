@@ -42,21 +42,21 @@ class SalaryDetailsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF1565C0), // Dark Blue
+                Color(0xFF1976D2), // Dark Blue
                 Color(0xFF42A5F5), // Light Blue
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
+              bottomLeft: Radius.circular(24),
+              bottomRight: Radius.circular(24),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+                color: const Color(0xFF2196F3).withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
@@ -192,12 +192,13 @@ class SalaryDetailsScreen extends StatelessWidget {
                     icon: const Icon(Icons.list_alt_rounded),
                     label: const Text('View Full Details'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0),
+                      backgroundColor: const Color(0xFF2196F3),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 2,
                     ),
                   ),
                 ),
@@ -264,87 +265,39 @@ class SalaryDetailsScreen extends StatelessWidget {
     required List<Widget> children,
     IconData? icon,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (icon != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1565C0).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      icon,
-                      color: const Color(0xFF1565C0),
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1565C0),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ...children,
-          ],
-        ),
-      ),
+    return _ExpandableSectionCard(
+      title: title,
+      children: children,
+      icon: icon,
     );
   }
 
   Widget _buildDetailRow(String label, String value, {bool isBold = false, Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 140,
+          Expanded(
+            flex: 2,
             child: Text(
-              '$label:',
+              label,
               style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade500,
                 fontSize: 14,
               ),
             ),
           ),
           Expanded(
+            flex: 3,
             child: Text(
               value,
+              textAlign: TextAlign.right,
               style: GoogleFonts.poppins(
                 fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-                color: valueColor ?? (isBold ? const Color(0xFF1565C0) : Colors.black87),
-                fontSize: 14,
+                color: valueColor ?? (isBold ? const Color(0xFF2196F3) : Colors.grey.shade800),
+                fontSize: 15,
               ),
             ),
           ),
@@ -360,76 +313,90 @@ class SalaryDetailsScreen extends StatelessWidget {
     required int presentDays,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF1565C0),
-            Color(0xFF42A5F5),
+            Color(0xFF1976D2),
+            Color(0xFF2196F3),
+            Color(0xFF64B5F6),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF2196F3).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Subtle background decoration
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(Icons.account_balance_wallet, size: 120, color: Colors.white.withOpacity(0.1)),
+          ),
+          Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Net Salary',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Net Salary',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        formatIndianCurrency(netSalary),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatIndianCurrency(netSalary),
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      '${attendanceRate.toStringAsFixed(1)}%',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${attendanceRate.toStringAsFixed(1)}%',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildSummaryItem('Present', presentDays.toString(), Icons.check_circle_outline),
+                  _buildSummaryItem('Working', workingDays.toString(), Icons.work_outline),
+                  _buildSummaryItem('Rate', '${attendanceRate.toStringAsFixed(0)}%', Icons.percent),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildSummaryItem('Present', presentDays.toString(), Colors.green),
-              _buildSummaryItem('Working', workingDays.toString(), Colors.blue),
-              _buildSummaryItem('Rate', '${attendanceRate.toStringAsFixed(0)}%', Colors.orange),
             ],
           ),
         ],
@@ -437,33 +404,34 @@ class SalaryDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, Color color) {
+  Widget _buildSummaryItem(String label, String value, IconData icon) {
     return Column(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: Colors.white.withOpacity(0.2),
             shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
           ),
-          child: Center(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          child: Icon(icon, color: Colors.white, size: 24),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
         Text(
           label,
           style: GoogleFonts.poppins(
-            color: Colors.white70,
+            color: Colors.white.withOpacity(0.8),
             fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -551,6 +519,109 @@ class SalaryDetailsScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+      ),
+    );
+  }
+}
+
+class _ExpandableSectionCard extends StatefulWidget {
+  final String title;
+  final List<Widget> children;
+  final IconData? icon;
+
+  const _ExpandableSectionCard({
+    required this.title,
+    required this.children,
+    this.icon,
+  });
+
+  @override
+  State<_ExpandableSectionCard> createState() => _ExpandableSectionCardState();
+}
+
+class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2196F3).withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade100, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            borderRadius: _isExpanded 
+                ? const BorderRadius.vertical(top: Radius.circular(20))
+                : BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Row(
+                children: [
+                  if (widget.icon != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        color: const Color(0xFF2196F3),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    color: Colors.grey.shade500,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isExpanded) ...[
+            Container(
+              height: 1.5,
+              width: double.infinity,
+              color: Colors.grey.shade50,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: widget.children,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

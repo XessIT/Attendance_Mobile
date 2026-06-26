@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -29,7 +30,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
   final _positionController = TextEditingController();
   final _salaryController = TextEditingController();
   
-  File? _faceImage;
+  XFile? _faceImage;
   bool _isLoading = false;
   bool _isCapturing = false;
   Shift? _selectedShift;
@@ -139,7 +140,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
 
       if (image != null) {
         setState(() {
-          _faceImage = File(image.path);
+          _faceImage = image;
         });
       }
     } catch (e) {
@@ -170,7 +171,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
 
       if (image != null) {
         setState(() {
-          _faceImage = File(image.path);
+          _faceImage = image;
         });
       }
     } catch (e) {
@@ -183,6 +184,25 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         );
       }
     }
+  }
+
+  void _clearForm() {
+    setState(() {
+      _nameController.clear();
+      _emailController.clear();
+      _phoneController.clear();
+      _positionController.clear();
+      _salaryController.clear();
+      _faceImage = null;
+      _selectedShift = null;
+      _selectedDepartment = null;
+      _dateOfBirth = null;
+      _dateOfBirthController.clear();
+      
+      _dateOfJoining = DateTime.now();
+      _dateOfJoiningController.text = DateFormat('dd MMM yyyy').format(_dateOfJoining!);
+      _passwordController.text = _generatePasswordFromDate(_dateOfJoining!);
+    });
   }
 
   Future<void> _registerEmployee() async {
@@ -340,8 +360,9 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
               _buildShiftSection(),
               const SizedBox(height: 32),
 
-              // Register Button
+              // Action Buttons
               _buildRegisterButton(),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -349,170 +370,285 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
     );
   }
 
-  Widget _buildFaceImageSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Face Image',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Face image preview
-        Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: _faceImage != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    _faceImage!,
-                    fit: BoxFit.cover,
-                  ),
-                )
-              : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.face,
-                        size: 48,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No face image selected',
-                        style: GoogleFonts.poppins(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-        ),
-        const SizedBox(height: 16),
+  InputDecoration _buildInputDecoration(String label, IconData icon, {String? hintText, String? helperText, Color? fillColor, Color? iconColor}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText,
+      helperText: helperText,
+      labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 13),
+      prefixIcon: Icon(icon, color: iconColor ?? const Color(0xFF2196F3), size: 20),
+      filled: true,
+      fillColor: fillColor ?? Colors.grey.shade50,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF2196F3), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.red.shade300, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    );
+  }
 
-        // Action buttons
-        Row(
-          children: [
-            Expanded(
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2196F3).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFF2196F3), size: 20),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFaceImageSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Face Image', Icons.face_retouching_natural),
+          const SizedBox(height: 24),
+          
+          // Circular Face image preview
+          Center(
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _faceImage != null ? const Color(0xFF2196F3) : Colors.grey.shade300, 
+                  width: 3,
+                ),
+                boxShadow: [
+                  if (_faceImage != null)
+                    BoxShadow(
+                      color: const Color(0xFF2196F3).withOpacity(0.2),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                ],
+              ),
+              child: _faceImage != null
+                  ? ClipOval(
+                      child: kIsWeb
+                          ? Image.network(
+                              _faceImage!.path,
+                              fit: BoxFit.cover,
+                              width: 140,
+                              height: 140,
+                            )
+                          : Image.file(
+                              File(_faceImage!.path),
+                              fit: BoxFit.cover,
+                              width: 140,
+                              height: 140,
+                            ),
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'No Photo',
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey.shade500,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Action buttons
+          if (_faceImage == null)
+            SizedBox(
+              width: double.infinity,
+              height: 48,
               child: ElevatedButton.icon(
                 onPressed: _isCapturing ? null : _captureFaceImage,
                 icon: _isCapturing
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.camera_alt),
+                    : const Icon(Icons.camera_alt_outlined),
                 label: Text(
-                  _isCapturing ? 'Capturing...' : 'Capture',
-                  style: GoogleFonts.poppins(),
+                  _isCapturing ? 'Opening Camera...' : 'Open Camera',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2196F3),
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
                 ),
               ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _faceImage = null;
+                      });
+                    },
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: Text(
+                      'Remove',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isCapturing ? null : _captureFaceImage,
+                    icon: _isCapturing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.camera_alt_outlined, size: 18),
+                    label: Text(
+                      'Retake',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2196F3),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            /*const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _pickFaceImage,
-                icon: const Icon(Icons.photo_library),
-                label: Text(
-                  'Gallery',
-                  style: GoogleFonts.poppins(),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF2196F3),
-                  side: const BorderSide(color: Color(0xFF2196F3)),
-                ),
-              ),
-            ),*/
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildPersonalInfoSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Personal Information',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 16),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Personal Information', Icons.person_outline),
+          const SizedBox(height: 20),
 
-        // Name field
-        TextFormField(
-          controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Full Name',
-            prefixIcon: Icon(Icons.person),
-          ),
-          textCapitalization: TextCapitalization.words,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Please enter full name';
-            }
-            final trimmedValue = value.trim();
-            if (trimmedValue.isEmpty) {
-              return 'Please enter full name';
-            }
-            // Check if first letter is capital
-            if (trimmedValue[0] != trimmedValue[0].toUpperCase()) {
-              return 'Name must start with a capital letter';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-
-        // Email field (optional)
-        TextFormField(
-          controller: _emailController,
-          decoration: const InputDecoration(
-            labelText: 'Email (Optional)',
-            prefixIcon: Icon(Icons.email),
-            hintText: 'Enter email address',
-          ),
-          keyboardType: TextInputType.emailAddress,
-          validator: (value) {
-            // Email is optional, but if provided, it must be valid
-            if (value != null && value.trim().isNotEmpty) {
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                return 'Please enter a valid email';
+          // Name field
+          TextFormField(
+            controller: _nameController,
+            decoration: _buildInputDecoration('Full Name', Icons.badge_outlined, hintText: 'Enter full name'),
+            textCapitalization: TextCapitalization.words,
+            inputFormatters: [
+              _CapitalizeWordsInputFormatter(),
+            ],
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter full name';
               }
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
+              final trimmedValue = value.trim();
+              if (trimmedValue.isEmpty) {
+                return 'Please enter full name';
+              }
+              // Check if first letter is capital
+              if (trimmedValue[0] != trimmedValue[0].toUpperCase()) {
+                return 'Name must start with a capital letter';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 20),
 
         // Phone field
         TextFormField(
           controller: _phoneController,
-          decoration: const InputDecoration(
-            labelText: 'Phone Number',
-            prefixIcon: Icon(Icons.phone),
-            hintText: 'Enter 10 digit mobile number',
-          ),
+          decoration: _buildInputDecoration('Phone Number', Icons.phone_outlined, hintText: 'Enter 10 digit mobile number'),
           keyboardType: TextInputType.phone,
           maxLength: 10,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter phone number';
@@ -525,24 +661,49 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             return null;
           },
         ),
+        const SizedBox(height: 20),
+
+        // Email field (optional)
+        TextFormField(
+          controller: _emailController,
+          decoration: _buildInputDecoration('Email (Optional)', Icons.email_outlined, hintText: 'Enter email address'),
+          keyboardType: TextInputType.emailAddress,
+          validator: (value) {
+            // Email is optional, but if provided, it must be valid
+            if (value != null && value.trim().isNotEmpty) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                return 'Please enter a valid email';
+              }
+            }
+            return null;
+          },
+        ),
       ],
+    ),
     );
   }
 
   Widget _buildWorkInfoSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Work Information',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 16),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Work Information', Icons.work_outline),
+          const SizedBox(height: 20),
 
-        // Position field
+          // Position field
         Consumer<DepartmentProvider>(
           builder: (context, departmentProvider, child) {
             if (departmentProvider.isLoading) {
@@ -624,19 +785,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
 
             return DropdownButtonFormField<Department>(
               value: _selectedDepartment,
-              decoration: InputDecoration(
-                labelText: 'Select Department',
-                prefixIcon: const Icon(Icons.business),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              hint: Text(
-                'Choose employee department',
-                style: GoogleFonts.poppins(color: Colors.grey),
-              ),
+              decoration: _buildInputDecoration('Select Department', Icons.business_outlined, hintText: 'Choose employee department'),
               items: departmentProvider.departments.map((department) {
                 return DropdownMenuItem<Department>(
                   value: department,
@@ -677,75 +826,16 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // Salary field
         TextFormField(
           controller: _salaryController,
-          decoration: const InputDecoration(
-            labelText: 'Monthly Salary',
-            prefixIcon: Icon(Icons.currency_rupee),
-            helperText: 'Enter amount (commas will be added automatically)',
-          ),
+          decoration: _buildInputDecoration('Monthly Salary', Icons.currency_rupee, helperText: 'Enter amount'),
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
-            TextInputFormatter.withFunction((oldValue, newValue) {
-              // Format with commas as user types
-              final text = newValue.text;
-              if (text.isEmpty) {
-                return TextEditingValue(
-                  text: '',
-                  selection: TextSelection.collapsed(offset: 0),
-                );
-              }
-              
-              // Remove any existing commas
-              final digitsOnly = text.replaceAll(',', '');
-              if (digitsOnly.isEmpty) {
-                return TextEditingValue(
-                  text: '',
-                  selection: TextSelection.collapsed(offset: 0),
-                );
-              }
-              
-              // Format with commas
-              final formatted = _formatNumberWithCommas(digitsOnly);
-              
-              // Calculate cursor position
-              // Count digits before cursor in old value
-              final oldCursorPos = oldValue.selection.baseOffset;
-              int digitsBeforeCursor = 0;
-              for (int i = 0; i < oldCursorPos && i < oldValue.text.length; i++) {
-                if (oldValue.text[i] != ',') {
-                  digitsBeforeCursor++;
-                }
-              }
-              
-              // Find position in new formatted string
-              int newCursorPos = 0;
-              int digitCount = 0;
-              for (int i = 0; i < formatted.length; i++) {
-                if (formatted[i] != ',') {
-                  digitCount++;
-                  if (digitCount >= digitsBeforeCursor) {
-                    newCursorPos = i + 1;
-                    break;
-                  }
-                }
-                newCursorPos = i + 1;
-              }
-              
-              // Ensure cursor doesn't go beyond text length
-              if (newCursorPos > formatted.length) {
-                newCursorPos = formatted.length;
-              }
-              
-              return TextEditingValue(
-                text: formatted,
-                selection: TextSelection.collapsed(offset: newCursorPos),
-              );
-            }),
+            IndianCurrencyFormatter(),
           ],
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -762,17 +852,13 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             return null;
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
         // Date of Birth field
         TextFormField(
           controller: _dateOfBirthController,
           readOnly: true,
-          decoration: const InputDecoration(
-            labelText: 'Date of Birth',
-            prefixIcon: Icon(Icons.cake),
-            hintText: 'Select date of birth',
-          ),
+          decoration: _buildInputDecoration('Date of Birth', Icons.cake_outlined, hintText: 'Select date of birth'),
           onTap: () async {
             final DateTime initialDate = _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25));
             final DateTime? picked = await showDatePicker(
@@ -802,16 +888,13 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             }
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
         // Date of Joining field
         TextFormField(
           controller: _dateOfJoiningController,
           readOnly: true,
-          decoration: const InputDecoration(
-            labelText: 'Date of Joining',
-            prefixIcon: Icon(Icons.calendar_today),
-          ),
+          decoration: _buildInputDecoration('Date of Joining', Icons.calendar_today_outlined),
           onTap: () async {
             final DateTime initialDate = _dateOfJoining ?? DateTime.now();
             final DateTime? picked = await showDatePicker(
@@ -846,19 +929,14 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             return null;
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
         // Password field (auto-generated from date of joining)
         TextFormField(
           controller: _passwordController,
           readOnly: true,
-          decoration: InputDecoration(
-            labelText: 'Password (Auto-generated)',
-            prefixIcon: const Icon(Icons.lock),
-            helperText: 'Password is generated from date of joining (YYYYMMDD format)',
-            filled: true,
-            fillColor: Colors.grey.shade50,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF1565C0)),
+          decoration: _buildInputDecoration('Password (Auto-generated)', Icons.lock, helperText: 'Generated from date of joining (YYYYMMDD)', fillColor: const Color(0xFFE3F2FD), iconColor: const Color(0xFF1565C0)),
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Password is required';
@@ -867,25 +945,33 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           },
         ),
       ],
+    ),
     );
   }
 
 
 
   Widget _buildShiftSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Shift Assignment',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 16),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Shift Assignment', Icons.schedule_outlined),
+          const SizedBox(height: 20),
 
-        // Shift dropdown
+          // Shift dropdown
         Consumer<ShiftProvider>(
           builder: (context, shiftProvider, child) {
             if (shiftProvider.isLoading) {
@@ -967,19 +1053,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
 
             return DropdownButtonFormField<Shift>(
               value: _selectedShift,
-              decoration: InputDecoration(
-                labelText: 'Select Shift',
-                prefixIcon: const Icon(Icons.schedule),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-              hint: Text(
-                'Choose employee shift',
-                style: GoogleFonts.poppins(color: Colors.grey),
-              ),
+              decoration: _buildInputDecoration('Select Shift', Icons.schedule_outlined, hintText: 'Choose employee shift'),
               items: shiftProvider.shifts.map((shift) {
                 return DropdownMenuItem<Shift>(
                   value: shift,
@@ -1054,41 +1128,114 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           ),
         ],
       ],
+    ),
     );
   }
 
   Widget _buildRegisterButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _registerEmployee,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2196F3),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _clearForm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey.shade100,
+                foregroundColor: Colors.grey.shade800,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                'Clear',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ),
-        child: _isLoading
-            ? const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // const Icon(Icons.person_add),
-                  // const SizedBox(width: 8),
-                  Text(
-                    'Register',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: SizedBox(
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _registerEmployee,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2196F3),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-      ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Text(
+                      'Register',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
-} 
+}
+
+class IndianCurrencyFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.selection.baseOffset == 0) {
+      return newValue;
+    }
+    String digitsOnly = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digitsOnly.isEmpty) return newValue.copyWith(text: '');
+    
+    final formatter = NumberFormat.currency(locale: 'en_IN', symbol: '', decimalDigits: 0);
+    String newText = formatter.format(int.parse(digitsOnly)).trim();
+    
+    return newValue.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+  }
+}
+
+class _CapitalizeWordsInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+    
+    // Capitalize first letter of each word
+    String newText = newValue.text;
+    List<String> words = newText.split(' ');
+    for (int i = 0; i < words.length; i++) {
+      if (words[i].isNotEmpty) {
+        words[i] = words[i][0].toUpperCase() + words[i].substring(1);
+      }
+    }
+    newText = words.join(' ');
+    
+    return TextEditingValue(
+      text: newText,
+      selection: newValue.selection,
+    );
+  }
+}

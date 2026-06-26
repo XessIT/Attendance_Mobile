@@ -13,6 +13,7 @@ import 'employee_list_screen.dart';
 import 'attendance_screen.dart';
 import 'salary_screen.dart';
 import 'settings_screen.dart';
+import 'face_attendance_screen_new.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -259,8 +260,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         actions: [
           IconButton(
             icon: const Icon(Icons.fingerprint),
-            onPressed: _openFingerprintOptions,
-            tooltip: 'Fingerprint login',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FaceAttendanceScreen(shouldLoop: true),
+                ),
+              );
+            },
+            tooltip: 'Mark Attendance',
           ),
           IconButton(
             icon: const Icon(Icons.logout),

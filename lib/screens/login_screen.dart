@@ -296,9 +296,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Login successful!',
+                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height - 120 > 0 
+                    ? MediaQuery.of(context).size.height - 120 
+                    : 0,
+                right: 20,
+                left: MediaQuery.of(context).size.width > 240 
+                    ? MediaQuery.of(context).size.width - 200 
+                    : 20,
+              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 3),
+              elevation: 4,
             ),
           );
 
@@ -566,21 +589,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ).animate().fadeIn(duration: 600.ms, delay: 300.ms).slideY(begin: 0.2),
                     const SizedBox(height: 16),
                     
-                    // Remember me / Forgot password
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.radio_button_unchecked, color: Color(0xFF42A5F5), size: 16),
-                            const SizedBox(width: 8),
-                            Text('Remember me', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
-                          ],
-                        ),
-                        Text('Forget password?', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
-                      ],
-                    ).animate().fadeIn(duration: 600.ms, delay: 350.ms).slideY(begin: 0.2),
-                    
                     const SizedBox(height: 32),
 
                     // Login Button
@@ -617,33 +625,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     
                     const SizedBox(height: 24),
 
-                    // Sign up
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "New user? ",
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            // Navigate to sign up if implemented
-                          },
-                          child: Text(
-                            "Sign Up",
-                            style: GoogleFonts.poppins(
-                              color: const Color(0xFF2196F3),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ).animate().fadeIn(duration: 600.ms, delay: 500.ms).slideY(begin: 0.2),
-                    const SizedBox(height: 20),
+
 
                     // Footer
                     Center(

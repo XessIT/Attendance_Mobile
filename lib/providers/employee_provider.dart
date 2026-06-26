@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/employee.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
@@ -133,7 +134,7 @@ class EmployeeProvider with ChangeNotifier {
   }
 
   // Create new employee
-  Future<bool> createEmployee(Employee employee, {File? imageFile, String? shiftName, String? departmentName, int? departmentId, String? password}) async {
+  Future<bool> createEmployee(Employee employee, {XFile? imageFile, String? shiftName, String? departmentName, int? departmentId, String? password}) async {
     _setLoading(true);
     try {
       print('📦 [EMPLOYEE PROVIDER] Creating employee via API...');
