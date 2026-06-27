@@ -291,7 +291,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           await Provider.of<EmployeeProvider>(context, listen: false)
               .refresh(search: _searchQuery.isEmpty ? null : _searchQuery, status: status);
         },
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: const Color(0xFF152A4A),
         foregroundColor: Colors.white,
         child: const Icon(Icons.person_add),
       ),
@@ -338,7 +338,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+                      borderSide: const BorderSide(color: Color(0xFF152A4A), width: 2),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
@@ -429,7 +429,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                       value: EmployeeFilter.all,
                       child: Row(
                         children: [
-                          Icon(Icons.people_outline, size: 18, color: const Color(0xFF2196F3)),
+                          Icon(Icons.people_outline, size: 18, color: const Color(0xFF152A4A)),
                           const SizedBox(width: 12),
                           Text(
                             'All',
@@ -470,19 +470,19 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                        color: const Color(0xFF152A4A).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.search, size: 12, color: const Color(0xFF2196F3)),
+                          Icon(Icons.search, size: 12, color: const Color(0xFF152A4A)),
                           const SizedBox(width: 4),
                           Text(
                             _searchQuery,
                             style: GoogleFonts.poppins(
                               fontSize: 11,
-                              color: const Color(0xFF2196F3),
+                              color: const Color(0xFF152A4A),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -497,7 +497,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                               });
                               _applyFilter();
                             },
-                            child: Icon(Icons.close, size: 12, color: const Color(0xFF2196F3)),
+                            child: Icon(Icons.close, size: 12, color: const Color(0xFF152A4A)),
                           ),
                         ],
                       ),
@@ -591,7 +591,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
               bottom: 0,
               width: 6,
               child: Container(
-                color: employee.isActive ? const Color(0xFF2196F3) : Colors.grey.shade400,
+                color: employee.isActive ? const Color(0xFF152A4A) : Colors.grey.shade400,
               ),
             ),
             Material(
@@ -609,7 +609,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                 child: CircleAvatar(
                   radius: 24,
                   backgroundColor: employee.isActive 
-                      ? const Color(0xFF2196F3).withOpacity(0.1)
+                      ? const Color(0xFF152A4A).withOpacity(0.1)
                       : Colors.grey.withOpacity(0.1),
                   child: Text(
                     employee.name.substring(0, 1).toUpperCase(),
@@ -617,7 +617,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: employee.isActive 
-                          ? const Color(0xFF2196F3)
+                          ? const Color(0xFF152A4A)
                           : Colors.grey.shade600,
                     ),
                   ),
@@ -773,7 +773,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 16, color: Colors.blue),
+                        Icon(Icons.edit_outlined, size: 16, color: const Color(0xFF152A4A)),
                         const SizedBox(width: 8),
                         Text(
                           'Edit',
@@ -906,7 +906,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: employee.isActive 
-                        ? const Color(0xFF2196F3).withOpacity(0.1)
+                        ? const Color(0xFF152A4A).withOpacity(0.1)
                         : Colors.grey.withOpacity(0.1),
                     child: Text(
                       employee.name.substring(0, 1).toUpperCase(),
@@ -914,7 +914,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: employee.isActive 
-                            ? const Color(0xFF2196F3)
+                            ? const Color(0xFF152A4A)
                             : Colors.grey.shade600,
                       ),
                     ),

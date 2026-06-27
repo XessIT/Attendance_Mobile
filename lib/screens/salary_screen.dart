@@ -178,8 +178,8 @@ class _SalaryScreenState extends State<SalaryScreen> {
                 //   begin: Alignment.topLeft,
                 //   end: Alignment.bottomRight,
                 //   colors: [
-                //     const Color(0xFF2196F3),
-                //     const Color(0xFF1976D2),
+                //     const Color(0xFF152A4A),
+                //     const Color(0xFF152A4A),
                 //   ],
                 // ),
                 borderRadius: BorderRadius.circular(10),
@@ -221,10 +221,10 @@ class _SalaryScreenState extends State<SalaryScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[300]!,
+                  color: _selectedEmployeeId == null ? const Color(0xFF152A4A) : Colors.grey[300]!,
                   width: _selectedEmployeeId == null ? 2 : 1,
                 ),
-                color: _selectedEmployeeId == null ? const Color(0xFF2196F3).withOpacity(0.1) : Colors.white,
+                color: _selectedEmployeeId == null ? const Color(0xFF152A4A).withOpacity(0.1) : Colors.white,
               ),
               child: Material(
                 color: Colors.transparent,
@@ -248,9 +248,9 @@ class _SalaryScreenState extends State<SalaryScreen> {
                           height: 20,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.transparent,
+                            color: _selectedEmployeeId == null ? const Color(0xFF152A4A) : Colors.transparent,
                             border: Border.all(
-                              color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[400]!,
+                              color: _selectedEmployeeId == null ? const Color(0xFF152A4A) : Colors.grey[400]!,
                               width: 2,
                             ),
                           ),
@@ -269,7 +269,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: _selectedEmployeeId == null ? FontWeight.w600 : FontWeight.w500,
-                              color: _selectedEmployeeId == null ? const Color(0xFF2196F3) : Colors.grey[700],
+                              color: _selectedEmployeeId == null ? const Color(0xFF152A4A) : Colors.grey[700],
                             ),
                           ),
                         ),
@@ -287,10 +287,10 @@ class _SalaryScreenState extends State<SalaryScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF2196F3) : Colors.grey[300]!,
+                    color: isSelected ? const Color(0xFF152A4A) : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
-                  color: isSelected ? const Color(0xFF2196F3).withOpacity(0.1) : Colors.white,
+                  color: isSelected ? const Color(0xFF152A4A).withOpacity(0.1) : Colors.white,
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -314,9 +314,9 @@ class _SalaryScreenState extends State<SalaryScreen> {
                             height: 20,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isSelected ? const Color(0xFF2196F3) : Colors.transparent,
+                              color: isSelected ? const Color(0xFF152A4A) : Colors.transparent,
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[400]!,
+                                color: isSelected ? const Color(0xFF152A4A) : Colors.grey[400]!,
                                 width: 2,
                               ),
                             ),
@@ -335,7 +335,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey[700],
+                                color: isSelected ? const Color(0xFF152A4A) : Colors.grey[700],
                               ),
                             ),
                           ),
@@ -345,7 +345,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3).withOpacity(0.1),
+                              color: const Color(0xFF152A4A).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -353,7 +353,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF2196F3),
+                                color: const Color(0xFF152A4A),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -510,10 +510,10 @@ class _SalaryScreenState extends State<SalaryScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade100,
+                              color: isSelected ? const Color(0xFF152A4A) : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade300,
+                                color: isSelected ? const Color(0xFF152A4A) : Colors.grey.shade300,
                               ),
                             ),
                             child: Text(
@@ -568,10 +568,10 @@ class _SalaryScreenState extends State<SalaryScreen> {
                         child: Container(
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade50,
+                            color: isSelected ? const Color(0xFF152A4A) : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade200,
+                              color: isSelected ? const Color(0xFF152A4A) : Colors.grey.shade200,
                             ),
                           ),
                           child: Text(
@@ -612,11 +612,11 @@ class _SalaryScreenState extends State<SalaryScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF2196F3), width: 1.2),
+                  border: Border.all(color: const Color(0xFF152A4A), width: 1.2),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_month, color: Color(0xFF2196F3), size: 22),
+                    const Icon(Icons.calendar_month, color: Color(0xFF152A4A), size: 22),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -628,7 +628,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                         ),
                       ),
                     ),
-                    Icon(Icons.edit_calendar, color: const Color(0xFF2196F3), size: 20),
+                    Icon(Icons.edit_calendar, color: const Color(0xFF152A4A), size: 20),
                   ],
                 ),
               ),
@@ -709,7 +709,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2196F3), width: 1.5),
+                      borderSide: const BorderSide(color: Color(0xFF152A4A), width: 1.5),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -797,9 +797,9 @@ class _SalaryScreenState extends State<SalaryScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: Color(0x1A0F172A),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.blue[200]!),
+                          border: Border.all(color: Color(0x4D0F172A)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -807,7 +807,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                             Icon(
                               Icons.search_rounded,
                               size: 14,
-                              color: Colors.blue[700],
+                              color: Color(0xFF152A4A),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -816,7 +816,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                   : _searchQuery,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: Colors.blue[700],
+                                color: Color(0xFF152A4A),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -830,7 +830,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                               child: Icon(
                                 Icons.close_rounded,
                                 size: 14,
-                                color: Colors.blue[700],
+                                color: Color(0xFF152A4A),
                               ),
                             ),
                           ],
@@ -856,7 +856,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
               child: _buildOverviewCard(
                 title: 'Total Employees',
                 value: '--',
-                color: Colors.blue,
+                color: const Color(0xFF152A4A),
                 icon: Icons.people,
               ),
             ),
@@ -897,7 +897,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
             child: _buildOverviewCard(
               title: 'Total Employees',
               value: totalEmployees.toString(),
-              color: Colors.blue,
+              color: const Color(0xFF152A4A),
               icon: Icons.people,
             ),
           ),
@@ -1030,7 +1030,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              color: const Color(0xFF2196F3),
+              color: const Color(0xFF152A4A),
             ),
             const SizedBox(height: 16),
             Text(
@@ -1140,7 +1140,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
               top: 0,
               bottom: 0,
               width: 6,
-              child: Container(color: const Color(0xFF2196F3)),
+              child: Container(color: const Color(0xFF152A4A)),
             ),
             Material(
               color: Colors.transparent,
@@ -1154,13 +1154,13 @@ class _SalaryScreenState extends State<SalaryScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF152A4A).withOpacity(0.1),
                   child: Text(
                     name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2196F3),
+                      color: const Color(0xFF152A4A),
                     ),
                   ),
                 ),
@@ -1223,7 +1223,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF152A4A),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1269,7 +1269,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
               top: 0,
               bottom: 0,
               width: 6,
-              child: Container(color: const Color(0xFF2196F3)),
+              child: Container(color: const Color(0xFF152A4A)),
             ),
             Material(
               color: Colors.transparent,
@@ -1283,13 +1283,13 @@ class _SalaryScreenState extends State<SalaryScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: const Color(0xFF2196F3).withOpacity(0.1),
+                  backgroundColor: const Color(0xFF152A4A).withOpacity(0.1),
                   child: Text(
                     employee.name.substring(0, 1).toUpperCase(),
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2196F3),
+                      color: const Color(0xFF152A4A),
                     ),
                   ),
                 ),
@@ -1352,7 +1352,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF152A4A),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1459,7 +1459,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
               value,
               style: GoogleFonts.poppins(
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: isBold ? const Color(0xFF2196F3) : null,
+                color: isBold ? const Color(0xFF152A4A) : null,
               ),
             ),
           ),
@@ -1473,7 +1473,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Payslip generation feature coming soon'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF152A4A),
       ),
     );
   }
@@ -1502,7 +1502,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Payslip generation feature coming soon'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF152A4A),
       ),
     );
   }
@@ -1524,7 +1524,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: const Color(0xFF152A4A),
               foregroundColor: Colors.white,
             ),
             child: const Text('Calculate'),
@@ -1621,3 +1621,4 @@ class _SalaryScreenState extends State<SalaryScreen> {
     }
   }
 }
+

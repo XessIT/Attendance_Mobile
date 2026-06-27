@@ -91,17 +91,17 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
       builder: (context, constraints) {
         final availableHeight = constraints.maxHeight;
         final iconSize = isSelected 
-            ? (availableHeight * 0.5).clamp(20.0, 28.0)
-            : (availableHeight * 0.4).clamp(16.0, 24.0);
+            ? (availableHeight * 0.5).clamp(18.0, 24.0)
+            : (availableHeight * 0.45).clamp(18.0, 22.0);
         final fontSize = isSelected 
-            ? (availableHeight * 0.15).clamp(8.0, 12.0)
-            : 0.0;
+            ? (availableHeight * 0.15).clamp(9.0, 11.0)
+            : (availableHeight * 0.15).clamp(8.0, 10.0);
         
         return AnimatedContainer(
           duration: widget.animationDuration,
           curve: widget.curve,
-          padding: EdgeInsets.symmetric(
-            horizontal: isSelected ? 4 : 2,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 2,
             vertical: 2,
           ),
           child: Column(
@@ -131,23 +131,21 @@ class _CustomAnimatedBottomBarState extends State<CustomAnimatedBottomBar> {
                   size: iconSize * 0.8,
                 ),
               ),
-              if (isSelected && fontSize > 0)
-                SizedBox(height: availableHeight * 0.05),
-              if (isSelected && fontSize > 0)
-                AnimatedContainer(
-                  duration: widget.animationDuration,
-                  curve: widget.curve,
-                  child: DefaultTextStyle.merge(
-                    style: GoogleFonts.poppins(
-                      color: item.activeColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: fontSize,
-                    ),
-                    child: FittedBox(
-                      child: item.title,
-                    ),
+              SizedBox(height: availableHeight * 0.05),
+              AnimatedContainer(
+                duration: widget.animationDuration,
+                curve: widget.curve,
+                child: DefaultTextStyle.merge(
+                  style: GoogleFonts.poppins(
+                    color: isSelected ? item.activeColor : item.inactiveColor,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: fontSize,
+                  ),
+                  child: FittedBox(
+                    child: item.title,
                   ),
                 ),
+              ),
             ],
           ),
         );
@@ -160,7 +158,7 @@ class BottomNavyBarItem {
   BottomNavyBarItem({
     required this.icon,
     required this.title,
-    this.activeColor = Colors.blue,
+    this.activeColor = const Color(0xFF152A4A),
     this.textAlign,
     this.inactiveColor = Colors.grey,
   });
@@ -171,3 +169,4 @@ class BottomNavyBarItem {
   final Color inactiveColor;
   final TextAlign? textAlign;
 }
+

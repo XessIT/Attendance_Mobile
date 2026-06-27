@@ -56,7 +56,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
     //     ScaffoldMessenger.of(context).showSnackBar(
     //       SnackBar(
     //         content: Text('Test: Snackbar is working!'),
-    //         backgroundColor: Colors.blue,
+    //         backgroundColor: const Color(0xFF152A4A),
     //         duration: const Duration(seconds: 2),
     //       ),
     //     );
@@ -606,12 +606,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
+                color: const Color(0xFF152A4A).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.info_outline,
-                color: Color(0xFF2196F3),
+                color: Color(0xFF152A4A),
                 size: 20,
               ),
             ),
@@ -621,7 +621,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
               ),
             ),
           ],
@@ -659,16 +659,16 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2196F3).withOpacity(0.08),
+                          color: const Color(0xFF152A4A).withOpacity(0.08),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF2196F3).withOpacity(0.15),
+                            color: const Color(0xFF152A4A).withOpacity(0.15),
                             width: 1,
                           ),
                         ),
                         child: Icon(
                           item['icon'] as IconData,
-                          color: const Color(0xFF2196F3),
+                          color: const Color(0xFF152A4A),
                           size: 18,
                         ),
                       ),
@@ -716,7 +716,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
               ),
             ),
           ),
@@ -811,7 +811,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                     ? [Colors.red[400]!, Colors.red[600]!]
                     : _locationStatus.contains('error') || _locationStatus.contains('unavailable') 
                       ? [Colors.orange[400]!, Colors.orange[600]!]
-                      : [Colors.blue[400]!, Colors.blue[600]!],
+                      : [Color(0x990F172A), Color(0xFF152A4A)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
@@ -819,7 +819,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                   BoxShadow(
                     color: (_locationStatus.contains('permission required') ? Colors.red : 
                            _locationStatus.contains('error') || _locationStatus.contains('unavailable') ? Colors.orange : 
-                           Colors.blue).withOpacity(0.2),
+                           const Color(0xFF152A4A)).withOpacity(0.2),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -967,16 +967,16 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                                     padding: const EdgeInsets.all(40),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: const Color(0xFF2196F3).withOpacity(0.08),
+                                      color: const Color(0xFF152A4A).withOpacity(0.08),
                                       border: Border.all(
-                                        color: const Color(0xFF2196F3).withOpacity(0.2),
+                                        color: const Color(0xFF152A4A).withOpacity(0.2),
                                         width: 1,
                                       ),
                                     ),
                                     child: Icon(
                                       Icons.camera_alt_outlined,
                                       size: 100,
-                                      color: const Color(0xFF2196F3),
+                                      color: const Color(0xFF152A4A),
                                     ),
                                   ),
                                 );
@@ -988,7 +988,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF2196F3),
+                                color: const Color(0xFF152A4A),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -1018,16 +1018,16 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withOpacity(0.1),
+                    color: const Color(0xFF152A4A).withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF2196F3).withOpacity(0.2),
+                      color: const Color(0xFF152A4A).withOpacity(0.2),
                       width: 1,
                     ),
                   ),
                   child: const Icon(
                     Icons.info_outline,
-                    color: Color(0xFF2196F3),
+                    color: Color(0xFF152A4A),
                     size: 28,
                   ),
                 ),
@@ -1341,7 +1341,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.blue.withOpacity(0.8),
+                      color: const Color(0xFF152A4A).withOpacity(0.8),
                       width: 2,
                     ),
                   ),

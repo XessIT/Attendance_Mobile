@@ -236,12 +236,12 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
+                color: const Color(0xFF152A4A).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.info_outline,
-                color: Color(0xFF2196F3),
+                color: Color(0xFF152A4A),
                 size: 20,
               ),
             ),
@@ -251,7 +251,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
               ),
             ),
           ],
@@ -277,16 +277,16 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withOpacity(0.08),
+                        color: const Color(0xFF152A4A).withOpacity(0.08),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFF2196F3).withOpacity(0.15),
+                          color: const Color(0xFF152A4A).withOpacity(0.15),
                           width: 1,
                         ),
                       ),
                       child: Icon(
                         item['icon'] as IconData,
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF152A4A),
                         size: 18,
                       ),
                     ),
@@ -316,7 +316,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
             child: Text(
               'Got it!',
               style: GoogleFonts.poppins(
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -331,7 +331,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Face Attendance'),
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: const Color(0xFF152A4A),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -376,7 +376,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   color: _locationStatus.contains('permission required') ? Colors.red[400] : 
-                         _locationStatus.contains('error') || _locationStatus.contains('unavailable') ? Colors.orange[400] : Colors.blue[400],
+                         _locationStatus.contains('error') || _locationStatus.contains('unavailable') ? Colors.orange[400] : Color(0x990F172A),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -418,7 +418,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                   margin: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF2196F3), width: 3),
+                    border: Border.all(color: const Color(0xFF152A4A), width: 3),
                     color: Colors.grey[100],
                   ),
                   child: ClipRRect(
@@ -502,7 +502,7 @@ class _FaceAttendanceScreenState extends State<FaceAttendanceScreen> {
                 ),
                 child: const Icon(
                   Icons.help_outline,
-                  color: Color(0xFF2196F3),
+                  color: Color(0xFF152A4A),
                   size: 24,
                 ),
               ),
@@ -838,3 +838,4 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     );
   }
 }
+

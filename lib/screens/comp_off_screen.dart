@@ -36,9 +36,9 @@ class _CompOffScreenState extends State<CompOffScreen> with SingleTickerProvider
         iconTheme: const IconThemeData(color: Colors.black87),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF2196F3),
+          labelColor: const Color(0xFF152A4A),
           unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF2196F3),
+          indicatorColor: const Color(0xFF152A4A),
           labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           tabs: const [
             Tab(text: 'Request Credit'),
@@ -158,7 +158,7 @@ class _RequestCreditTabState extends State<RequestCreditTab> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: Colors.blue[700], size: 20),
+                    Icon(Icons.calendar_today, color: Color(0xFF152A4A), size: 20),
                     const SizedBox(width: 12),
                      Text(
                       _earnedDate != null ? DateFormat('dd MMM yyyy').format(_earnedDate!) : 'Select Date',
@@ -213,7 +213,7 @@ class _RequestCreditTabState extends State<RequestCreditTab> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitRequest,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
+                  backgroundColor: const Color(0xFF152A4A),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isLoading 
@@ -233,7 +233,7 @@ class _RequestCreditTabState extends State<RequestCreditTab> {
       labelStyle: GoogleFonts.poppins(color: Colors.grey[700]),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2196F3))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF152A4A))),
       filled: true,
       fillColor: Colors.white,
     );
@@ -401,9 +401,9 @@ class _MyCreditsTabState extends State<MyCreditsTab> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF64B5F6)]),
+              gradient: const LinearGradient(colors: [Color(0xFF152A4A), Color(0xFF334155)]),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [BoxShadow(color: const Color(0xFF152A4A).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -420,7 +420,7 @@ class _MyCreditsTabState extends State<MyCreditsTab> {
                   onPressed: _showApplyLeaveDialog,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: Colors.blue[700],
+                    foregroundColor: Color(0xFF152A4A),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: const Text('Use Credit'),
@@ -493,3 +493,5 @@ class _MyCreditsTabState extends State<MyCreditsTab> {
     );
   }
 }
+
+

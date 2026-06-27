@@ -318,7 +318,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const CircularProgressIndicator(
-                color: Color(0xFF2196F3),
+                color: Color(0xFF152A4A),
               ),
               const SizedBox(height: 16),
               Text(
@@ -389,7 +389,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ElevatedButton(
                   onPressed: _refreshData,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2196F3),
+                    backgroundColor: const Color(0xFF152A4A),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   ),
@@ -411,7 +411,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Text(
                     'Show Dashboard Anyway',
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF2196F3),
+                      color: const Color(0xFF152A4A),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -449,27 +449,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             );
 
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isSmallScreen)
-                    Expanded(
-                      flex: 1,
-                      child: SingleChildScrollView(
+            return RefreshIndicator(
+              onRefresh: _refreshData,
+              color: const Color(0xFF152A4A),
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 16, top: 16),
                         child: topSections,
                       ),
-                    )
-                  else
-                    topSections,
-
-                  // Today's Attendance
-                  Expanded(
-                    flex: isSmallScreen ? 1 : 1,
-                    child: _buildTodayAttendance(),
-                  ),
-                ],
+                    ),
+                  ];
+                },
+                body: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: _buildTodayAttendance(),
+                ),
               ),
             );
           },
@@ -484,8 +481,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF1565C0), // Darker InstaMarQ Blue
-            Color(0xFF2196F3), // InstaMarQ Blue
+            Color(0xFF020617), // Darker InstaMarQ Blue
+            Color(0xFF152A4A), // InstaMarQ Blue
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -493,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2196F3).withOpacity(0.3),
+            color: const Color(0xFF152A4A).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -559,71 +556,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 140,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            children: [
-              SizedBox(
-                width: 150,
-                child: _buildActionCard(
-                  icon: Icons.edit_calendar,
-                  title: 'Manual Attendance',
-                  subtitle: 'Add Manually',
-                  color: Colors.green,
-                  onTap: _navigateToManualAttendanceScreen,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = (constraints.maxWidth - 12) / 2;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: cardWidth,
+                  child: _buildActionCard(
+                    icon: Icons.edit_calendar,
+                    title: 'Manual Attendance',
+                    subtitle: 'Add Manually',
+                    color: Colors.green,
+                    onTap: _navigateToManualAttendanceScreen,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 150,
-                child: _buildActionCard(
-                  icon: Icons.person_add,
-                  title: 'Add Employee',
-                  subtitle: 'Register New',
-                  color: Colors.orange,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const EmployeeRegistrationScreen(),
-                      ),
-                    );
-                  },
+                SizedBox(
+                  width: cardWidth,
+                  child: _buildActionCard(
+                    icon: Icons.person_add,
+                    title: 'Add Employee',
+                    subtitle: 'Register New',
+                    color: Colors.orange,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EmployeeRegistrationScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 150,
-                child: _buildActionCard(
-                  icon: Icons.check_circle_outline,
-                  title: 'Approve Leave',
-                  subtitle: 'Review Requests',
-                  color: Colors.teal,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LevelApprovalScreen(),
-                      ),
-                    );
-                  },
+                SizedBox(
+                  width: cardWidth,
+                  child: _buildActionCard(
+                    icon: Icons.check_circle_outline,
+                    title: 'Approve Leave',
+                    subtitle: 'Review Requests',
+                    color: Colors.teal,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LevelApprovalScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 150,
-                child: _buildActionCard(
-                  icon: Icons.face,
-                  title: 'Face Attendance',
-                  subtitle: 'Face Recognition',
-                  color: Colors.orange.shade700,
-                  onTap: _navigateToFaceAttendanceScreen,
+                SizedBox(
+                  width: cardWidth,
+                  child: _buildActionCard(
+                    icon: Icons.face,
+                    title: 'Face Attendance',
+                    subtitle: 'Face Recognition',
+                    color: Colors.orange.shade700,
+                    onTap: _navigateToFaceAttendanceScreen,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
       ],
     ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms);
@@ -735,45 +731,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // New Statistics UI - Horizontal Scroll Cards
-              SizedBox(
-                height: 130,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildModernStatCard(
-                      title: 'Total Employees',
-                      value: summaryTotalEmployees.toString(),
-                      icon: Icons.people,
-                      color: Colors.blue,
-                      percentage: null,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildModernStatCard(
-                      title: 'Present Today',
-                      value: summaryPresent.toString(),
-                      icon: Icons.check_circle,
-                      color: Colors.green,
-                      percentage: summaryTotalEmployees > 0 ? (summaryPresent / summaryTotalEmployees * 100).round() : null,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildModernStatCard(
-                      title: 'Absent',
-                      value: summaryAbsent.toString(),
-                      icon: Icons.trending_up,
-                      color: Colors.orange,
-                      percentage: summaryTotalEmployees > 0 ? (summaryAbsent / summaryTotalEmployees * 100).round() : null,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildModernStatCard(
-                      title: 'Late Check In',
-                      value: summaryLate.toString(),
-                      icon: Icons.access_time,
-                      color: Colors.purple,
-                      percentage: summaryTotalEmployees > 0 ? (summaryLate / summaryTotalEmployees * 100).round() : null,
-                    ),
-                  ],
-                ),
+              // New Statistics UI - Grid Layout
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final cardWidth = (constraints.maxWidth - 12) / 2;
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildModernStatCard(
+                        title: 'Total Employees',
+                        value: summaryTotalEmployees.toString(),
+                        icon: Icons.people,
+                        color: const Color(0xFF152A4A),
+                        percentage: null,
+                        width: cardWidth,
+                      ),
+                      _buildModernStatCard(
+                        title: 'Present Today',
+                        value: summaryPresent.toString(),
+                        icon: Icons.check_circle,
+                        color: Colors.green,
+                        percentage: summaryTotalEmployees > 0 ? (summaryPresent / summaryTotalEmployees * 100).round() : null,
+                        width: cardWidth,
+                      ),
+                      _buildModernStatCard(
+                        title: 'Absent',
+                        value: summaryAbsent.toString(),
+                        icon: Icons.trending_up,
+                        color: Colors.orange,
+                        percentage: summaryTotalEmployees > 0 ? (summaryAbsent / summaryTotalEmployees * 100).round() : null,
+                        width: cardWidth,
+                      ),
+                      _buildModernStatCard(
+                        title: 'Late Check In',
+                        value: summaryLate.toString(),
+                        icon: Icons.access_time,
+                        color: Colors.purple,
+                        percentage: summaryTotalEmployees > 0 ? (summaryLate / summaryTotalEmployees * 100).round() : null,
+                        width: cardWidth,
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           );
@@ -814,9 +814,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required IconData icon,
     required Color color,
     int? percentage,
+    double? width,
   }) {
     return Container(
-      width: 160,
+      width: width ?? 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -940,13 +941,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 width: 1,
               ),
             ),
-            child: RefreshIndicator(
-              onRefresh: _refreshData,
-              color: const Color(0xFF2196F3),
-              child: attendanceList.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
+            child: attendanceList.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
                         SizedBox(
                           height: 200,
                           child: Center(
@@ -991,7 +989,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       statusColor = Colors.red;
                       statusIcon = Icons.cancel;
                     } else if (status == 'halfday') {
-                      statusColor = Colors.blue;
+                      statusColor = const Color(0xFF152A4A);
                       statusIcon = Icons.schedule;
                     } else {
                       statusColor = Colors.grey;
@@ -1119,7 +1117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   icon: Icons.login,
                                   label: 'Check In',
                                   time: checkIn,
-                                  color: Colors.blue,
+                                  color: const Color(0xFF152A4A),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -1138,7 +1136,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   },
                 ),
-            ),
           ),
         ),
       ],

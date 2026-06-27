@@ -234,7 +234,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2196F3),
+                  color: const Color(0xFF152A4A),
                 ),
               ),
               const SizedBox(height: 8),
@@ -356,7 +356,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(),
-        prefixIcon: Icon(icon, color: const Color(0xFF2196F3)),
+        prefixIcon: Icon(icon, color: const Color(0xFF152A4A)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -367,7 +367,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF152A4A), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -432,7 +432,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.access_time, color: Color(0xFF2196F3)),
+                  const Icon(Icons.access_time, color: Color(0xFF152A4A)),
                   const SizedBox(width: 8),
                   Text(
                     'Shift',
@@ -544,7 +544,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
     return ElevatedButton(
       onPressed: _isLoading ? null : _updateEmployee,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: const Color(0xFF152A4A),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
@@ -617,4 +617,5 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
     );
   }
 }
+
 

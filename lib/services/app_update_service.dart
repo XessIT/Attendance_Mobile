@@ -119,7 +119,7 @@ class AppUpdateService {
               children: [
                 Icon(
                   isForceUpdate ? Icons.system_update_alt : Icons.system_update,
-                  color: isForceUpdate ? Colors.red : Colors.blue,
+                  color: isForceUpdate ? Colors.red : const Color(0xFF152A4A),
                 ),
                 const SizedBox(width: 8),
                 Text(isForceUpdate ? 'Required Update' : 'Update Available'),
@@ -157,7 +157,7 @@ class AppUpdateService {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isForceUpdate ? Colors.red : Colors.blue,
+                  backgroundColor: isForceUpdate ? Colors.red : const Color(0xFF152A4A),
                   foregroundColor: Colors.white,
                 ),
                 child: Text(isForceUpdate ? 'Update Now' : 'Update'),
@@ -169,3 +169,4 @@ class AppUpdateService {
     );
   }
 }
+

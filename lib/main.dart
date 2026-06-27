@@ -63,13 +63,13 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF2196F3),
+            seedColor: const Color(0xFF152A4A),
             brightness: Brightness.light,
           ),
           useMaterial3: true,
           textTheme: GoogleFonts.poppinsTextTheme(),
           appBarTheme: AppBarTheme(
-            backgroundColor: const Color(0xFF2196F3),
+            backgroundColor: const Color(0xFF152A4A),
             foregroundColor: Colors.white,
             elevation: 0,
             centerTitle: true,
@@ -81,7 +81,7 @@ class MyApp extends StatelessWidget {
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2196F3),
+              backgroundColor: const Color(0xFF152A4A),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -96,7 +96,7 @@ class MyApp extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+              borderSide: const BorderSide(color: Color(0xFF152A4A), width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
@@ -113,7 +113,7 @@ class MyApp extends StatelessWidget {
             ),
             elevation: 8,
             insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            actionTextColor: const Color(0xFF64B5F6),
+            actionTextColor: const Color(0xFF334155),
           ),
         ),
         initialRoute: '/splash',
@@ -129,3 +129,4 @@ class MyApp extends StatelessWidget {
   }
 }
 //leas
+

@@ -139,10 +139,10 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
                     _loadRequests();
                   }
                 },
-                selectedColor: const Color(0xFF2196F3).withOpacity(0.1),
+                selectedColor: const Color(0xFF152A4A).withOpacity(0.1),
                 labelStyle: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: isSelected ? const Color(0xFF2196F3) : Colors.grey[600],
+                  color: isSelected ? const Color(0xFF152A4A) : Colors.grey[600],
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
@@ -570,3 +570,4 @@ class _LevelApprovalScreenState extends State<LevelApprovalScreen> {
     );
   }
 }
+

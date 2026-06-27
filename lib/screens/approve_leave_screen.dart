@@ -180,8 +180,8 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF1565C0), // Dark Blue
-                Color(0xFF42A5F5), // Light Blue
+                Color(0xFF020617), // Dark Blue
+                Color(0xFF1E293B), // Light Blue
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -237,8 +237,8 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
             //     begin: Alignment.topCenter,
             //     end: Alignment.bottomCenter,
             //     colors: [
-            //       const Color(0xFF2196F3),
-            //       const Color(0xFF1976D2),
+            //       const Color(0xFF152A4A),
+            //       const Color(0xFF152A4A),
             //       Colors.white,
             //     ],
             //     stops: const [0.0, 0.3, 1.0],
@@ -402,9 +402,9 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: Color(0x1A0F172A),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.blue[200]!),
+                                border: Border.all(color: Color(0x4D0F172A)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -412,7 +412,7 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                   Icon(
                                     Icons.search_rounded,
                                     size: 14,
-                                    color: Colors.blue[700],
+                                    color: Color(0xFF152A4A),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -421,7 +421,7 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                         : _searchQuery,
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: Colors.blue[700],
+                                      color: Color(0xFF152A4A),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -436,7 +436,7 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                     child: Icon(
                                       Icons.close_rounded,
                                       size: 14,
-                                      color: Colors.blue[700],
+                                      color: Color(0xFF152A4A),
                                     ),
                                   ),
                                 ],
@@ -473,7 +473,7 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                               ],
                             ),
                             child: const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF152A4A)),
                               strokeWidth: 3,
                             ),
                           ),
@@ -550,7 +550,7 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                         ),
                       )
                     : RefreshIndicator(
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF152A4A),
                         backgroundColor: Colors.white,
                         onRefresh: _loadLeaveRequests,
                         child: ListView.builder(
@@ -618,14 +618,14 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF2196F3),
-                            const Color(0xFF1976D2),
+                            const Color(0xFF152A4A),
+                            const Color(0xFF152A4A),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF2196F3).withOpacity(0.3),
+                            color: const Color(0xFF152A4A).withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -685,14 +685,14 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue[50],
+                                  color: Color(0x1A0F172A),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   leave['department']?.toString() ?? '-',
                                   style: GoogleFonts.poppins(
                                     fontSize: 9,
-                                    color: Colors.blue[700],
+                                    color: Color(0xFF152A4A),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -714,14 +714,14 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                const Color(0xFF2196F3),
-                                const Color(0xFF1976D2),
+                                const Color(0xFF152A4A),
+                                const Color(0xFF152A4A),
                               ],
                             ),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF2196F3).withOpacity(0.3),
+                                color: const Color(0xFF152A4A).withOpacity(0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -1007,8 +1007,8 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF2196F3),
-                    const Color(0xFF1976D2),
+                    const Color(0xFF152A4A),
+                    const Color(0xFF152A4A),
                   ],
                 ),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1074,13 +1074,13 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Colors.blue.withOpacity(0.05),
-                            Colors.blue.withOpacity(0.02),
+                            const Color(0xFF152A4A).withOpacity(0.05),
+                            const Color(0xFF152A4A).withOpacity(0.02),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.blue.withOpacity(0.2),
+                          color: const Color(0xFF152A4A).withOpacity(0.2),
                           width: 1,
                         ),
                       ),
@@ -1095,8 +1095,8 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      const Color(0xFF2196F3),
-                                      const Color(0xFF1976D2),
+                                      const Color(0xFF152A4A),
+                                      const Color(0xFF152A4A),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -1117,7 +1117,7 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue[700],
+                                        color: Color(0xFF152A4A),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -1562,13 +1562,13 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
+                color: const Color(0xFF152A4A).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 icon,
                 size: 14,
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
               ),
             ),
             const SizedBox(width: 6),
@@ -1613,8 +1613,8 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF2196F3),
-                    const Color(0xFF1976D2),
+                    const Color(0xFF152A4A),
+                    const Color(0xFF152A4A),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -1778,4 +1778,6 @@ class _ApproveLeaveScreenState extends State<ApproveLeaveScreen> {
     );
   }
 }
+
+
 

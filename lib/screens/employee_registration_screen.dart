@@ -376,7 +376,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       hintText: hintText,
       helperText: helperText,
       labelStyle: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 13),
-      prefixIcon: Icon(icon, color: iconColor ?? const Color(0xFF2196F3), size: 20),
+      prefixIcon: Icon(icon, color: iconColor ?? const Color(0xFF152A4A), size: 20),
       filled: true,
       fillColor: fillColor ?? Colors.grey.shade50,
       border: OutlineInputBorder(
@@ -389,7 +389,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF2196F3), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFF152A4A), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -409,10 +409,10 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF2196F3).withOpacity(0.1),
+            color: const Color(0xFF152A4A).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: const Color(0xFF2196F3), size: 20),
+          child: Icon(icon, color: const Color(0xFF152A4A), size: 20),
         ),
         const SizedBox(width: 12),
         Text(
@@ -456,13 +456,13 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                 color: Colors.grey.shade50,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _faceImage != null ? const Color(0xFF2196F3) : Colors.grey.shade300, 
+                  color: _faceImage != null ? const Color(0xFF152A4A) : Colors.grey.shade300, 
                   width: 3,
                 ),
                 boxShadow: [
                   if (_faceImage != null)
                     BoxShadow(
-                      color: const Color(0xFF2196F3).withOpacity(0.2),
+                      color: const Color(0xFF152A4A).withOpacity(0.2),
                       blurRadius: 12,
                       spreadRadius: 2,
                     ),
@@ -528,7 +528,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
+                  backgroundColor: const Color(0xFF152A4A),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -578,7 +578,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
+                      backgroundColor: const Color(0xFF152A4A),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -871,7 +871,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: const ColorScheme.light(
-                      primary: Color(0xFF2196F3),
+                      primary: Color(0xFF152A4A),
                       onPrimary: Colors.white,
                       onSurface: Colors.black,
                     ),
@@ -907,7 +907,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                 return Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: const ColorScheme.light(
-                      primary: Color(0xFF2196F3),
+                      primary: Color(0xFF152A4A),
                       onPrimary: Colors.white,
                       onSurface: Colors.black,
                     ),
@@ -935,8 +935,8 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
         TextFormField(
           controller: _passwordController,
           readOnly: true,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF1565C0)),
-          decoration: _buildInputDecoration('Password (Auto-generated)', Icons.lock, helperText: 'Generated from date of joining (YYYYMMDD)', fillColor: const Color(0xFFE3F2FD), iconColor: const Color(0xFF1565C0)),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF020617)),
+          decoration: _buildInputDecoration('Password (Auto-generated)', Icons.lock, helperText: 'Generated from date of joining (YYYYMMDD)', fillColor: const Color(0xFFE3F2FD), iconColor: const Color(0xFF020617)),
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Password is required';
@@ -1099,10 +1099,10 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF2196F3).withOpacity(0.1),
+              color: const Color(0xFF152A4A).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: const Color(0xFF2196F3).withOpacity(0.3),
+                color: const Color(0xFF152A4A).withOpacity(0.3),
               ),
             ),
             child: Row(
@@ -1110,7 +1110,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                 const Icon(
                   Icons.access_time,
                   size: 20,
-                  color: Color(0xFF2196F3),
+                  color: Color(0xFF152A4A),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -1118,7 +1118,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
                     'Selected: ${_selectedShift!.name} (${_selectedShift!.formattedFromTime} - ${_selectedShift!.formattedToTime})',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: const Color(0xFF2196F3),
+                      color: const Color(0xFF152A4A),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -1166,7 +1166,7 @@ class _EmployeeRegistrationScreenState extends State<EmployeeRegistrationScreen>
             child: ElevatedButton(
               onPressed: _isLoading ? null : _registerEmployee,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2196F3),
+                backgroundColor: const Color(0xFF152A4A),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(

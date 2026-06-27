@@ -5,9 +5,9 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // App-aligned accent colors (login / premium app bar)
-const Color _kFpBlueDark = Color(0xFF1565C0);
-const Color _kFpBlueLight = Color(0xFF42A5F5);
-const Color _kFpIndigo = Color(0xFF667EEA);
+const Color _kFpBlueDark = Color(0xFF020617);
+const Color _kFpBlueLight = Color(0xFF1E293B);
+const Color _kFpIndigo = Color(0xFF152A4A);
 
 class BiometricAuthService {
   static const String biometricMobileKey = 'biometric_mobile_number';
@@ -570,4 +570,7 @@ Future<void> showFingerprintLoginOptionsDialog(BuildContext context) async {
     },
   );
 }
+
+
+
 

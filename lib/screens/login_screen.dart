@@ -311,12 +311,12 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green.shade600,
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height - 120 > 0 
-                    ? MediaQuery.of(context).size.height - 120 
+                bottom: MediaQuery.of(context).size.height - 170 > 0 
+                    ? MediaQuery.of(context).size.height - 170 
                     : 0,
                 right: 20,
                 left: MediaQuery.of(context).size.width > 240 
-                    ? MediaQuery.of(context).size.width - 200 
+                    ? MediaQuery.of(context).size.width - 220 
                     : 20,
               ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -458,7 +458,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF1565C0), Color(0xFF2196F3)],
+                    colors: [Color(0xFF020617), Color(0xFF152A4A)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -467,10 +467,47 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.face_retouching_natural,
-                        size: 60,
-                        color: Colors.white,
+                      SizedBox(
+                        height: 90,
+                        width: 90,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Gradient Ring
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF3B82F6),
+                                  width: 6,
+                                ),
+                              ),
+                            ),
+                            // Person Icon
+                            const Icon(
+                              Icons.person,
+                              size: 56,
+                              color: Colors.white,
+                            ),
+                            // Checkmark Overlap
+                            Positioned(
+                              bottom: -2,
+                              right: -2,
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF152A4A), // Match the new background
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(2),
+                                child: const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF3B82F6),
+                                  size: 32,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -510,7 +547,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildInputField(
                       controller: _mobileNumberController,
                       hintText: 'Mobile Number',
-                      icon: Icons.person_outline,
+                      icon: Icons.smartphone,
                       isChecking: _isCheckingMobile,
                       keyboardType: TextInputType.phone,
                       inputFormatters: [
@@ -536,7 +573,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             hintText: 'Company',
                             hintStyle: GoogleFonts.poppins(color: Colors.grey[400], fontSize: 14),
-                            prefixIcon: const Icon(Icons.business_outlined, color: Color(0xFF90CDF4)),
+                            prefixIcon: const Icon(Icons.business_outlined, color: Color(0xFF334155)),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
                           ),
@@ -598,7 +635,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: OutlinedButton(
                         onPressed: _isLoading ? null : _login,
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF2196F3), width: 1.5),
+                          side: const BorderSide(color: Color(0xFF152A4A), width: 1.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -609,7 +646,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF152A4A)),
                                 ),
                               )
                             : Text(
@@ -617,7 +654,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF2196F3),
+                                  color: const Color(0xFF152A4A),
                                 ),
                               ),
                       ),
@@ -660,7 +697,7 @@ class _LoginScreenState extends State<LoginScreen> {
       borderRadius: BorderRadius.circular(30),
       boxShadow: [
         BoxShadow(
-          color: const Color(0xFF667EEA).withOpacity(0.08),
+          color: const Color(0xFF152A4A).withOpacity(0.08),
           blurRadius: 20,
           offset: const Offset(0, 10),
         ),
@@ -701,7 +738,7 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(16),
             child: Icon(
               icon,
-              color: const Color(0xFF90CDF4),
+              color: const Color(0xFF334155),
             ),
           ),
           suffixIcon: isChecking
@@ -712,7 +749,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1565C0)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF020617)),
                     ),
                   ),
                 )
@@ -751,3 +788,5 @@ class HeaderWaveClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
+
+

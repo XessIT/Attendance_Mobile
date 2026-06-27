@@ -138,7 +138,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                           ElevatedButton(
                             onPressed: _loadDashboardData,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2196F3),
+                              backgroundColor: const Color(0xFF152A4A),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                               shape: RoundedRectangleBorder(
@@ -184,7 +184,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       //     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
       //   ),
       //   icon: const Icon(Icons.camera_alt),
-      //   backgroundColor: const Color(0xFF2196F3),
+      //   backgroundColor: const Color(0xFF152A4A),
       // ),
     );
   }
@@ -295,14 +295,14 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+          colors: [Color(0xFF152A4A), Color(0xFF152A4A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2196F3).withOpacity(0.3),
+            color: const Color(0xFF152A4A).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -324,7 +324,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1976D2),
+                  color: const Color(0xFF152A4A),
                 ),
               ),
             ),
@@ -422,12 +422,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2196F3).withOpacity(0.1),
+                      color: const Color(0xFF152A4A).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.today,
-                      color: Color(0xFF2196F3),
+                      color: Color(0xFF152A4A),
                       size: 24,
                     ),
                   ),
@@ -583,12 +583,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
+                color: const Color(0xFF152A4A).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.calendar_month,
-                color: Color(0xFF2196F3),
+                color: Color(0xFF152A4A),
                 size: 24,
               ),
             ),
@@ -642,7 +642,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 'Half Days',
                 stats['halfDays']?.toString() ?? '0',
                 Icons.timelapse,
-                const Color(0xFF2196F3),
+                const Color(0xFF152A4A),
               ),
             ),
           ],
@@ -841,12 +841,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2196F3).withOpacity(0.1),
+                  color: const Color(0xFF152A4A).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.beach_access,
-                  color: Color(0xFF2196F3),
+                  color: Color(0xFF152A4A),
                   size: 24,
                 ),
               ),
@@ -875,7 +875,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildLeaveItem('Casual', leaves['casual']?.toString() ?? '0', Colors.blue),
+                _buildLeaveItem('Casual', leaves['casual']?.toString() ?? '0', const Color(0xFF152A4A)),
                 _buildLeaveItem('Medical', leaves['medical']?.toString() ?? '0', Colors.pink),
                 _buildLeaveItem('Other', leaves['other']?.toString() ?? '0', Colors.orange),
               ],
@@ -1014,4 +1014,6 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     return NoInternetWidget(onRetry: _loadDashboardData);
   }
 }
+
+
 

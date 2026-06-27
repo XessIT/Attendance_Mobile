@@ -116,8 +116,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF2196F3),
-              Color(0xFF1976D2),
+              Color(0xFF152A4A),
+              Color(0xFF152A4A),
             ],
           ),
         ),
@@ -202,7 +202,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2196F3),
+                            color: const Color(0xFF152A4A),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -410,7 +410,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   _agreeToTerms = value ?? false;
                                 });
                               },
-                              activeColor: const Color(0xFF2196F3),
+                              activeColor: const Color(0xFF152A4A),
                             ),
                             Expanded(
                               child: RichText(
@@ -424,7 +424,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     TextSpan(
                                       text: 'Terms and Conditions',
                                       style: GoogleFonts.poppins(
-                                        color: const Color(0xFF2196F3),
+                                        color: const Color(0xFF152A4A),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -432,7 +432,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     TextSpan(
                                       text: 'Privacy Policy',
                                       style: GoogleFonts.poppins(
-                                        color: const Color(0xFF2196F3),
+                                        color: const Color(0xFF152A4A),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -451,7 +451,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _register,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2196F3),
+                              backgroundColor: const Color(0xFF152A4A),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -497,7 +497,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               child: Text(
                                 'Sign In',
                                 style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2196F3),
+                                  color: const Color(0xFF152A4A),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -518,3 +518,5 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 }
+
+

@@ -43,9 +43,9 @@ class _EmployeeLeaveScreenState extends State<EmployeeLeaveScreen> {
             Container(
               color: Colors.white,
               child: TabBar(
-                labelColor: const Color(0xFF2196F3),
+                labelColor: const Color(0xFF152A4A),
                 unselectedLabelColor: Colors.grey,
-                indicatorColor: const Color(0xFF2196F3),
+                indicatorColor: const Color(0xFF152A4A),
                 labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: isSmallDevice ? 12 : 14),
                 tabs: [
                   const Tab(text: 'Apply Leave'),
@@ -285,16 +285,16 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                         ),
                         calendarStyle: CalendarStyle(
                           todayDecoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.3),
+                            color: const Color(0xFF152A4A).withOpacity(0.3),
                             shape: BoxShape.circle,
                           ),
                           rangeHighlightColor: const Color(0xFFE3F2FD),
                           rangeStartDecoration: const BoxDecoration(
-                            color: Color(0xFF2196F3),
+                            color: Color(0xFF152A4A),
                             shape: BoxShape.circle,
                           ),
                           rangeEndDecoration: const BoxDecoration(
-                            color: Color(0xFF2196F3),
+                            color: Color(0xFF152A4A),
                             shape: BoxShape.circle,
                           ),
                           defaultTextStyle: GoogleFonts.poppins(),
@@ -310,7 +310,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                               ? 'Selected: ${DateFormat('dd MMM').format(_rangeStart!)} - ${DateFormat('dd MMM').format(_rangeEnd!)}'
                               : 'Selected: ${DateFormat('dd MMM').format(_rangeStart!)}',
                           style: GoogleFonts.poppins(
-                            color: const Color(0xFF2196F3),
+                            color: const Color(0xFF152A4A),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -400,17 +400,17 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.05),
+                          color: const Color(0xFF152A4A).withOpacity(0.05),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                             Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                             Icon(Icons.info_outline, size: 16, color: Color(0xFF152A4A)),
                              const SizedBox(width: 8),
                              Expanded(
                                child: Text(
                                  _calculateDurationText(),
-                                 style: GoogleFonts.poppins(fontSize: 11, color: Colors.blue[900]),
+                                 style: GoogleFonts.poppins(fontSize: 11, color: Color(0xFF152A4A)),
                                ),
                              ),
                           ],
@@ -423,7 +423,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                     if (_leaveType == 'Medical') ...[
                       Row(
                         children: [
-                          Icon(Icons.medical_services, size: 16, color: Colors.blue[700]),
+                          Icon(Icons.medical_services, size: 16, color: Color(0xFF152A4A)),
                           const SizedBox(width: 8),
                           Text(
                             'Medical Certificate',
@@ -443,14 +443,14 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: _certificateFile != null ? Colors.green : Colors.blue.withOpacity(0.3),
+                              color: _certificateFile != null ? Colors.green : const Color(0xFF152A4A).withOpacity(0.3),
                               style: BorderStyle.solid,
                               width: 1.5,
                             ),
                             borderRadius: BorderRadius.circular(16),
                             color: _certificateFile != null 
                                 ? Colors.green.withOpacity(0.05) 
-                                : Colors.blue.withOpacity(0.05),
+                                : const Color(0xFF152A4A).withOpacity(0.05),
                           ),
                           child: Column(
                             children: [
@@ -498,13 +498,13 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                                     color: Colors.white,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.add_a_photo_outlined, color: Colors.blue[400], size: 30),
+                                  child: Icon(Icons.add_a_photo_outlined, color: Color(0x990F172A), size: 30),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
                                   'Tap to upload Medical Document',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.blue[700], 
+                                    color: Color(0xFF152A4A), 
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500
                                   ),
@@ -556,7 +556,7 @@ class _ApplyLeaveTabState extends State<ApplyLeaveTab> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _applyLeave,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2196F3),
+                          backgroundColor: const Color(0xFF152A4A),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -750,7 +750,7 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                           labelStyle: GoogleFonts.poppins(
                             fontSize: 13,
                             color: _selectedStatus == status
-                                ? const Color(0xFF2196F3)
+                                ? const Color(0xFF152A4A)
                                 : Colors.grey[700],
                             fontWeight: _selectedStatus == status
                                 ? FontWeight.w600
@@ -760,7 +760,7 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                             borderRadius: BorderRadius.circular(20),
                             side: BorderSide(
                               color: _selectedStatus == status
-                                  ? const Color(0xFF2196F3)
+                                  ? const Color(0xFF152A4A)
                                   : Colors.grey[300]!,
                             ),
                           ),
@@ -830,11 +830,11 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
             calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
               todayDecoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.3),
+                color: const Color(0xFF152A4A).withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
               selectedDecoration: const BoxDecoration(
-                color: Color(0xFF2196F3),
+                color: Color(0xFF152A4A),
                 shape: BoxShape.circle,
               ),
               defaultTextStyle: GoogleFonts.poppins(),
@@ -860,13 +860,13 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: const Color(0xFF152A4A).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Icon(
                           Icons.info_outline,
                           size: 18,
-                          color: Colors.blue,
+                          color: const Color(0xFF152A4A),
                         ),
                       ),
                     ),
@@ -946,8 +946,8 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                 final key = DateTime.utc(day.year, day.month, day.day);
                 final leavesOnDay = _leavesMap[key];
                 
-                Color backgroundColor = Colors.blue.withOpacity(0.3);
-                Color textColor = Colors.blue;
+                Color backgroundColor = const Color(0xFF152A4A).withOpacity(0.3);
+                Color textColor = const Color(0xFF152A4A);
                 IconData? statusIcon;
                 FontWeight fontWeight = FontWeight.bold;
                 
@@ -1012,7 +1012,7 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
                 final key = DateTime.utc(day.year, day.month, day.day);
                 final leavesOnDay = _leavesMap[key];
                 
-                Color backgroundColor = const Color(0xFF2196F3);
+                Color backgroundColor = const Color(0xFF152A4A);
                 Color textColor = Colors.white;
                 IconData? statusIcon;
                 
@@ -1214,7 +1214,7 @@ class _MyLeavesTabState extends State<MyLeavesTab> {
             child: Text(
               'Got it!',
               style: GoogleFonts.poppins(
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1612,11 +1612,11 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withOpacity(0.1),
+                    color: const Color(0xFF152A4A).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF152A4A)),
                     strokeWidth: 3,
                   ),
                 ),
@@ -1704,7 +1704,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[700],
+                color: Color(0xFF152A4A),
               ),
             ),
             const SizedBox(height: 8),
@@ -1725,8 +1725,8 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF2196F3),
-                    const Color(0xFF1976D2),
+                    const Color(0xFF152A4A),
+                    const Color(0xFF152A4A),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -1799,8 +1799,8 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
           //       begin: Alignment.topLeft,
           //       end: Alignment.bottomRight,
           //       colors: [
-          //         const Color(0xFF2196F3),
-          //         const Color(0xFF1976D2),
+          //         const Color(0xFF152A4A),
+          //         const Color(0xFF152A4A),
           //       ],
           //     ),
           //     borderRadius: BorderRadius.circular(12),
@@ -1856,13 +1856,13 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF2196F3).withOpacity(0.1),
-            const Color(0xFF1976D2).withOpacity(0.05),
+            const Color(0xFF152A4A).withOpacity(0.1),
+            const Color(0xFF152A4A).withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF2196F3).withOpacity(0.2),
+          color: const Color(0xFF152A4A).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -1878,8 +1878,8 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF2196F3),
-                      const Color(0xFF1976D2),
+                      const Color(0xFF152A4A),
+                      const Color(0xFF152A4A),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -1900,7 +1900,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
+                        color: Color(0xFF152A4A),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -2013,7 +2013,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: Color(0x1A0F172A),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -2021,7 +2021,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.blue[700],
+                                  color: Color(0xFF152A4A),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -2061,7 +2061,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: Color(0x1A0F172A),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -2083,7 +2083,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
                             'Allowance',
                             balance.monthlyAllowanceText,
                             Icons.calendar_today_rounded,
-                            Colors.blue,
+                            const Color(0xFF152A4A),
                           ),
                         ),
                         Expanded(
@@ -2223,7 +2223,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
         children: [
           Row(
             children: [
-              Icon(Icons.people_outline_rounded, size: 20, color: Colors.blue[700]),
+              Icon(Icons.people_outline_rounded, size: 20, color: Color(0xFF152A4A)),
               const SizedBox(width: 8),
               Text(
                 'Select Employee',
@@ -2303,7 +2303,7 @@ class _LeaveBalanceTabState extends State<LeaveBalanceTab> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Attendance ${attendance['status']} for selected employee'),
-              backgroundColor: attendance['status'] == 'Checked Out' ? Colors.green : Colors.blue,
+              backgroundColor: attendance['status'] == 'Checked Out' ? Colors.green : const Color(0xFF152A4A),
               duration: const Duration(seconds: 2),
             ),
           );
@@ -2442,7 +2442,7 @@ class _ApplyPermissionTabState extends State<ApplyPermissionTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Apply Permission', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1565C0))),
+            Text('Apply Permission', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF020617))),
             const SizedBox(height: 24),
             _buildTile(label: 'Date', value: DateFormat('dd MMM yyyy').format(_selectedDate), icon: Icons.calendar_today, onTap: () => _selectDate(context)),
             const SizedBox(height: 16),
@@ -2466,7 +2466,7 @@ class _ApplyPermissionTabState extends State<ApplyPermissionTab> {
               height: 54,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitRequest,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2196F3), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF152A4A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text('Submit Request', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
               ),
             ),
@@ -2494,3 +2494,5 @@ class _ApplyPermissionTabState extends State<ApplyPermissionTab> {
     );
   }
 }
+
+

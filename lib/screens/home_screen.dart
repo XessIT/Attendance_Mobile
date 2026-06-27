@@ -177,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   Expanded(
                     child: OutlinedButton(
+                      autofocus: true,
                       onPressed: () => Navigator.of(context).pop(false),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -315,8 +316,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -328,8 +329,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor:  Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -341,8 +342,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -354,8 +355,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -367,8 +368,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
         ],
@@ -376,3 +377,4 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 }
+

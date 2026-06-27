@@ -256,7 +256,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2196F3), // Header background & selected day
+              primary: Color(0xFF152A4A), // Header background & selected day
               onPrimary: Colors.white,    // Header text
               onSurface: Colors.black87,  // Body text
             ),
@@ -266,7 +266,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
-              headerBackgroundColor: const Color(0xFF2196F3),
+              headerBackgroundColor: const Color(0xFF152A4A),
               headerForegroundColor: Colors.white,
               backgroundColor: Colors.white,
               dayStyle: GoogleFonts.poppins(),
@@ -305,8 +305,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF2196F3),
-                    const Color(0xFF1976D2),
+                    const Color(0xFF152A4A),
+                    const Color(0xFF152A4A),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -349,12 +349,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _selectedEmployeeId == null
-                      ? const Color(0xFF2196F3)
+                      ? const Color(0xFF152A4A)
                       : Colors.grey[300]!,
                   width: _selectedEmployeeId == null ? 2 : 1,
                 ),
                 color: _selectedEmployeeId == null
-                    ? const Color(0xFF2196F3).withOpacity(0.1)
+                    ? const Color(0xFF152A4A).withOpacity(0.1)
                     : Colors.white,
               ),
               child: Material(
@@ -380,11 +380,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _selectedEmployeeId == null
-                                ? const Color(0xFF2196F3)
+                                ? const Color(0xFF152A4A)
                                 : Colors.transparent,
                             border: Border.all(
                               color: _selectedEmployeeId == null
-                                  ? const Color(0xFF2196F3)
+                                  ? const Color(0xFF152A4A)
                                   : Colors.grey[400]!,
                               width: 2,
                             ),
@@ -407,7 +407,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   ? FontWeight.w600
                                   : FontWeight.w500,
                               color: _selectedEmployeeId == null
-                                  ? const Color(0xFF2196F3)
+                                  ? const Color(0xFF152A4A)
                                   : Colors.grey[700],
                             ),
                           ),
@@ -427,12 +427,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF2196F3)
+                        ? const Color(0xFF152A4A)
                         : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
                   color: isSelected
-                      ? const Color(0xFF2196F3).withOpacity(0.1)
+                      ? const Color(0xFF152A4A).withOpacity(0.1)
                       : Colors.white,
                 ),
                 child: Material(
@@ -458,11 +458,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isSelected
-                                  ? const Color(0xFF2196F3)
+                                  ? const Color(0xFF152A4A)
                                   : Colors.transparent,
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFF2196F3)
+                                    ? const Color(0xFF152A4A)
                                     : Colors.grey[400]!,
                                 width: 2,
                               ),
@@ -485,7 +485,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                     ? FontWeight.w600
                                     : FontWeight.w500,
                                 color: isSelected
-                                    ? const Color(0xFF2196F3)
+                                    ? const Color(0xFF152A4A)
                                     : Colors.grey[700],
                               ),
                             ),
@@ -496,7 +496,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2196F3).withOpacity(0.1),
+                              color: const Color(0xFF152A4A).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -504,7 +504,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF2196F3),
+                                color: const Color(0xFF152A4A),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -633,8 +633,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       //     begin: Alignment.topCenter,
       //     end: Alignment.bottomCenter,
       //     colors: [
-      //       const Color(0xFF2196F3),
-      //       const Color(0xFF1976D2),
+      //       const Color(0xFF152A4A),
+      //       const Color(0xFF152A4A),
       //       Colors.white,
       //     ],
       //     stops: const [0.0, 0.3, 1.0],
@@ -668,7 +668,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         children: [
                           // Container(
                           //   padding: const EdgeInsets.all(8),
-                          //   child: const Icon(Icons.calendar_today, color: Color(0xFF2196F3), size: 20),
+                          //   child: const Icon(Icons.calendar_today, color: Color(0xFF152A4A), size: 20),
                           // ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -688,7 +688,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(Icons.calendar_month,
-                                color: Color(0xFF2196F3), size: 20),
+                                color: Color(0xFF152A4A), size: 20),
                           ),
                         ],
                       ),
@@ -862,9 +862,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: Color(0x1A0F172A),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.blue[200]!),
+                          border: Border.all(color: Color(0x4D0F172A)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -872,7 +872,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             Icon(
                               Icons.search_rounded,
                               size: 14,
-                              color: Colors.blue[700],
+                              color: Color(0xFF152A4A),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -881,7 +881,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   : _searchQuery,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: Colors.blue[700],
+                                color: Color(0xFF152A4A),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -895,7 +895,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                               child: Icon(
                                 Icons.close_rounded,
                                 size: 14,
-                                color: Colors.blue[700],
+                                color: Color(0xFF152A4A),
                               ),
                             ),
                           ],
@@ -1003,7 +1003,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               child: _buildStatCard(
                 title: 'Half Day',
                 value: halfDay.toString(),
-                color: Colors.blue,
+                color: const Color(0xFF152A4A),
                 icon: Icons.schedule,
               ),
             ),
@@ -1259,7 +1259,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       icon: Icons.login,
                       label: 'Check In',
                       time: checkIn,
-                      color: Colors.blue,
+                      color: const Color(0xFF152A4A),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1340,20 +1340,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: const Color(0xFF152A4A).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    border: Border.all(color: const Color(0xFF152A4A).withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.schedule,
-                          size: 14, color: Colors.blue.shade700),
+                          size: 14, color: const Color(0xFF152A4A)),
                       const SizedBox(width: 8),
                       Text(
                         'Half Day',
                         style: GoogleFonts.poppins(
                           fontSize: 9,
-                          color: Colors.blue.shade700,
+                          color: const Color(0xFF152A4A),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1763,3 +1763,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 }
+
+
+

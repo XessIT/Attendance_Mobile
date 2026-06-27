@@ -64,8 +64,8 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF1565C0), // Dark Blue
-                Color(0xFF42A5F5), // Light Blue
+                Color(0xFF020617), // Dark Blue
+                Color(0xFF1E293B), // Light Blue
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -161,11 +161,11 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withOpacity(0.1),
+                    color: const Color(0xFF152A4A).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF152A4A)),
                     strokeWidth: 3,
                   ),
                 ),
@@ -231,7 +231,7 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[700],
+                color: Color(0xFF152A4A),
               ),
             ),
             const SizedBox(height: 8),
@@ -252,8 +252,8 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF2196F3),
-                    const Color(0xFF1976D2),
+                    const Color(0xFF152A4A),
+                    const Color(0xFF152A4A),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -316,13 +316,13 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF2196F3).withOpacity(0.1),
-            const Color(0xFF1976D2).withOpacity(0.05),
+            const Color(0xFF152A4A).withOpacity(0.1),
+            const Color(0xFF152A4A).withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF2196F3).withOpacity(0.2),
+          color: const Color(0xFF152A4A).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -338,8 +338,8 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF2196F3),
-                      const Color(0xFF1976D2),
+                      const Color(0xFF152A4A),
+                      const Color(0xFF152A4A),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -360,7 +360,7 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
+                        color: Color(0xFF152A4A),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -459,7 +459,7 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue[50],
+                                color: Color(0x1A0F172A),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -467,7 +467,7 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.blue[700],
+                                  color: Color(0xFF152A4A),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -486,7 +486,7 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: Color(0x1A0F172A),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -508,7 +508,7 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
                             'Allowance',
                             balance.monthlyAllowanceText,
                             Icons.calendar_today_rounded,
-                            Colors.blue,
+                            const Color(0xFF152A4A),
                           ),
                         ),
                         Expanded(
@@ -622,3 +622,5 @@ class _LeaveBalanceDetailScreenState extends State<LeaveBalanceDetailScreen> {
     );
   }
 }
+
+

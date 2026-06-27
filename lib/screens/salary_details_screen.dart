@@ -42,8 +42,8 @@ class SalaryDetailsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF1976D2), // Dark Blue
-                Color(0xFF42A5F5), // Light Blue
+                Color(0xFF152A4A), // Dark Blue
+                Color(0xFF1E293B), // Light Blue
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -54,7 +54,7 @@ class SalaryDetailsScreen extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2196F3).withOpacity(0.3),
+                color: const Color(0xFF152A4A).withOpacity(0.3),
                 blurRadius: 15,
                 offset: const Offset(0, 5),
               ),
@@ -162,12 +162,12 @@ class SalaryDetailsScreen extends StatelessWidget {
                 _buildDetailRow('Half Days', attendance['halfDays'].toString(),
                     valueColor: Colors.amber),
                 _buildDetailRow('Holiday Days', attendance['holidayDays'].toString(),
-                    valueColor: Colors.blue),
+                    valueColor: const Color(0xFF152A4A)),
                 _buildDetailRow('Leave Days', attendance['leaveDays'].toString(),
                     valueColor: Colors.purple),
                 _buildDetailRow('Working Days', attendance['workingDays'].toString()),
                 _buildDetailRow('Attendance Rate', '${attendance['attendancePercentage']}%',
-                    isBold: true, valueColor: const Color(0xFF2196F3)),
+                    isBold: true, valueColor: const Color(0xFF152A4A)),
                 
                 const Divider(height: 32),
                 
@@ -192,7 +192,7 @@ class SalaryDetailsScreen extends StatelessWidget {
                     icon: const Icon(Icons.list_alt_rounded),
                     label: const Text('View Full Details'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2196F3),
+                      backgroundColor: const Color(0xFF152A4A),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -225,7 +225,7 @@ class SalaryDetailsScreen extends StatelessWidget {
                     isBold: true, valueColor: Colors.red),
                 const Divider(height: 24),
                 _buildDetailRow('Net Payable', formatIndianCurrency(double.tryParse(salary['netPayableSalary'].toString()) ?? 0.0), 
-                    isBold: true, valueColor: const Color(0xFF1565C0)),
+                    isBold: true, valueColor: const Color(0xFF020617)),
               ],
             ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms),
             
@@ -244,7 +244,7 @@ class SalaryDetailsScreen extends StatelessWidget {
                 _buildDetailRow('Deductions', formatIndianCurrency(double.tryParse(monthlyBreakdown['deductions']['total'].toString()) ?? 0.0),
                     valueColor: Colors.red),
                 _buildDetailRow('Net Salary', formatIndianCurrency(double.tryParse(monthlyBreakdown['netSalary'].toString()) ?? 0.0),
-                    isBold: true, valueColor: const Color(0xFF1565C0)),
+                    isBold: true, valueColor: const Color(0xFF020617)),
               ],
             ).animate().fadeIn(delay: 500.ms, duration: 600.ms).slideY(begin: 0.3, duration: 600.ms),
             
@@ -296,7 +296,7 @@ class SalaryDetailsScreen extends StatelessWidget {
               textAlign: TextAlign.right,
               style: GoogleFonts.poppins(
                 fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-                color: valueColor ?? (isBold ? const Color(0xFF2196F3) : Colors.grey.shade800),
+                color: valueColor ?? (isBold ? const Color(0xFF152A4A) : Colors.grey.shade800),
                 fontSize: 15,
               ),
             ),
@@ -317,9 +317,9 @@ class SalaryDetailsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF1976D2),
-            Color(0xFF2196F3),
-            Color(0xFF64B5F6),
+            Color(0xFF152A4A),
+            Color(0xFF152A4A),
+            Color(0xFF334155),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -327,7 +327,7 @@ class SalaryDetailsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2196F3).withOpacity(0.3),
+            color: const Color(0xFF152A4A).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -453,7 +453,7 @@ class SalaryDetailsScreen extends StatelessWidget {
   //             ),
   //           ),
   //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: const Color(0xFF1565C0),
+  //             backgroundColor: const Color(0xFF020617),
   //             foregroundColor: Colors.white,
   //             padding: const EdgeInsets.symmetric(vertical: 14),
   //             shape: RoundedRectangleBorder(
@@ -477,8 +477,8 @@ class SalaryDetailsScreen extends StatelessWidget {
   //           ),
   //           style: ElevatedButton.styleFrom(
   //             backgroundColor: Colors.white,
-  //             foregroundColor: const Color(0xFF1565C0),
-  //             side: const BorderSide(color: Color(0xFF1565C0)),
+  //             foregroundColor: const Color(0xFF020617),
+  //             side: const BorderSide(color: Color(0xFF020617)),
   //             padding: const EdgeInsets.symmetric(vertical: 14),
   //             shape: RoundedRectangleBorder(
   //               borderRadius: BorderRadius.circular(12),
@@ -498,7 +498,7 @@ class SalaryDetailsScreen extends StatelessWidget {
           'Payslip download started...',
           style: GoogleFonts.poppins(),
         ),
-        backgroundColor: const Color(0xFF1565C0),
+        backgroundColor: const Color(0xFF020617),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -514,7 +514,7 @@ class SalaryDetailsScreen extends StatelessWidget {
           'Share functionality coming soon!',
           style: GoogleFonts.poppins(),
         ),
-        backgroundColor: const Color(0xFF1565C0),
+        backgroundColor: const Color(0xFF020617),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -550,7 +550,7 @@ class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2196F3).withOpacity(0.06),
+            color: const Color(0xFF152A4A).withOpacity(0.06),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -577,12 +577,12 @@ class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                        color: const Color(0xFF152A4A).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         widget.icon,
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF152A4A),
                         size: 22,
                       ),
                     ),
@@ -626,3 +626,5 @@ class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
     );
   }
 }
+
+

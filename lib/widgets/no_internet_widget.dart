@@ -71,7 +71,7 @@ class NoInternetWidget extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2196F3),
+                  backgroundColor: const Color(0xFF152A4A),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -100,3 +100,4 @@ class NoInternetWidget extends StatelessWidget {
     );
   }
 }
+

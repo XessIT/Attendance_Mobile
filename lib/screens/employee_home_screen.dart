@@ -148,6 +148,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
                 children: [
                   Expanded(
                     child: OutlinedButton(
+                      autofocus: true,
                       onPressed: () => Navigator.of(context).pop(false),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -283,8 +284,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -296,8 +297,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -309,8 +310,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
           BottomNavyBarItem(
@@ -322,8 +323,8 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
                 fontWeight: FontWeight.w500,
               ),
             ),
-            activeColor: const Color(0xFF2196F3),
-            inactiveColor: Colors.grey,
+            activeColor: const Color(0xFF152A4A),
+            inactiveColor: const Color(0xFF152A4A),
             textAlign: TextAlign.center,
           ),
         ],
@@ -331,3 +332,4 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
     );
   }
 }
+

@@ -77,30 +77,52 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2196F3),
+      backgroundColor: const Color(0xFF152A4A),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App Icon
-            Container(
-              width: 120,
+            // App Logo Match from Login Screen
+            SizedBox(
               height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+              width: 120,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Gradient Ring
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF3B82F6),
+                        width: 8,
+                      ),
+                    ),
+                  ),
+                  // Person Icon
+                  const Icon(
+                    Icons.person,
+                    size: 74,
+                    color: Colors.white,
+                  ),
+                  // Checkmark Overlap
+                  Positioned(
+                    bottom: -2,
+                    right: -2,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF152A4A),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: const Icon(
+                        Icons.check_circle,
+                        color: Color(0xFF3B82F6),
+                        size: 36,
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              child: const Icon(
-                Icons.face,
-                size: 60,
-                color: Color(0xFF2196F3),
               ),
             )
                 .animate()

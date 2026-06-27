@@ -30,7 +30,7 @@ class _TestDashboardScreenState extends State<TestDashboardScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xFF2196F3),
+        backgroundColor: const Color(0xFF152A4A),
       ),
       body: Center(
         child: Column(
@@ -39,7 +39,7 @@ class _TestDashboardScreenState extends State<TestDashboardScreen> {
             const Icon(
               Icons.dashboard,
               size: 100,
-              color: Color(0xFF2196F3),
+              color: Color(0xFF152A4A),
             ),
             const SizedBox(height: 20),
             Text(
@@ -70,7 +70,7 @@ class _TestDashboardScreenState extends State<TestDashboardScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2196F3),
+                backgroundColor: const Color(0xFF152A4A),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
@@ -87,3 +87,4 @@ class _TestDashboardScreenState extends State<TestDashboardScreen> {
     );
   }
 }
+

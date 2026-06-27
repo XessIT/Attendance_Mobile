@@ -89,8 +89,8 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFF1976D2),
-                Color(0xFF2196F3),
+                Color(0xFF152A4A),
+                Color(0xFF152A4A),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -101,7 +101,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2196F3).withOpacity(0.3),
+                color: const Color(0xFF152A4A).withOpacity(0.3),
                 blurRadius: 15,
                 offset: const Offset(0, 5),
               ),
@@ -175,10 +175,10 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF2196F3).withOpacity(0.4), width: 1.5),
+          border: Border.all(color: const Color(0xFF152A4A).withOpacity(0.4), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2196F3).withOpacity(0.05),
+              color: const Color(0xFF152A4A).withOpacity(0.05),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -191,7 +191,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
               label,
               style: GoogleFonts.poppins(
                 fontSize: 11,
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
               ),
@@ -211,10 +211,10 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withOpacity(0.1),
+                    color: const Color(0xFF152A4A).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Icon(Icons.calendar_month_rounded, size: 14, color: Color(0xFF2196F3)),
+                  child: const Icon(Icons.calendar_month_rounded, size: 14, color: Color(0xFF152A4A)),
                 ),
               ],
             ),
@@ -235,7 +235,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2196F3),
+              primary: Color(0xFF152A4A),
               onPrimary: Colors.white,
               onSurface: Colors.black87,
               surface: Colors.white,
@@ -243,14 +243,14 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
             dialogBackgroundColor: Colors.white,
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2196F3),
+                foregroundColor: const Color(0xFF152A4A),
                 textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
               ),
             ),
             datePickerTheme: DatePickerThemeData(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.transparent,
-              headerBackgroundColor: const Color(0xFF2196F3),
+              headerBackgroundColor: const Color(0xFF152A4A),
               headerForegroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
@@ -312,7 +312,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
           ElevatedButton(
             onPressed: _fetchReport,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1565C0),
+              backgroundColor: const Color(0xFF020617),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -382,9 +382,9 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
           _buildSummaryCard('Absent', absentDays.toString(), Colors.red, Icons.cancel_outlined),
           _buildSummaryCard('Late', lateDays.toString(), Colors.orange, Icons.schedule),
           _buildSummaryCard('Half Day', halfDays.toString(), Colors.amber, Icons.timelapse),
-          _buildSummaryCard('Holiday', holidayDays.toString(), Colors.blue, Icons.event_available),
+          _buildSummaryCard('Holiday', holidayDays.toString(), const Color(0xFF152A4A), Icons.event_available),
           _buildSummaryCard('Leave', leaveDays.toString(), Colors.purple, Icons.directions_walk),
-          _buildSummaryCard('Rate', '${attendanceRate.toStringAsFixed(1)}%', const Color(0xFF2196F3), Icons.pie_chart_outline),
+          _buildSummaryCard('Rate', '${attendanceRate.toStringAsFixed(1)}%', const Color(0xFF152A4A), Icons.pie_chart_outline),
         ],
       ),
     );
@@ -472,10 +472,10 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2196F3).withOpacity(0.1),
+                          color: const Color(0xFF152A4A).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.calendar_today, color: Color(0xFF2196F3), size: 16),
+                        child: const Icon(Icons.calendar_today, color: Color(0xFF152A4A), size: 16),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -512,7 +512,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
               Row(
                 children: [
                   Expanded(
-                    child: _buildDetailItem(Icons.timer_outlined, 'Work Hrs', '$workHrs hrs', const Color(0xFF2196F3)),
+                    child: _buildDetailItem(Icons.timer_outlined, 'Work Hrs', '$workHrs hrs', const Color(0xFF152A4A)),
                   ),
                   Expanded(
                     child: _buildDetailItem(Icons.work_outline, 'Shift', shift, Colors.purple),
@@ -609,7 +609,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
               ListTile(
                 title: Text('Check-In', style: GoogleFonts.poppins(fontSize: 14)),
                 subtitle: Text(checkInTime?.format(context) ?? 'Select Time',
-                    style: GoogleFonts.poppins(fontSize: 14, color: Colors.blue)),
+                    style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF152A4A))),
                 trailing: const Icon(Icons.access_time),
                 onTap: () async {
                   final picked = await showTimePicker(
@@ -622,7 +622,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
               ListTile(
                 title: Text('Check-Out', style: GoogleFonts.poppins(fontSize: 14)),
                 subtitle: Text(checkOutTime?.format(context) ?? 'Select Time',
-                    style: GoogleFonts.poppins(fontSize: 14, color: Colors.blue)),
+                    style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF152A4A))),
                 trailing: const Icon(Icons.access_time),
                 onTap: () async {
                   final picked = await showTimePicker(
@@ -659,7 +659,7 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
                 Navigator.pop(context);
                 _updateAttendance(dateStr, checkInTime, checkOutTime, selectedStatus);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1565C0)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF020617)),
               child: Text('Save', style: GoogleFonts.poppins(color: Colors.white)),
             ),
           ],
@@ -740,8 +740,8 @@ class _AttendanceDetailReportScreenState extends State<AttendanceDetailReportScr
         textColor = Colors.red[800]!;
         break;
       case 'holiday':
-        bgColor = Colors.blue[100]!;
-        textColor = Colors.blue[800]!;
+        bgColor = Color(0x330F172A);
+        textColor = Color(0xFF152A4A);
         break;
       case 'half day':
         bgColor = Colors.amber[100]!;
@@ -810,7 +810,7 @@ class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2196F3).withOpacity(0.06),
+            color: const Color(0xFF152A4A).withOpacity(0.06),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -837,12 +837,12 @@ class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2196F3).withOpacity(0.1),
+                        color: const Color(0xFF152A4A).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         widget.icon,
-                        color: const Color(0xFF2196F3),
+                        color: const Color(0xFF152A4A),
                         size: 22,
                       ),
                     ),
@@ -886,3 +886,5 @@ class _ExpandableSectionCardState extends State<_ExpandableSectionCard> {
     );
   }
 }
+
+

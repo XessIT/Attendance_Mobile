@@ -225,7 +225,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                       const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 formatButtonDecoration: BoxDecoration(
-                  color: const Color(0xFF2196F3),
+                  color: const Color(0xFF152A4A),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 formatButtonTextStyle: GoogleFonts.poppins(
@@ -239,11 +239,11 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
               calendarStyle: CalendarStyle(
                 outsideDaysVisible: false,
                 todayDecoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: const Color(0xFF152A4A).withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: const BoxDecoration(
-                  color: Color(0xFF2196F3),
+                  color: Color(0xFF152A4A),
                   shape: BoxShape.circle,
                 ),
                 defaultTextStyle: GoogleFonts.poppins(),
@@ -269,13 +269,13 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: const Color(0xFF152A4A).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Icon(
                             Icons.info_outline,
                             size: 18,
-                            color: Colors.blue,
+                            color: const Color(0xFF152A4A),
                           ),
                         ),
                       ),
@@ -356,8 +356,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   final key = DateTime.utc(day.year, day.month, day.day);
                   final status = _attendanceMap[key];
 
-                  Color backgroundColor = Colors.blue.withOpacity(0.3);
-                  Color textColor = Colors.blue;
+                  Color backgroundColor = const Color(0xFF152A4A).withOpacity(0.3);
+                  Color textColor = const Color(0xFF152A4A);
                   IconData? statusIcon;
                   FontWeight fontWeight = FontWeight.bold;
 
@@ -446,7 +446,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
                   final key = DateTime.utc(day.year, day.month, day.day);
                   final status = _attendanceMap[key];
 
-                  Color backgroundColor = const Color(0xFF2196F3);
+                  Color backgroundColor = const Color(0xFF152A4A);
                   Color textColor = Colors.white;
                   IconData? statusIcon;
 
@@ -695,7 +695,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
             child: Text(
               'Got it!',
               style: GoogleFonts.poppins(
-                color: const Color(0xFF2196F3),
+                color: const Color(0xFF152A4A),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -852,7 +852,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
               ),
               Expanded(
                 child: _buildTimeDetail(
-                    'Hours', record['hours'], Icons.timer, Colors.blue),
+                    'Hours', record['hours'], Icons.timer, const Color(0xFF152A4A)),
               ),
             ],
           ),
@@ -930,3 +930,4 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
     );
   }
 }
+
