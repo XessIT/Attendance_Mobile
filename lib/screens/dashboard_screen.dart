@@ -19,6 +19,7 @@ import 'level_approval_screen.dart';
 import 'manual_attendance_screen.dart';
 import 'employee_leave_screen.dart';
 import '../widgets/no_internet_widget.dart';
+import '../utils/biometric_auth_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -611,8 +612,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: cardWidth,
                   child: _buildActionCard(
                     icon: Icons.face,
-                    title: 'Face Attendance',
-                    subtitle: 'Face Recognition',
+                    title: 'Fingerprint Attendance',
+                    subtitle: 'Biometric Scan',
                     color: Colors.orange.shade700,
                     onTap: _navigateToFaceAttendanceScreen,
                   ),

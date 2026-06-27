@@ -262,14 +262,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           IconButton(
             icon: const Icon(Icons.fingerprint),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FaceAttendanceScreen(shouldLoop: true),
-                ),
-              );
+              showFingerprintLoginOptionsDialog(context);
             },
-            tooltip: 'Mark Attendance',
+            tooltip: 'Fingerprint Settings',
           ),
           IconButton(
             icon: const Icon(Icons.logout),

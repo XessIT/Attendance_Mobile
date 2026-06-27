@@ -230,14 +230,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> with TickerProv
           IconButton(
             icon: const Icon(Icons.fingerprint),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FaceAttendanceScreen(shouldLoop: true),
-                ),
-              );
+              showFingerprintLoginOptionsDialog(context);
             },
-            tooltip: 'Mark Attendance',
+            tooltip: 'Fingerprint Settings',
           ),
           IconButton(
             icon: const Icon(Icons.logout),
