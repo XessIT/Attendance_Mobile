@@ -267,6 +267,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             tooltip: 'Fingerprint Settings',
           ),
           IconButton(
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () => Navigator.of(context).pushNamed('/billing'),
+            tooltip: 'Billing',
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
             tooltip: 'Logout',

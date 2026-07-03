@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 import 'providers/employee_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/shift_provider.dart';
@@ -10,6 +11,9 @@ import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/employee_home_screen.dart';
+import 'screens/upgrade/pricing_screen.dart';
+import 'screens/upgrade/billing_screen.dart';
+import 'services/payment_service.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -42,6 +46,9 @@ void main() async {
     // If Firebase initialization fails, continue without it (for development purposes)
     debugPrint('Firebase initialization failed: $e');
   }
+  // Initialize PaymentController
+  Get.put(PaymentController(), permanent: true);
+
   runApp(const MyApp());
 }
 
@@ -121,8 +128,10 @@ class MyApp extends StatelessWidget {
           '/splash': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegistrationScreen(),
-          '/home': (context) => HomeScreen(),
-          '/employee-home': (context) => EmployeeHomeScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/employee-home': (context) => const EmployeeHomeScreen(),
+          '/pricing': (context) => const PricingScreen(),
+          '/billing': (context) => const BillingScreen(),
         },
       ),
     );
