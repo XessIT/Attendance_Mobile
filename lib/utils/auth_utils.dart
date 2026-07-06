@@ -6,6 +6,7 @@ import '../services/local_storage_service.dart';
 /// Token and user type are stored in Flutter Secure Storage.
 class AuthUtils {
   static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
   static const String _userTypeKey = 'user_type';
 
   static const _storage = FlutterSecureStorage(
@@ -26,6 +27,17 @@ class AuthUtils {
   /// Store authentication token in secure storage
   static Future<bool> setToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
+    return true;
+  }
+
+  /// Get stored refresh token from secure storage
+  static Future<String?> getRefreshToken() async {
+    return await _storage.read(key: _refreshTokenKey);
+  }
+
+  /// Store refresh token in secure storage
+  static Future<bool> setRefreshToken(String token) async {
+    await _storage.write(key: _refreshTokenKey, value: token);
     return true;
   }
 
@@ -132,6 +144,7 @@ class AuthUtils {
   static Future<bool> clearAuthData() async {
     await _storage.delete(key: _userTypeKey);
     await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshTokenKey);
     // Clear all local caches on logout to prevent cross-company data visibility
     await LocalStorageService.clearAllCache();
     return true;

@@ -11,6 +11,8 @@ import '../models/salary.dart';
 import '../models/leave_balance.dart';
 import '../utils/auth_utils.dart';
 import 'location_service.dart';
+import 'package:flutter/material.dart' show Navigator;
+import 'notification_service.dart' show navigatorKey;
 
 class ApiService {
   // Face recognition and attendance API base URL
@@ -20,28 +22,25 @@ class ApiService {
   static const String userBaseUrl = 'https://nodeface.agniplay.com/api/';
 
   // Dio instance for face recognition and attendance APIs
-  static final Dio _dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 60),
-    receiveTimeout: const Duration(seconds: 60),
-    sendTimeout: const Duration(seconds: 60),
-    headers: {
-      'Connection': 'keep-alive',
-      'Accept': '*/*',
-    },
-  ));
+  static final Dio _dio = _initDio(baseUrl);
 
   // Dio instance for user management APIs
-  static final Dio _userDio = Dio(BaseOptions(
-    baseUrl: userBaseUrl,
-    connectTimeout: const Duration(seconds: 60),
-    receiveTimeout: const Duration(seconds: 60),
-    sendTimeout: const Duration(seconds: 60),
-    headers: {
-      'Connection': 'keep-alive',
-      'Accept': '*/*',
-    },
-  ));
+  static final Dio _userDio = _initDio(userBaseUrl);
+
+  static Dio _initDio(String url) {
+    final dioInstance = Dio(BaseOptions(
+      baseUrl: url,
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 60),
+      headers: {
+        'Connection': 'keep-alive',
+        'Accept': '*/*',
+      },
+    ));
+    dioInstance.interceptors.add(AuthInterceptor(() => dioInstance));
+    return dioInstance;
+  }
 
   // Employee APIs
   static Future<Map<String, dynamic>> getEmployees({
@@ -1483,14 +1482,24 @@ class ApiService {
                   response.data['data']['bearer'];
         }
 
+        // Try extracting refresh token
+        String? refreshToken = response.data['refreshToken'] ??
+                               response.data['refresh_token'];
+        if (refreshToken == null && response.data['data'] != null) {
+          refreshToken = response.data['data']['refreshToken'] ??
+                         response.data['data']['refresh_token'];
+        }
+
         print('🔑 Token found in response: ${token != null ? "YES" : "NO"}');
         if (token != null) {
           print('🔑 Token value: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
         }
+        print('🔑 Refresh Token found in response: ${refreshToken != null ? "YES" : "NO"}');
 
         return {
           'success': true,
           'token': token,
+          'refreshToken': refreshToken,
           'data': response.data,
         };
       } else {
@@ -1585,14 +1594,24 @@ class ApiService {
                   response.data['data']['bearer'];
         }
 
+        // Try extracting refresh token
+        String? refreshToken = response.data['refreshToken'] ??
+                               response.data['refresh_token'];
+        if (refreshToken == null && response.data['data'] != null) {
+          refreshToken = response.data['data']['refreshToken'] ??
+                         response.data['data']['refresh_token'];
+        }
+
         print('🔑 Token found in response: ${token != null ? "YES" : "NO"}');
         if (token != null) {
           print('🔑 Token value: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
         }
+        print('🔑 Refresh Token found in response: ${refreshToken != null ? "YES" : "NO"}');
 
         return {
           'success': true,
           'token': token,
+          'refreshToken': refreshToken,
           'data': response.data,
         };
       } else {
@@ -3006,6 +3025,117 @@ class ApiService {
       print('Error: $e');
       print('========================================');
       throw Exception('Error updating attendance: $e');
+    }
+  }
+}
+
+class AuthInterceptor extends QueuedInterceptor {
+  final Dio Function() dioGetter;
+
+  AuthInterceptor(this.dioGetter);
+
+  final Dio _refreshDio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+  ));
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    final token = await AuthUtils.getToken();
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.response?.statusCode == 401) {
+      final originalRequest = err.requestOptions;
+
+      // If we already retried this request, reject
+      if (originalRequest.extra['isRetry'] == true) {
+        handler.reject(err);
+        return;
+      }
+
+      originalRequest.extra['isRetry'] = true;
+      final storedRefreshToken = await AuthUtils.getRefreshToken();
+
+      if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
+        // No refresh token available, force logout
+        await _handleLogoutRedirect();
+        handler.reject(err);
+        return;
+      }
+
+      try {
+        print('🔄 Access token expired. Attempting token refresh...');
+        // Call the Refresh API
+        final response = await _refreshDio.post(
+          '${ApiService.userBaseUrl}auth/refresh',
+          data: {'refreshToken': storedRefreshToken},
+          options: Options(contentType: 'application/json'),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = response.data;
+          String? newAccess = data['accessToken'] ?? data['access_token'] ?? data['token'];
+          String? newRefresh = data['refreshToken'] ?? data['refresh_token'];
+
+          if (newAccess == null && data['data'] != null) {
+            newAccess = data['data']['accessToken'] ?? data['data']['access_token'] ?? data['data']['token'];
+            newRefresh = data['data']['refreshToken'] ?? data['data']['refresh_token'];
+          }
+
+          if (newAccess != null) {
+            print('✅ Token refresh successful. Saving new tokens...');
+            await AuthUtils.setToken(newAccess);
+            if (newRefresh != null) {
+              await AuthUtils.setRefreshToken(newRefresh);
+            }
+
+            // Retry the original request with the new token
+            originalRequest.headers['Authorization'] = 'Bearer $newAccess';
+
+            final dio = dioGetter();
+            final retryResponse = await dio.request(
+              originalRequest.path,
+              data: originalRequest.data,
+              queryParameters: originalRequest.queryParameters,
+              options: Options(
+                method: originalRequest.method,
+                headers: originalRequest.headers,
+                extra: originalRequest.extra,
+                contentType: originalRequest.contentType,
+              ),
+            );
+            handler.resolve(retryResponse);
+            return;
+          }
+        }
+
+        throw DioException(
+          requestOptions: originalRequest,
+          error: 'Failed to refresh token',
+        );
+      } catch (refreshError) {
+        print('❌ Token refresh failed: $refreshError. Logging out...');
+        await AuthUtils.clearAuthData();
+        await _handleLogoutRedirect();
+        handler.reject(err);
+        return;
+      }
+    }
+
+    handler.next(err);
+  }
+
+  Future<void> _handleLogoutRedirect() async {
+    await AuthUtils.logout();
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
 }

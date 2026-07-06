@@ -269,6 +269,12 @@ class _LoginScreenState extends State<LoginScreen> {
         await AuthUtils.setToken(token);
         print('✅ Token stored in secure storage');
 
+        String? refreshToken = result['refreshToken'];
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          await AuthUtils.setRefreshToken(refreshToken);
+          print('✅ Refresh Token stored in secure storage');
+        }
+
         String? role = AuthUtils.getRoleFromToken(token);
         if (role == null || role.isEmpty) {
           try {

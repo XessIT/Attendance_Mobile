@@ -991,6 +991,72 @@ class _SalaryScreenState extends State<SalaryScreen> {
         );
       }
 
+      final isNoDataError = _error!.toLowerCase().contains('no active employee') ||
+          _error!.toLowerCase().contains('no employee') ||
+          _error!.toLowerCase().contains('not found') ||
+          _error!.toLowerCase().contains('empty');
+
+      if (isNoDataError) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF152A4A).withOpacity(0.06),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.people_outline_rounded,
+                  size: 44,
+                  color: Color(0xFF152A4A),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'No Data Available',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF152A4A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'No salary data found for the selected period. Try a different month or check if employees are active.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    height: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _loadData();
+                  _loadSalaryData();
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Refresh'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF152A4A),
+                  side: const BorderSide(color: Color(0xFF152A4A)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  textStyle: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
